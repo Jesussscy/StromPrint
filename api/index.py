@@ -399,3 +399,9 @@ async def not_found_handler(request: Request, exc):
 async def internal_error_handler(request: Request, exc):
     logger.exception("Unhandled 500")
     return JSONResponse(status_code=500, content=sanitize_exception_response(exc))
+
+
+# ---------------------------------------------------------------------------
+# Vercel serverless handler
+# ---------------------------------------------------------------------------
+app_handler = app

@@ -102,10 +102,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
-            "script-src 'self'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
             "style-src 'self' 'unsafe-inline'; "
             "img-src 'self' data: blob:; "
-            "connect-src 'self'; "
+            "connect-src 'self' https://api.open-meteo.com; "
             "frame-ancestors 'none'; "
             "base-uri 'self'; "
             "form-action 'self'"

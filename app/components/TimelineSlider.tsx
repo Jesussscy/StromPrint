@@ -2,35 +2,33 @@
 
 import { motion } from "framer-motion";
 import { useCallback, useMemo } from "react";
-import type { FloodRecord } from "@/app/lib/api";
-import { riskColor } from "@/app/lib/api";
+import type { PuntoPrediccion } from "@/app/lib/api";
+import { riskColor, formatHour, formatHourShort } from "@/app/lib/api";
 
 interface TimelineSliderProps {
-  records: FloodRecord[];
+  puntos: PuntoPrediccion[];
   currentHour: number;
   onScrub: (hour: number) => void;
   isPlaying: boolean;
   onTogglePlay: () => void;
 }
 
-const MAX_HOURS = 168;
-
 export default function TimelineSlider({
-  records,
+  puntos,
   currentHour,
   onScrub,
   isPlaying,
   onTogglePlay,
 }: TimelineSliderProps) {
-  const maxHour = records.length > 0 ? records[records.length - 1].hour : MAX_HOURS;
-  const progressPct = Math.min(100, (currentHour / (maxHour || MAX_HOURS)) * 100);
+  const maxHour = puntos.length > 0 ? puntos[puntos.length - 1].tiempo_hora : 72;
+  const progressPct = Math.min(100, (currentHour / (maxHour || 72)) * 100);
 
-  const activeRecord = useMemo(() => {
-    if (records.length === 0) return null;
-    return records.reduce((closest, r) =>
-      Math.abs(r.hour - currentHour) < Math.abs(closest.hour - currentHour) ? r : closest
+  const activePunto = useMemo(() => {
+    if (puntos.length === 0) return null;
+    return puntos.reduce((closest, p) =>
+      Math.abs(p.tiempo_hora - currentHour) < Math.abs(closest.tiempo_hora - currentHour) ? p : closest
     );
-  }, [records, currentHour]);
+  }, [puntos, currentHour]);
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -40,19 +38,29 @@ export default function TimelineSlider({
   );
 
   const dayMarkers = useMemo(() => {
-    const days = Math.floor((maxHour || MAX_HOURS) / 24);
+    const days = Math.floor((maxHour || 72) / 24);
     return Array.from({ length: days + 1 }, (_, i) => i * 24);
   }, [maxHour]);
 
-  const trackColor = activeRecord ? riskColor(activeRecord.risk_level) : "#00F3FF";
+  const trackColor = activePunto ? riskColor(activePunto.estado) : "#00F3FF";
+
+  // Mini heatmap of risk levels along the timeline
+  const riskHeatmap = useMemo(() => {
+    if (puntos.length === 0) return [];
+    const step = Math.max(1, Math.floor(puntos.length / 100));
+    return puntos.filter((_, i) => i % step === 0).map((p) => ({
+      hour: p.tiempo_hora,
+      color: riskColor(p.estado),
+    }));
+  }, [puntos]);
 
   return (
-    <div className="glass-panel p-5 md:p-6">
-      <div className="mb-4 flex items-center justify-between">
+    <div className="glass-panel p-4 md:p-5">
+      <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
             onClick={onTogglePlay}
-            aria-label={isPlaying ? "Pausar simulación" : "Reproducir simulación"}
+            aria-label={isPlaying ? "Pausar prediccion" : "Reproducir prediccion"}
             className="flex h-10 w-10 items-center justify-center rounded-full border border-cyan/30 bg-abyss-3/60 text-cyan transition hover:border-cyan hover:shadow-glow-cyan"
           >
             {isPlaying ? (
@@ -67,32 +75,45 @@ export default function TimelineSlider({
             )}
           </button>
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-widest text-mist">Línea temporal</p>
+            <p className="font-mono text-[9px] uppercase tracking-widest text-mist">Linea temporal</p>
             <p className="font-display text-lg text-fog font-tabular">
-              Hora {currentHour.toFixed(0)}{" "}
-              <span className="text-mist text-sm">/ {Math.round(maxHour || MAX_HOURS)}h</span>
+              {formatHour(currentHour)}
+              <span className="text-mist text-sm"> / {formatHourShort(maxHour)}</span>
             </p>
           </div>
         </div>
 
-        {activeRecord && (
+        {activePunto && (
           <motion.div
-            key={activeRecord.risk_level}
+            key={activePunto.estado}
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
-            className="rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-wider"
+            className="rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-wider"
             style={{
               color: trackColor,
               border: `1px solid ${trackColor}55`,
               backgroundColor: `${trackColor}14`,
             }}
           >
-            {activeRecord.water_level_cm.toFixed(1)} cm
+            {activePunto.nivel_agua_cm.toFixed(1)} cm \u00b7 {activePunto.estado}
           </motion.div>
         )}
       </div>
 
-      <div className="relative pt-2">
+      {/* Risk heatmap */}
+      {riskHeatmap.length > 0 && (
+        <div className="mb-2 flex h-1.5 w-full overflow-hidden rounded-full">
+          {riskHeatmap.map((point, i) => (
+            <div
+              key={i}
+              className="h-full flex-1"
+              style={{ backgroundColor: point.color, opacity: 0.6 }}
+            />
+          ))}
+        </div>
+      )}
+
+      <div className="relative pt-1">
         <div className="relative h-2 w-full overflow-hidden rounded-full bg-abyss-3">
           <motion.div
             className="absolute inset-y-0 left-0 rounded-full"
@@ -109,17 +130,17 @@ export default function TimelineSlider({
         <input
           type="range"
           min={0}
-          max={maxHour || MAX_HOURS}
+          max={maxHour || 72}
           step={1}
           value={currentHour}
           onChange={handleChange}
           className="absolute inset-x-0 top-0 h-6 w-full cursor-pointer appearance-none bg-transparent [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-cyan [&::-webkit-slider-thumb]:bg-abyss [&::-webkit-slider-thumb]:shadow-glow-cyan"
-          aria-label="Deslizador de línea temporal, 0 a 168 horas"
+          aria-label="Deslizador de linea temporal"
         />
 
-        <div className="mt-3 flex justify-between font-mono text-[10px] text-mist">
+        <div className="mt-2 flex justify-between font-mono text-[9px] text-mist">
           {dayMarkers.map((h) => (
-            <span key={h}>Día {h / 24}</span>
+            <span key={h}>{h === 0 ? "Hoy" : `Dia ${h / 24}`}</span>
           ))}
         </div>
       </div>

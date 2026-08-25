@@ -2,9 +2,17 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "StormPrint — Manga, Cartagena",
-  description: "La huella que deja cada tormenta en el territorio",
+  title: "StormPrint \u2014 Prediccion de Inundaciones Manga, Cartagena",
+  description:
+    "Simulacion ciberfisica del riesgo de inundacion en el barrio Manga, Cartagena de Indias. Modelo de ecuaciones diferenciales de segundo orden con datos meteorologicos en tiempo real.",
   robots: { index: false, follow: false },
+  openGraph: {
+    title: "StormPrint \u2014 Prediccion de Inundaciones Manga, Cartagena",
+    description:
+      "Simulacion ciberfisica del riesgo de inundacion en el barrio Manga, Cartagena de Indias.",
+    type: "website",
+    locale: "es_CO",
+  },
 };
 
 export default function RootLayout({

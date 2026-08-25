@@ -20,11 +20,6 @@ from starlette.types import ASGIApp
 # ---------------------------------------------------------------------------
 # API Key configuration
 # ---------------------------------------------------------------------------
-# The raw key is only ever read from the environment. We never log it and we
-# never echo it back in any response. What we store/compare is a salted
-# SHA-256 hash, evaluated with a constant-time comparison to avoid timing
-# side-channels.
-
 _API_KEY_SALT = os.environ.get("STORMPRINT_KEY_SALT", "storm-print-manga-static-salt-v1")
 _RAW_API_KEY = os.environ.get("STORMPRINT_API_KEY", "sp_live_manga_default_change_me")
 
@@ -37,11 +32,6 @@ _EXPECTED_KEY_HASH = _hash_key(_RAW_API_KEY)
 
 
 def generate_admin_credentials(username: str, password: str) -> dict:
-    """
-    Generates a securely salted hash for an administrative user.
-    Uses PBKDF2-HMAC-SHA256 with a per-user random salt (100k iterations),
-    following OWASP password storage recommendations.
-    """
     salt = secrets.token_hex(16)
     derived = hashlib.pbkdf2_hmac(
         "sha256",
@@ -67,11 +57,6 @@ def verify_admin_credentials(password: str, salt: str, password_hash: str) -> bo
 
 
 async def verify_api_key(x_stormprint_key: Optional[str] = Header(default=None)) -> str:
-    """
-    FastAPI dependency enforcing presence + validity of X-StormPrint-Key.
-    Uses constant-time comparison against the stored hash to prevent
-    timing attacks. Raises 401 with a generic, non-revealing message.
-    """
     if not x_stormprint_key:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -90,11 +75,12 @@ async def verify_api_key(x_stormprint_key: Optional[str] = Header(default=None))
 
 
 # ---------------------------------------------------------------------------
-# Rate limiting (slowapi) — 10 req/min per IP on protected endpoints
+# Rate limiting (slowapi)
 # ---------------------------------------------------------------------------
 limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
 
 RATE_LIMIT_PREDICT = "10/minute"
+RATE_LIMIT_PREDECIR = "30/minute"
 
 
 def rate_limit_exceeded_handler(request: Request, exc) -> JSONResponse:
@@ -108,12 +94,6 @@ def rate_limit_exceeded_handler(request: Request, exc) -> JSONResponse:
 # Security headers middleware
 # ---------------------------------------------------------------------------
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    """
-    Injects strict security headers into every response:
-    CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy,
-    Permissions-Policy. Also strips identifying server headers.
-    """
-
     def __init__(self, app: ASGIApp):
         super().__init__(app)
 
@@ -156,7 +136,21 @@ def get_allowed_origins() -> list:
 
 
 # ---------------------------------------------------------------------------
-# Generic, sanitized error responses (mask stack traces in production)
+# Public routes (no auth required)
+# ---------------------------------------------------------------------------
+PUBLIC_ROUTES = {
+    "/api/v1/health",
+    "/api/v1/predecir",
+    "/api/v1/predicciones",
+}
+
+
+def is_public_route(path: str) -> bool:
+    return path.rstrip("/") in PUBLIC_ROUTES
+
+
+# ---------------------------------------------------------------------------
+# Generic, sanitized error responses
 # ---------------------------------------------------------------------------
 IS_PRODUCTION = os.environ.get("VERCEL_ENV", os.environ.get("ENV", "production")) != "development"
 

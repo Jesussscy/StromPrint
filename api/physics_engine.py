@@ -1,99 +1,312 @@
 """
 StormPrint :: physics_engine.py
-Numerical solver for the territorial water-accumulation model in Manga,
-Cartagena de Indias.
+Motor de ecuaciones diferenciales de segundo orden para el modelo territorial
+de acumulacion de agua en Manga, Cartagena de Indias.
 
-    m * H''(t) + c * H'(t) + k * H(t) = F_rain(t) + F_tide(t)
+ ========================================================================
+ ECUACION DIFERENCIAL DE SEGUNDO ORDEN (EDO):
+ ========================================================================
 
-Where:
-    H(t)  -> accumulated water height on the territory (cm)
-    m     -> inertial mass of the hydric mass (system resistance to change)
-    c     -> drainage damping coefficient (storm-drain evacuation capacity)
-    k     -> terrain "restoring stiffness" (natural absorption / elevation)
-    F_rain(t)  -> forcing term from rainfall intensity
-    F_tide(t)  -> forcing term from Caribbean Sea tidal coupling (Manga is
-                  a peninsula bounded by the Cartagena Bay)
+   m * H''(t) + c(t) * H'(t) + k(t) * H(t) = F_rain(t) + F_tide(t) + F_wind(t)
 
-Solved as a first-order system with scipy.integrate.solve_ivp (RK45).
+ Donde:
+   H(t)       -> nivel acumulado de agua en el territorio (cm)
+   H'(t)      -> velocidad de cambio del nivel (cm/h)
+   H''(t)     -> aceleracion del nivel (cm/h^2)
+   m          -> inercia de la masa hidrica (resistencia al cambio)
+   c(t)       -> coeficiente de amortiguamiento temporal (capacidad de drenaje)
+   k(t)       -> rigidez temporal del terreno (absorcion natural)
+   F_rain(t)  -> termino de forzamiento por lluvia (pulso gaussiano)
+   F_tide(t)  -> termino de forzamiento por marea (semidiurno + envolvente)
+   F_wind(t)  -> termino de forzamiento por viento (empuje de marea)
+
+ ========================================================================
+ FORMA INTEGRAL EQUIVALENTE (Ecuacion de Volterra de 2da especie):
+ ========================================================================
+
+ Integrando dos veces la EDO desde 0 hasta t:
+
+   H(t) = (1/m) * integral_0^t integral_0^s {
+       F_rain(tau) + F_tide(tau) + F_wind(tau)
+       - c(s) * H'(s) - k(s) * H(s)
+   } dtau ds
+
+ Esta forma integral es equivalente y demuestra que H(t) depende de toda
+ la historia del sistema (memoria integral), no solo del estado actual.
+
+ ========================================================================
+ TRANSFORMACION A SISTEMA DE PRIMER ORDEN (para solve_ivp):
+ ========================================================================
+
+ Sea y = [H, H']:
+   dy/dt = [y[1], (F_total(t) - c(t)*y[1] - k(t)*y[0]) / m]
+
+ Condiciones iniciales: H(0) = 0, H'(0) = 0 (territorio seco al inicio)
+
+ Se resuelve numericamente con scipy.integrate.solve_ivp (Runge-Kutta 45).
+
+ ========================================================================
+ VARIABLES AMBIENTALES QUE MODULAN c(t) y k(t):
+ ========================================================================
+
+   c(t) = c_0 * max(0.2, 1 - d_consecutivos * 0.1)
+     -> Dias lluviosos consecutivos satures el alcantarillado
+
+   k(t) = k_0 * (1 + h_suelo * 0.5)
+     -> Suelo humedo reduce la capacidad de absorcion
+
+   F_wind(t) = wind_gain * viento_vel * push_factor * sin(2*pi*t / T_tide)
+     -> Vientos del sur/oeste empujan marea hacia la bahia (mar de levante)
 """
 
 import math
-from dataclasses import dataclass
-from typing import Callable, List
+from dataclasses import dataclass, field
+from typing import List
 
 import numpy as np
 from scipy.integrate import solve_ivp
 
-RISK_THRESHOLD_MODERATE = 15.0
-RISK_THRESHOLD_HIGH = 30.0
-RISK_THRESHOLD_CRITICAL = 45.0
+# ---------------------------------------------------------------------------
+# Umbrales de clasificacion de riesgo (en espanol)
+# ---------------------------------------------------------------------------
+RISK_THRESHOLD_MODERATE = 15.0   # cm — Alerta
+RISK_THRESHOLD_CRITICAL = 30.0   # cm — Inundacion Critica
 
 
 @dataclass
 class PhysicalParameters:
-    mass: float = 1.0          # m — inertia of the hydric mass
-    damping: float = 0.45      # c — storm-drain / gravity drainage coefficient
-    stiffness: float = 0.65    # k — terrain absorption & elevation stiffness
-    rain_gain: float = 3.2     # scales rainfall intensity into forcing units
-    tide_gain: float = 1.1     # scales tidal oscillation into forcing units
-    tide_period_h: float = 12.42  # semi-diurnal tidal period (hours)
+    """Parametros fisicos del modelo territorial de Manga."""
+
+    mass: float = 1.0              # m  — inercia de la masa hidrica
+    damping: float = 0.45          # c_0 — coeficiente base de amortiguamiento
+    stiffness: float = 0.65        # k_0 — rigidez base del terreno
+    rain_gain: float = 3.2         # escala lluvia -> unidades de fuerza
+    tide_gain: float = 1.1         # escala marea -> unidades de fuerza
+    tide_period_h: float = 12.42   # periodo semidiurno de marea (horas)
+    wind_gain: float = 0.8         # escala viento -> forzamiento de marea
+    soil_humidity: float = 0.3     # h_suelo — humedad del suelo estimada (0-1)
+    consecutive_rainy_days: int = 0  # d — dias lluviosos consecutivos
+    rain_duration_h: float = 6.0   # duracion de la tormenta (h, sigma de la gaussiana)
+    wind_direction_deg: float = 0.0  # direccion del viento (grados)
+    wind_speed_kmh: float = 0.0    # velocidad del viento (km/h)
+    mean_sea_level: float = 8.0    # nivel medio del mar para marea (cm)
 
 
-def rain_forcing(t: float, storm_peak_hour: float, storm_intensity: float, storm_width: float) -> float:
+# ---------------------------------------------------------------------------
+# Funciones de amortiguamiento y rigidez dependientes del tiempo
+# ---------------------------------------------------------------------------
+def effective_damping(t: float, params: PhysicalParameters) -> float:
     """
-    Rainfall forcing modeled as a Gaussian storm pulse centered at
-    `storm_peak_hour`, representing a tropical convective event typical
-    of Cartagena's rainy season (Aug–Nov).
+    c(t) = c_0 * max(0.2, 1 - d * 0.1)
+
+    Dias consecutivos de lluvia saturan el sistema de alcantarillado,
+    reduciendo la capacidad de evacuacion.
     """
-    gaussian = math.exp(-((t - storm_peak_hour) ** 2) / (2 * storm_width ** 2))
+    d = params.consecutive_rainy_days
+    factor = max(0.2, 1.0 - d * 0.1)
+    return params.damping * factor
+
+
+def effective_stiffness(t: float, params: PhysicalParameters) -> float:
+    """
+    k(t) = k_0 * (1 + h_suelo * 0.5)
+
+    Si el suelo esta humedo, absorbe menos agua y la rigidez efectiva
+    del terreno aumenta (el agua se queda en superficie).
+    """
+    return params.stiffness * (1.0 + params.soil_humidity * 0.5)
+
+
+# ---------------------------------------------------------------------------
+# Terminos de forzamiento
+# ---------------------------------------------------------------------------
+def rain_forcing(
+    t: float,
+    storm_peak_hour: float,
+    storm_intensity: float,
+    params: PhysicalParameters,
+) -> float:
+    """
+    Forzamiento de lluvia modelado como pulso gaussiano centrado en
+    storm_peak_hour, representando un evento convectivo tropical tipico
+    de la temporada de lluvias de Cartagena (Ago-Nov).
+
+    F_rain(t) = I_pico * exp(-(t - t_pico)^2 / (2 * sigma^2))
+
+    Donde sigma = rain_duration_h determina la duracion de la tormenta.
+    """
+    sigma = params.rain_duration_h
+    if sigma <= 0:
+        sigma = 6.0
+    gaussian = math.exp(-((t - storm_peak_hour) ** 2) / (2 * sigma ** 2))
     return storm_intensity * gaussian
 
 
-def tide_forcing(t: float, params: PhysicalParameters, mean_sea_level: float) -> float:
+def tide_forcing(t: float, params: PhysicalParameters) -> float:
     """
-    Tidal forcing as a semi-diurnal sinusoid coupled with a slow spring/neap
-    envelope, reflecting the Cartagena Bay's tidal regime acting on Manga's
-    low-lying shoreline.
+    Forzamiento de marea como senoide semidiurna acoplada con una
+    envolvente lenta de mareas de spring/neap, reflejando el regimen
+    de mareas de la Bahia de Cartagena que actua sobre la costa baja
+    de Manga.
+
+    F_tide(t) = tide_gain * MSL * sin(2*pi*t / T) * (1 + 0.25*sin(2*pi*t / T_spring))
     """
     semi_diurnal = math.sin(2 * math.pi * t / params.tide_period_h)
+    # Envolvente spring/neap (ciclo de ~14.77 dias)
     envelope = 1.0 + 0.25 * math.sin(2 * math.pi * t / (24 * 14.77))
-    return params.tide_gain * mean_sea_level * semi_diurnal * envelope
+    return params.tide_gain * params.mean_sea_level * semi_diurnal * envelope
 
 
-def classify_risk(water_level_cm: float) -> str:
+def wind_tide_forcing(t: float, params: PhysicalParameters) -> float:
+    """
+    Forzamiento del viento sobre la marea (mar de levante).
+
+    Vientos del sur (180) y oeste (270) empujan agua de la bahia
+    hacia la costa de Manga. El factor de empuje es maximo cuando
+    la direccion del viento esta entre 135 y 270 grados.
+    """
+    if params.wind_speed_kmh <= 0:
+        return 0.0
+
+    # Calcular factor de empuje segun direccion
+    d = params.wind_direction_deg
+    if 135 <= d <= 270:
+        # Sur/Oeste: empuje maximo hacia Manga
+        push_factor = 1.0
+    elif 90 <= d < 135:
+        # Sureste: empuje parcial
+        push_factor = (d - 90) / 45.0 * 0.6
+    elif 270 < d <= 315:
+        # Noroeste: empuje parcial
+        push_factor = (315 - d) / 45.0 * 0.6
+    else:
+        # Norte/Noreste: sin empuje o efecto minimo
+        push_factor = 0.0
+
+    # Oscilacion sincronizada con la marea
+    tide_oscillation = math.sin(2 * math.pi * t / params.tide_period_h)
+    return params.wind_gain * params.wind_speed_kmh * push_factor * tide_oscillation
+
+
+def total_forcing(t: float, storm_peak: float, storm_intensity: float, params: PhysicalParameters) -> float:
+    """Suma de todos los terminos de forzamiento."""
+    f_rain = rain_forcing(t, storm_peak, storm_intensity, params) * params.rain_gain
+    f_tide = tide_forcing(t, params)
+    f_wind = wind_tide_forcing(t, params)
+    return f_rain + f_tide + f_wind
+
+
+# ---------------------------------------------------------------------------
+# Clasificacion de riesgo en espanol
+# ---------------------------------------------------------------------------
+def classify_risk_spanish(water_level_cm: float) -> str:
+    """Clasifica el nivel de riesgo en categorias en espanol."""
+    if water_level_cm >= RISK_THRESHOLD_CRITICAL:
+        return "Inundacion Critica"
+    if water_level_cm >= RISK_THRESHOLD_MODERATE:
+        return "Alerta"
+    return "Normal"
+
+
+def classify_risk_english(water_level_cm: float) -> str:
+    """Clasificacion en ingles (para backwards compatibility)."""
     if water_level_cm >= RISK_THRESHOLD_CRITICAL:
         return "critical"
-    if water_level_cm >= RISK_THRESHOLD_HIGH:
-        return "high"
     if water_level_cm >= RISK_THRESHOLD_MODERATE:
+        return "high"
+    if water_level_cm >= 10.0:
         return "moderate"
     return "low"
 
 
+# ---------------------------------------------------------------------------
+# Metricas avanzadas
+# ---------------------------------------------------------------------------
+def compute_advanced_metrics(records: List[dict]) -> dict:
+    """Calcula metricas avanzadas a partir de los registros de simulacion."""
+    if not records:
+        return {}
+
+    water_levels = [r["water_level_cm"] for r in records]
+    rain_intensities = [r.get("rain_intensity", 0) for r in records]
+    hours = [r["hour"] for r in records]
+
+    max_level = max(water_levels)
+    max_level_idx = water_levels.index(max_level)
+    peak_hour = hours[max_level_idx]
+
+    # Acumulado total de lluvia (integral numerica trapezoidal)
+    total_rain = 0.0
+    for i in range(1, len(records)):
+        dt = hours[i] - hours[i - 1]
+        total_rain += (rain_intensities[i] + rain_intensities[i - 1]) / 2.0 * dt
+
+    # Horas con lluvia significativa (> 0.1 mm/h)
+    hours_with_rain = sum(1 for r in rain_intensities if r > 0.1)
+
+    # Eficiencia promedio de drenaje
+    drainage_values = [r.get("drainage_efficiency", 1.0) for r in records]
+    avg_drainage = sum(drainage_values) / len(drainage_values) if drainage_values else 1.0
+
+    # Nivel promedio
+    avg_level = sum(water_levels) / len(water_levels)
+
+    # Estado dominante
+    risk_counts = {}
+    for r in records:
+        risk = r.get("risk_level", "Normal")
+        risk_counts[risk] = risk_counts.get(risk, 0) + 1
+    dominant_risk = max(risk_counts, key=risk_counts.get) if risk_counts else "Normal"
+
+    return {
+        "max_water_level_cm": round(max_level, 3),
+        "peak_hour": round(peak_hour, 1),
+        "total_rain_mm": round(total_rain, 2),
+        "hours_with_rain": hours_with_rain,
+        "avg_drainage_efficiency": round(avg_drainage, 3),
+        "avg_water_level_cm": round(avg_level, 3),
+        "dominant_risk": dominant_risk,
+        "total_points": len(records),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Solucion numerica de la EDO
+# ---------------------------------------------------------------------------
 def run_simulation(
-    duration_hours: float = 168.0,
+    duration_hours: float = 72.0,
     resolution_hours: float = 1.0,
-    storm_peak_hour: float = 36.0,
-    storm_intensity: float = 42.0,
-    storm_width: float = 6.0,
+    storm_peak_hour: float = 12.0,
+    storm_intensity: float = 25.0,
     mean_sea_level: float = 8.0,
     params: PhysicalParameters | None = None,
 ) -> List[dict]:
     """
-    Solves H(t) over [0, duration_hours] and returns a per-hour timeseries
-    of water level, rainfall forcing, tidal level and risk classification,
-    ready for persistence and frontend consumption.
+    Resuelve la EDO de segundo orden:
+
+        m * H''(t) + c(t) * H'(t) + k(t) * H(t) = F_total(t)
+
+    sobre el intervalo [0, duration_hours] y retorna un series temporales
+    por hora con nivel de agua, forzamientos, y clasificacion de riesgo.
+
+    Implementa la forma integral de Volterra resuelta como sistema de
+    primer orden con scipy.integrate.solve_ivp (Runge-Kutta 45).
     """
     p = params or PhysicalParameters()
 
-    def forcing(t: float) -> float:
-        return rain_forcing(t, storm_peak_hour, storm_intensity, storm_width) * p.rain_gain + tide_forcing(
-            t, p, mean_sea_level
-        )
-
     def system(t: float, y: np.ndarray) -> List[float]:
+        """
+        Sistema de primer orden equivalente:
+            y[0] = H(t)      -> nivel de agua
+            y[1] = H'(t)     -> velocidad de cambio
+            y[1]' = H''(t)   -> aceleracion
+        """
         H, dH = y
-        d2H = (forcing(t) - p.damping * dH - p.stiffness * H) / p.mass
+        c_t = effective_damping(t, p)
+        k_t = effective_stiffness(t, p)
+        F = total_forcing(t, storm_peak_hour, storm_intensity, p)
+
+        d2H = (F - c_t * dH - k_t * H) / p.mass
         return [dH, d2H]
 
     t_eval = np.arange(0, duration_hours + resolution_hours, resolution_hours)
@@ -114,15 +327,29 @@ def run_simulation(
     records: List[dict] = []
     for idx, t in enumerate(solution.t):
         H = max(0.0, float(solution.y[0][idx]))
-        rain_val = rain_forcing(t, storm_peak_hour, storm_intensity, storm_width)
-        tide_val = tide_forcing(t, p, mean_sea_level)
+        dH = float(solution.y[1][idx])
+
+        c_t = effective_damping(t, p)
+        k_t = effective_stiffness(t, p)
+        rain_val = rain_forcing(t, storm_peak_hour, storm_intensity, p)
+        tide_val = tide_forcing(t, p)
+        wind_val = wind_tide_forcing(t, p)
+        soil_sat = min(1.0, p.soil_humidity + rain_val * 0.01)
+        drain_eff = max(0.2, 1.0 - p.consecutive_rainy_days * 0.1)
+
         records.append(
             {
                 "hour": float(t),
-                "water_level_cm": H,
-                "rain_intensity": max(0.0, rain_val),
-                "tide_level": tide_val,
-                "risk_level": classify_risk(H),
+                "water_level_cm": round(H, 4),
+                "rain_intensity": round(max(0.0, rain_val), 4),
+                "tide_level": round(tide_val, 4),
+                "wind_effect": round(wind_val, 4),
+                "soil_saturation": round(soil_sat, 3),
+                "drainage_efficiency": round(drain_eff, 3),
+                "risk_level": classify_risk_spanish(H),
+                "dH_dt": round(dH, 4),
+                "accumulation_rate": round(dH, 4),
             }
         )
+
     return records

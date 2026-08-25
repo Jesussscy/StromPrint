@@ -1,23 +1,22 @@
 """
 StormPrint :: database.py
 Async SQLite persistence layer via SQLAlchemy 2.x + aiosqlite.
-Stores every simulated FloodRecord for the Manga (Cartagena) territory.
+Stores FloodRecord (simulation timesteps) and PredictionRecord (forecast runs)
+for the Manga (Cartagena) territory.
 """
 
 import datetime
+import json
 import os
 from typing import AsyncGenerator, List, Optional
 
-from sqlalchemy import Float, Integer, String, DateTime, select
+from sqlalchemy import Float, Integer, String, DateTime, select, delete
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 # ---------------------------------------------------------------------------
 # Engine configuration
 # ---------------------------------------------------------------------------
-# Vercel serverless functions only allow writes to /tmp, so we detect that
-# environment and redirect the SQLite file there; locally it lives at the
-# project root as stormprint.db.
 _IS_VERCEL = bool(os.environ.get("VERCEL"))
 _DB_PATH = "/tmp/stormprint.db" if _IS_VERCEL else os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "stormprint.db"
@@ -32,11 +31,10 @@ class Base(DeclarativeBase):
     pass
 
 
+# ---------------------------------------------------------------------------
+# FloodRecord — registros de simulacion por timestep
+# ---------------------------------------------------------------------------
 class FloodRecord(Base):
-    """
-    Persists one timestep of a StormPrint simulation run for Manga.
-    """
-
     __tablename__ = "flood_records"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -61,6 +59,41 @@ class FloodRecord(Base):
         }
 
 
+# ---------------------------------------------------------------------------
+# PredictionRecord — predicciones completas guardadas
+# ---------------------------------------------------------------------------
+class PredictionRecord(Base):
+    __tablename__ = "predictions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    timestamp: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow, index=True
+    )
+    horas_pronostico: Mapped[int] = mapped_column(Integer, nullable=False)
+    puntos_json: Mapped[str] = mapped_column(String, nullable=False)
+    meteorologia_json: Mapped[str] = mapped_column(String, nullable=False)
+    max_water_level_cm: Mapped[float] = mapped_column(Float, nullable=False)
+    peak_hour: Mapped[float] = mapped_column(Float, nullable=False)
+    risk_level: Mapped[str] = mapped_column(String(24), nullable=False, index=True)
+    ecuacion: Mapped[str] = mapped_column(String(500), nullable=False)
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "timestamp": self.timestamp.isoformat() if self.timestamp else None,
+            "horas_pronostico": self.horas_pronostico,
+            "puntos": json.loads(self.puntos_json) if self.puntos_json else [],
+            "meteorologia_resumen": json.loads(self.meteorologia_json) if self.meteorologia_json else {},
+            "max_water_level_cm": round(self.max_water_level_cm, 3),
+            "peak_hour": round(self.peak_hour, 1),
+            "risk_level": self.risk_level,
+            "ecuacion": self.ecuacion,
+        }
+
+
+# ---------------------------------------------------------------------------
+# DB lifecycle
+# ---------------------------------------------------------------------------
 async def init_db() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -71,8 +104,10 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
         yield session
 
 
+# ---------------------------------------------------------------------------
+# FloodRecord CRUD
+# ---------------------------------------------------------------------------
 async def persist_records(session: AsyncSession, records: List[dict]) -> None:
-    """Bulk-persist a simulation's timestep results."""
     orm_records = [
         FloodRecord(
             hour=r["hour"],
@@ -95,12 +130,51 @@ async def fetch_recent_records(session: AsyncSession, limit: int = 168) -> List[
 
 
 async def clear_old_records(session: AsyncSession, keep_last: int = 5000) -> None:
-    """Housekeeping: cap table growth on long-running deployments."""
     stmt = select(FloodRecord.id).order_by(FloodRecord.id.desc()).offset(keep_last)
     result = await session.execute(stmt)
     ids_to_delete = [row[0] for row in result.all()]
     if ids_to_delete:
-        from sqlalchemy import delete
-
         await session.execute(delete(FloodRecord).where(FloodRecord.id.in_(ids_to_delete)))
+        await session.commit()
+
+
+# ---------------------------------------------------------------------------
+# PredictionRecord CRUD
+# ---------------------------------------------------------------------------
+async def persist_prediction(
+    session: AsyncSession,
+    horas_pronostico: int,
+    puntos: List[dict],
+    meteorologia: dict,
+    max_water_level_cm: float,
+    peak_hour: float,
+    risk_level: str,
+    ecuacion: str,
+) -> None:
+    record = PredictionRecord(
+        horas_pronostico=horas_pronostico,
+        puntos_json=json.dumps(puntos),
+        meteorologia_json=json.dumps(meteorologia),
+        max_water_level_cm=max_water_level_cm,
+        peak_hour=peak_hour,
+        risk_level=risk_level,
+        ecuacion=ecuacion,
+    )
+    session.add(record)
+    await session.commit()
+
+
+async def fetch_recent_predictions(session: AsyncSession, limit: int = 10) -> List[dict]:
+    stmt = select(PredictionRecord).order_by(PredictionRecord.id.desc()).limit(limit)
+    result = await session.execute(stmt)
+    rows = result.scalars().all()
+    return [r.to_dict() for r in reversed(rows)]
+
+
+async def clear_old_predictions(session: AsyncSession, keep_last: int = 200) -> None:
+    stmt = select(PredictionRecord.id).order_by(PredictionRecord.id.desc()).offset(keep_last)
+    result = await session.execute(stmt)
+    ids_to_delete = [row[0] for row in result.all()]
+    if ids_to_delete:
+        await session.execute(delete(PredictionRecord).where(PredictionRecord.id.in_(ids_to_delete)))
         await session.commit()

@@ -1,3 +1,11 @@
+// ---------------------------------------------------------------------------
+// StormPrint :: api.ts
+// Cliente HTTP tipado para la API de prediccion de inundaciones
+// Barrio Manga, Cartagena de Indias
+// ---------------------------------------------------------------------------
+
+// --- Tipos legacy (backwards compatibility) ---
+
 export interface FloodRecord {
   hour: number;
   water_level_cm: number;
@@ -26,30 +34,92 @@ export interface SimulationRequestParams {
   stiffness?: number;
 }
 
+// --- Tipos nuevos ---
+
+export interface PuntoPrediccion {
+  tiempo_hora: number;
+  nivel_agua_cm: number;
+  estado: "Normal" | "Alerta" | "Inundacion Critica";
+  lluvia_mm_h: number;
+  marea_cm: number;
+  viento_efecto_cm: number;
+  saturacion_suelo: number;
+  eficiencia_drenaje: number;
+  velocidad_cambio: number;
+}
+
+export interface MeteorologiaResumen {
+  lluvia_total_mm: number;
+  temp_max_c: number;
+  temp_min_c: number;
+  humedad_promedio: number;
+  viento_max_kmh: number;
+  dias_lluviosos: number;
+  horas_con_lluvia: number;
+}
+
+export interface PrediccionResponse {
+  territorio: string;
+  horas_pronostico: number;
+  puntos: PuntoPrediccion[];
+  meteorologia_resumen: MeteorologiaResumen;
+  ecuacion: string;
+}
+
+export interface PrediccionGuardada {
+  id: number;
+  timestamp: string;
+  horas_pronostico: number;
+  puntos: PuntoPrediccion[];
+  meteorologia_resumen: MeteorologiaResumen;
+  max_water_level_cm: number;
+  peak_hour: number;
+  risk_level: string;
+  ecuacion: string;
+}
+
+// --- Fetch helpers ---
+
 const API_KEY = process.env.NEXT_PUBLIC_STORMPRINT_API_KEY ?? "";
 
 async function stormprintFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(API_KEY ? { "X-StormPrint-Key": API_KEY } : {}),
+    ...(init?.headers as Record<string, string> ?? {}),
+  };
+
   const response = await fetch(path, {
     ...init,
-    headers: {
-      "Content-Type": "application/json",
-      "X-StormPrint-Key": API_KEY,
-      ...(init?.headers ?? {}),
-    },
+    headers,
   });
 
   if (!response.ok) {
-    let message = "Ocurrió un error al comunicarse con StormPrint.";
+    let message = "Ocurrio un error al comunicarse con StormPrint.";
     try {
       const body = await response.json();
       if (body?.message) message = body.message;
     } catch {
-      // response body wasn't JSON — keep generic message
+      // response body wasn't JSON
     }
     throw new Error(message);
   }
 
   return response.json() as Promise<T>;
+}
+
+// --- Funciones publicas ---
+
+export function predecir(params: {
+  horas_pronostico?: number;
+  intensidad_lluvia_mm_h?: number;
+  nivel_marea_cm?: number;
+  usar_datos_meteo?: boolean;
+}): Promise<PrediccionResponse> {
+  return stormprintFetch<PrediccionResponse>("/api/v1/predecir", {
+    method: "POST",
+    body: JSON.stringify(params),
+  });
 }
 
 export function runPrediction(params: SimulationRequestParams): Promise<SimulationResponse> {
@@ -65,10 +135,20 @@ export function fetchHistory(limit = 168): Promise<FloodRecord[]> {
   });
 }
 
-export function riskColor(risk: FloodRecord["risk_level"]): string {
-  switch (risk) {
+export function fetchPredicciones(limit = 10): Promise<{ predicciones: PrediccionGuardada[] }> {
+  return stormprintFetch(`/api/v1/predicciones?limit=${limit}`, {
+    method: "GET",
+  });
+}
+
+// --- Utilidades de UI ---
+
+export function riskColor(estado: string): string {
+  switch (estado) {
+    case "Inundacion Critica":
     case "critical":
       return "#FF0055";
+    case "Alerta":
     case "high":
       return "#FF7700";
     case "moderate":
@@ -78,15 +158,82 @@ export function riskColor(risk: FloodRecord["risk_level"]): string {
   }
 }
 
-export function riskLabel(risk: FloodRecord["risk_level"]): string {
-  switch (risk) {
+export function riskLabel(estado: string): string {
+  switch (estado) {
+    case "Inundacion Critica":
     case "critical":
-      return "Crítico";
+      return "Inundacion Critica";
+    case "Alerta":
     case "high":
-      return "Alto";
+      return "Alerta";
     case "moderate":
       return "Moderado";
     default:
-      return "Bajo";
+      return "Normal";
   }
+}
+
+export function formatHour(hora: number): string {
+  const day = Math.floor(hora / 24);
+  const h = Math.floor(hora % 24);
+  if (day === 0) return `Hoy ${String(h).padStart(2, "0")}:00`;
+  return `Dia ${day + 1}, ${String(h).padStart(2, "0")}:00`;
+}
+
+export function formatHourShort(hora: number): string {
+  const h = Math.floor(hora % 24);
+  return `${String(h).padStart(2, "0")}:00`;
+}
+
+export function dayLabel(hora: number): string {
+  const day = Math.floor(hora / 24);
+  if (day === 0) return "Hoy";
+  if (day === 1) return "Manana";
+  return `Dia ${day + 1}`;
+}
+
+export interface DaySummary {
+  dayIndex: number;
+  dayLabel: string;
+  lluviaTotal: number;
+  nivelMaximo: number;
+  estadoDominante: string;
+  horasConLluvia: number;
+  horasTotales: number;
+}
+
+export function computeDaySummaries(puntos: PuntoPrediccion[]): DaySummary[] {
+  const daysMap = new Map<number, PuntoPrediccion[]>();
+
+  for (const p of puntos) {
+    const dayIdx = Math.floor(p.tiempo_hora / 24);
+    if (!daysMap.has(dayIdx)) daysMap.set(dayIdx, []);
+    daysMap.get(dayIdx)!.push(p);
+  }
+
+  const summaries: DaySummary[] = [];
+  for (const [dayIdx, dayPoints] of daysMap) {
+    const lluviaTotal = dayPoints.reduce((sum, p) => sum + p.lluvia_mm_h, 0);
+    const nivelMaximo = Math.max(...dayPoints.map((p) => p.nivel_agua_cm));
+    const horasConLluvia = dayPoints.filter((p) => p.lluvia_mm_h > 0.1).length;
+
+    // Estado dominante (mayoritario)
+    const stateCounts = new Map<string, number>();
+    for (const p of dayPoints) {
+      stateCounts.set(p.estado, (stateCounts.get(p.estado) || 0) + 1);
+    }
+    const estadoDominante = [...stateCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || "Normal";
+
+    summaries.push({
+      dayIndex: dayIdx,
+      dayLabel: dayLabel(dayIdx * 24),
+      lluviaTotal: Math.round(lluviaTotal * 10) / 10,
+      nivelMaximo: Math.round(nivelMaximo * 10) / 10,
+      estadoDominante,
+      horasConLluvia,
+      horasTotales: dayPoints.length,
+    });
+  }
+
+  return summaries.sort((a, b) => a.dayIndex - b.dayIndex);
 }

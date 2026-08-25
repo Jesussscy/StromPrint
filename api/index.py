@@ -2,11 +2,19 @@
 StormPrint :: index.py
 FastAPI serverless entrypoint (Vercel-compatible).
 "La huella que deja cada tormenta en el territorio" — Barrio Manga, Cartagena.
+
+Endpoints:
+  POST /api/v1/predecir   — Prediccion publica con datos meteorologicos (sin auth)
+  POST /api/v1/predict    — Simulacion con parametros manuales (requiere API key)
+  GET  /api/v1/predicciones — Historial de predicciones guardadas
+  GET  /api/v1/history    — Historial de registros de simulacion
+  GET  /api/v1/health     — Healthcheck
 """
 
+import json
 import logging
 from contextlib import asynccontextmanager
-from typing import Optional
+from typing import Literal, Optional
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,15 +25,23 @@ from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .database import (
+    clear_old_predictions,
     clear_old_records,
+    fetch_recent_predictions,
     fetch_recent_records,
     get_session,
     init_db,
+    persist_prediction,
     persist_records,
 )
-from .physics_engine import PhysicalParameters, run_simulation
+from .physics_engine import (
+    PhysicalParameters,
+    compute_advanced_metrics,
+    run_simulation,
+)
 from .security import (
     RATE_LIMIT_PREDICT,
+    RATE_LIMIT_PREDECIR,
     SecurityHeadersMiddleware,
     get_allowed_origins,
     limiter,
@@ -33,9 +49,19 @@ from .security import (
     sanitize_exception_response,
     verify_api_key,
 )
+from .weather_service import (
+    extract_simulation_params,
+    fetch_weather_forecast,
+    get_weather_summary,
+)
 
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger("stormprint")
+
+ECUACION_DISPLAY = (
+    "m\u00b7H''(t) + c(t)\u00b7H'(t) + k(t)\u00b7H(t) "
+    "= F_lluvia(t) + F_marea(t) + F_viento(t)"
+)
 
 
 @asynccontextmanager
@@ -47,16 +73,13 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="StormPrint API",
     description="La huella que deja cada tormenta en el territorio — Manga, Cartagena",
-    version="1.0.0",
-    docs_url=None,  # disabled in production to reduce attack surface
+    version="2.0.0",
+    docs_url=None,
     redoc_url=None,
     openapi_url=None,
     lifespan=lifespan,
 )
 
-# ---------------------------------------------------------------------------
-# Security middleware stack
-# ---------------------------------------------------------------------------
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
@@ -72,7 +95,7 @@ app.add_middleware(
 
 
 # ---------------------------------------------------------------------------
-# Pydantic V2 request/response schemas (strict validation & sanitization)
+# Pydantic schemas — Simulacion (legacy)
 # ---------------------------------------------------------------------------
 class SimulationRequest(BaseModel):
     duration_hours: float = Field(default=168.0, ge=1.0, le=336.0)
@@ -111,14 +134,195 @@ class SimulationResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Routes
+# Pydantic schemas — Prediccion publica
+# ---------------------------------------------------------------------------
+class PrediccionRequest(BaseModel):
+    horas_pronostico: int = Field(default=72, ge=1, le=168)
+    intensidad_lluvia_mm_h: Optional[float] = Field(default=None, ge=0.0, le=200.0)
+    nivel_marea_cm: float = Field(default=8.0, ge=0.0, le=50.0)
+    usar_datos_meteo: bool = Field(default=True)
+
+
+class PuntoPrediccion(BaseModel):
+    tiempo_hora: int
+    nivel_agua_cm: float
+    estado: Literal["Normal", "Alerta", "Inundacion Critica"]
+    lluvia_mm_h: float
+    marea_cm: float
+    viento_efecto_cm: float
+    saturacion_suelo: float
+    eficiencia_drenaje: float
+    velocidad_cambio: float
+
+
+class MeteorologiaResumen(BaseModel):
+    lluvia_total_mm: float
+    temp_max_c: float
+    temp_min_c: float
+    humedad_promedio: float
+    viento_max_kmh: float
+    dias_lluviosos: int
+    horas_con_lluvia: int
+
+
+class PrediccionResponse(BaseModel):
+    territorio: str = "Manga, Cartagena de Indias"
+    horas_pronostico: int
+    puntos: list[PuntoPrediccion]
+    meteorologia_resumen: MeteorologiaResumen
+    ecuacion: str = ECUACION_DISPLAY
+
+
+# ---------------------------------------------------------------------------
+# Routes — Healthcheck
 # ---------------------------------------------------------------------------
 @app.get("/api/v1/health")
 @limiter.limit("30/minute")
 async def health(request: Request):
-    return {"status": "operational", "service": "stormprint-api", "territory": "manga-cartagena"}
+    return {"status": "operational", "service": "stormprint-api", "territory": "manga-cartagena", "version": "2.0.0"}
 
 
+# ---------------------------------------------------------------------------
+# Routes — Prediccion publica (sin auth)
+# ---------------------------------------------------------------------------
+@app.post("/api/v1/predecir", response_model=PrediccionResponse)
+@limiter.limit(RATE_LIMIT_PREDECIR)
+async def predecir(
+    request: Request,
+    payload: PrediccionRequest,
+    session: AsyncSession = Depends(get_session),
+):
+    try:
+        # 1. Obtener datos meteorologicos si se solicita
+        weather_data = None
+        if payload.usar_datos_meteo:
+            forecast = await fetch_weather_forecast(forecast_days=7)
+            weather_data = extract_simulation_params(
+                hourly_data=forecast["hourly"],
+                horas_pronostico=payload.horas_pronostico,
+                nivel_marea_cm=payload.nivel_marea_cm,
+            )
+            meteo_summary = get_weather_summary(
+                hourly_data=forecast["hourly"],
+                horas=payload.horas_pronostico,
+            )
+        else:
+            # Modo manual: usar intensidad proporcionada
+            meteo_summary = {
+                "lluvia_total_mm": 0,
+                "temp_max_c": 30.0,
+                "temp_min_c": 24.0,
+                "humedad_promedio": 80.0,
+                "viento_max_kmh": 0.0,
+                "dias_lluviosos": 0,
+                "horas_con_lluvia": 0,
+            }
+            if payload.intensidad_lluvia_mm_h is not None:
+                # Estimar pico e intensidad a partir del valor manual
+                estimated_peak = payload.horas_pronostico * 0.25
+                weather_data = {
+                    "storm_peak_hour": estimated_peak,
+                    "storm_intensity": payload.intensidad_lluvia_mm_h,
+                    "rain_duration_h": 6.0,
+                    "mean_sea_level": payload.nivel_marea_cm,
+                    "wind_direction_deg": 0.0,
+                    "wind_speed_kmh": 0.0,
+                    "soil_humidity": 0.3,
+                    "consecutive_rainy_days": 0,
+                }
+                meteo_summary["lluvia_total_mm"] = payload.intensidad_lluvia_mm_h * 6.0
+                meteo_summary["horas_con_lluvia"] = 6
+
+        # 2. Configurar parametros fisicos
+        params = PhysicalParameters(
+            soil_humidity=weather_data.get("soil_humidity", 0.3),
+            consecutive_rainy_days=weather_data.get("consecutive_rainy_days", 0),
+            rain_duration_h=weather_data.get("rain_duration_h", 6.0),
+            wind_direction_deg=weather_data.get("wind_direction_deg", 0.0),
+            wind_speed_kmh=weather_data.get("wind_speed_kmh", 0.0),
+            mean_sea_level=weather_data.get("mean_sea_level", payload.nivel_marea_cm),
+        )
+
+        # 3. Resolver la EDO de segundo orden
+        records = run_simulation(
+            duration_hours=float(payload.horas_pronostico),
+            resolution_hours=1.0,
+            storm_peak_hour=weather_data.get("storm_peak_hour", payload.horas_pronostico * 0.25),
+            storm_intensity=weather_data.get("storm_intensity", 20.0),
+            mean_sea_level=weather_data.get("mean_sea_level", payload.nivel_marea_cm),
+            params=params,
+        )
+
+        # 4. Mapear a puntos de prediccion
+        puntos = []
+        for r in records:
+            puntos.append(PuntoPrediccion(
+                tiempo_hora=int(r["hour"]),
+                nivel_agua_cm=round(r["water_level_cm"], 2),
+                estado=r["risk_level"],
+                lluvia_mm_h=round(r["rain_intensity"], 2),
+                marea_cm=round(r["tide_level"], 2),
+                viento_efecto_cm=round(r.get("wind_effect", 0.0), 2),
+                saturacion_suelo=round(r.get("soil_saturation", 0.3), 3),
+                eficiencia_drenaje=round(r.get("drainage_efficiency", 1.0), 3),
+                velocidad_cambio=round(r.get("dH_dt", 0.0), 3),
+            ))
+
+        # 5. Metricas para el resumen
+        max_record = max(records, key=lambda r: r["water_level_cm"])
+
+        # 6. Guardar prediccion en SQLite
+        try:
+            await persist_prediction(
+                session=session,
+                horas_pronostico=payload.horas_pronostico,
+                puntos=[p.model_dump() for p in puntos],
+                meteorologia=meteo_summary,
+                max_water_level_cm=max_record["water_level_cm"],
+                peak_hour=max_record["hour"],
+                risk_level=max_record["risk_level"],
+                ecuacion=ECUACION_DISPLAY,
+            )
+            await clear_old_predictions(session)
+        except Exception as persist_exc:
+            logger.warning("Could not persist prediction: %s", persist_exc)
+
+        return PrediccionResponse(
+            horas_pronostico=payload.horas_pronostico,
+            puntos=puntos,
+            meteorologia_resumen=MeteorologiaResumen(**meteo_summary),
+            ecuacion=ECUACION_DISPLAY,
+        )
+
+    except ValueError as exc:
+        return JSONResponse(status_code=422, content={"error": "validation_error", "message": str(exc)})
+    except Exception as exc:
+        logger.exception("Unhandled error in /predecir")
+        return JSONResponse(status_code=500, content=sanitize_exception_response(exc))
+
+
+# ---------------------------------------------------------------------------
+# Routes — Predicciones guardadas (publico)
+# ---------------------------------------------------------------------------
+@app.get("/api/v1/predicciones")
+@limiter.limit("30/minute")
+async def predicciones(
+    request: Request,
+    limit: int = 10,
+    session: AsyncSession = Depends(get_session),
+):
+    safe_limit = max(1, min(limit, 50))
+    try:
+        preds = await fetch_recent_predictions(session, limit=safe_limit)
+        return {"predicciones": preds}
+    except Exception as exc:
+        logger.exception("Unhandled error in /predicciones")
+        return JSONResponse(status_code=500, content=sanitize_exception_response(exc))
+
+
+# ---------------------------------------------------------------------------
+# Routes — Simulacion legacy (con auth)
+# ---------------------------------------------------------------------------
 @app.post("/api/v1/predict", response_model=SimulationResponse)
 @limiter.limit(RATE_LIMIT_PREDICT)
 async def predict(
@@ -138,7 +342,6 @@ async def predict(
             resolution_hours=payload.resolution_hours,
             storm_peak_hour=payload.storm_peak_hour,
             storm_intensity=payload.storm_intensity,
-            storm_width=payload.storm_width,
             mean_sea_level=payload.mean_sea_level,
             params=params,
         )
@@ -152,11 +355,20 @@ async def predict(
             total_points=len(records),
             max_water_level_cm=round(peak_record["water_level_cm"], 3),
             peak_hour=peak_record["hour"],
-            records=[FloodRecordResponse(**r) for r in records],
+            records=[
+                FloodRecordResponse(
+                    hour=r["hour"],
+                    water_level_cm=r["water_level_cm"],
+                    rain_intensity=r["rain_intensity"],
+                    tide_level=r["tide_level"],
+                    risk_level=r["risk_level"],
+                )
+                for r in records
+            ],
         )
     except ValueError as exc:
         return JSONResponse(status_code=422, content={"error": "validation_error", "message": str(exc)})
-    except Exception as exc:  # noqa: BLE001 — deliberate top-level guard
+    except Exception as exc:
         logger.exception("Unhandled error in /predict")
         return JSONResponse(status_code=500, content=sanitize_exception_response(exc))
 
@@ -173,7 +385,7 @@ async def history(
     try:
         records = await fetch_recent_records(session, limit=safe_limit)
         return [FloodRecordResponse(**r) for r in records]
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.exception("Unhandled error in /history")
         return JSONResponse(status_code=500, content=sanitize_exception_response(exc))
 

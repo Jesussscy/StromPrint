@@ -4,22 +4,22 @@ import { Suspense, useMemo, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Environment, OrbitControls, useGLTF, Html } from "@react-three/drei";
 import * as THREE from "three";
-import type { FloodRecord } from "@/app/lib/api";
+import type { PuntoPrediccion } from "@/app/lib/api";
 import { riskColor } from "@/app/lib/api";
 
 interface Canvas3DProps {
-  record: FloodRecord | null;
+  punto: PuntoPrediccion | null;
 }
 
-const BASE_ELEVATION_MULTIPLIER = 0.045; // scales cm of water into scene units
+const BASE_ELEVATION_MULTIPLIER = 0.045;
 const MAX_ELEVATION = 4.2;
 
-function MangaModel({ record }: { record: FloodRecord | null }) {
+function MangaModel({ punto }: { punto: PuntoPrediccion | null }) {
   const { scene } = useGLTF("/models/manga_model.glb");
   const waterMeshRef = useRef<THREE.Object3D | null>(null);
   const materialColorRef = useRef(new THREE.Color("#00F3FF"));
 
-  const waterObject = useMemo(() => {
+  const waterObject = useMemo<THREE.Object3D | null>(() => {
     let found: THREE.Object3D | null = null;
     scene.traverse((child) => {
       if (child.name === "WaterLevel_Animated") {
@@ -31,24 +31,25 @@ function MangaModel({ record }: { record: FloodRecord | null }) {
   }, [scene]);
 
   useFrame((_, delta) => {
-    if (!waterObject || !record) return;
+    const obj = waterObject;
+    if (!obj || !punto) return;
 
     const targetY = Math.min(
-      (record.water_level_cm * BASE_ELEVATION_MULTIPLIER) / 100,
+      (punto.nivel_agua_cm * BASE_ELEVATION_MULTIPLIER) / 100,
       MAX_ELEVATION
     );
 
-    waterObject.position.y = THREE.MathUtils.damp(
-      waterObject.position.y,
+    obj.position.y = THREE.MathUtils.damp(
+      obj.position.y,
       targetY,
       4,
       delta
     );
 
-    const targetColor = new THREE.Color(riskColor(record.risk_level));
+    const targetColor = new THREE.Color(riskColor(punto.estado));
     materialColorRef.current.lerp(targetColor, Math.min(delta * 3, 1));
 
-    const mesh = waterObject as THREE.Mesh;
+    const mesh = obj as THREE.Mesh;
     if (mesh.material) {
       const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
       materials.forEach((mat) => {
@@ -72,13 +73,13 @@ function LoadingFallback() {
     <Html center>
       <div className="flex flex-col items-center gap-2 text-cyan font-mono text-xs">
         <div className="h-8 w-8 rounded-full border-2 border-cyan/30 border-t-cyan animate-spin" />
-        <span>Cargando modelo territorial…</span>
+        <span>Cargando modelo territorial...</span>
       </div>
     </Html>
   );
 }
 
-export default function Canvas3D({ record }: Canvas3DProps) {
+export default function Canvas3D({ punto }: Canvas3DProps) {
   return (
     <div className="relative h-full w-full overflow-hidden rounded-2xl">
       <Canvas
@@ -93,7 +94,7 @@ export default function Canvas3D({ record }: Canvas3DProps) {
         <pointLight position={[-4, 2, -4]} intensity={0.6} color="#00F3FF" />
 
         <Suspense fallback={<LoadingFallback />}>
-          <MangaModel record={record} />
+          <MangaModel punto={punto} />
           <Environment preset="night" />
         </Suspense>
 
@@ -109,8 +110,19 @@ export default function Canvas3D({ record }: Canvas3DProps) {
 
       <div className="pointer-events-none absolute inset-0 grid-scan opacity-20" />
       <div className="pointer-events-none absolute bottom-3 left-3 font-mono text-[10px] uppercase tracking-widest text-cyan/60">
-        Visor territorial · Manga 3D
+        Visor territorial \u00b7 Manga 3D
       </div>
+
+      {/* Indicador de nivel de agua en la esquina */}
+      {punto && (
+        <div className="pointer-events-none absolute top-3 right-3 glass-panel px-3 py-2">
+          <p className="font-mono text-[9px] uppercase tracking-widest text-mist">Nivel H(t)</p>
+          <p className="font-display text-lg font-tabular" style={{ color: riskColor(punto.estado) }}>
+            {punto.nivel_agua_cm.toFixed(1)}
+            <span className="ml-1 text-xs text-mist">cm</span>
+          </p>
+        </div>
+      )}
     </div>
   );
 }

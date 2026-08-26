@@ -69,8 +69,9 @@ from scipy.integrate import solve_ivp
 # ---------------------------------------------------------------------------
 # Umbrales de clasificacion de riesgo (en espanol)
 # ---------------------------------------------------------------------------
-RISK_THRESHOLD_MODERATE = 15.0   # cm — Alerta
-RISK_THRESHOLD_CRITICAL = 30.0   # cm — Inundacion Critica
+RISK_THRESHOLD_NORMAL = 30.0      # cm — Normal (cota de calle Manga ~1.2 msnm)
+RISK_THRESHOLD_ALERTA = 60.0      # cm — Alerta (calles inundadas)
+RISK_THRESHOLD_EMERGENCIA = 100.0 # cm — Emergencia (entrada a viviendas)
 
 
 @dataclass
@@ -201,20 +202,22 @@ def total_forcing(t: float, storm_peak: float, storm_intensity: float, params: P
 # ---------------------------------------------------------------------------
 def classify_risk_spanish(water_level_cm: float) -> str:
     """Clasifica el nivel de riesgo en categorias en espanol."""
-    if water_level_cm >= RISK_THRESHOLD_CRITICAL:
-        return "Inundacion Critica"
-    if water_level_cm >= RISK_THRESHOLD_MODERATE:
+    if water_level_cm >= RISK_THRESHOLD_EMERGENCIA:
+        return "Critico"
+    if water_level_cm >= RISK_THRESHOLD_ALERTA:
+        return "Emergencia"
+    if water_level_cm >= RISK_THRESHOLD_NORMAL:
         return "Alerta"
     return "Normal"
 
 
 def classify_risk_english(water_level_cm: float) -> str:
     """Clasificacion en ingles (para backwards compatibility)."""
-    if water_level_cm >= RISK_THRESHOLD_CRITICAL:
+    if water_level_cm >= RISK_THRESHOLD_EMERGENCIA:
         return "critical"
-    if water_level_cm >= RISK_THRESHOLD_MODERATE:
+    if water_level_cm >= RISK_THRESHOLD_ALERTA:
         return "high"
-    if water_level_cm >= 10.0:
+    if water_level_cm >= RISK_THRESHOLD_NORMAL:
         return "moderate"
     return "low"
 
@@ -344,6 +347,9 @@ def run_simulation(
                 "rain_intensity": round(max(0.0, rain_val), 4),
                 "tide_level": round(tide_val, 4),
                 "wind_effect": round(wind_val, 4),
+                "f_lluvia": round(max(0.0, rain_val * p.rain_gain), 4),
+                "f_marea": round(tide_val, 4),
+                "f_viento": round(wind_val, 4),
                 "soil_saturation": round(soil_sat, 3),
                 "drainage_efficiency": round(drain_eff, 3),
                 "risk_level": classify_risk_spanish(H),

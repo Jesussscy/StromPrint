@@ -146,10 +146,13 @@ class PrediccionRequest(BaseModel):
 class PuntoPrediccion(BaseModel):
     tiempo_hora: int
     nivel_agua_cm: float
-    estado: Literal["Normal", "Alerta", "Inundacion Critica"]
+    estado: Literal["Normal", "Alerta", "Emergencia", "Critico"]
     lluvia_mm_h: float
     marea_cm: float
     viento_efecto_cm: float
+    f_lluvia: float = 0.0
+    f_marea: float = 0.0
+    f_viento: float = 0.0
     saturacion_suelo: float
     eficiencia_drenaje: float
     velocidad_cambio: float
@@ -171,6 +174,12 @@ class PrediccionResponse(BaseModel):
     puntos: list[PuntoPrediccion]
     meteorologia_resumen: MeteorologiaResumen
     ecuacion: str = ECUACION_DISPLAY
+    nivel_actual_cm: float = 0.0
+    nivel_maximo_cm: float = 0.0
+    hora_pico: float = 0.0
+    tendencia: str = "estable"
+    narrativa: str = ""
+    recomendacion: str = ""
 
 
 # ---------------------------------------------------------------------------
@@ -263,6 +272,9 @@ async def predecir(
                 lluvia_mm_h=round(r["rain_intensity"], 2),
                 marea_cm=round(r["tide_level"], 2),
                 viento_efecto_cm=round(r.get("wind_effect", 0.0), 2),
+                f_lluvia=round(r.get("f_lluvia", 0.0), 2),
+                f_marea=round(r.get("f_marea", 0.0), 2),
+                f_viento=round(r.get("f_viento", 0.0), 2),
                 saturacion_suelo=round(r.get("soil_saturation", 0.3), 3),
                 eficiencia_drenaje=round(r.get("drainage_efficiency", 1.0), 3),
                 velocidad_cambio=round(r.get("dH_dt", 0.0), 3),
@@ -270,6 +282,54 @@ async def predecir(
 
         # 5. Metricas para el resumen
         max_record = max(records, key=lambda r: r["water_level_cm"])
+        current = records[min(1, len(records) - 1)]
+        peak_idx = records.index(max_record)
+
+        # Tendencia: comparar nivel actual con nivel en +6h
+        future_idx = min(6, len(records) - 1)
+        current_level = records[0]["water_level_cm"]
+        future_level = records[future_idx]["water_level_cm"]
+        delta = future_level - current_level
+        if delta > 2.0:
+            tendencia = "creciente"
+        elif delta < -2.0:
+            tendencia = "decreciente"
+        else:
+            tendencia = "estable"
+
+        # Narrativa dinamica
+        nivel_actual = current["water_level_cm"]
+        nivel_max = max_record["water_level_cm"]
+        hora_pico = max_record["hour"]
+        estado_max = max_record["risk_level"]
+
+        if estado_max == "Normal":
+            recomendacion = "Drene sus patios y mantenga limpias las alcantarillas para prevenir acumulacion."
+        elif estado_max == "Alerta":
+            recomendacion = "Evite transitar por calles bajas. El nivel del agua puede inundar aceras y huecos."
+        elif estado_max == "Emergencia":
+            recomendacion = "Desaloje temporalmente las zonas mas bajas. Proteja pertenencias en plantas bajas."
+        else:
+            recomendacion = "EVACUE inmediatamente las zonas inundables. Dirijase a los puntos de alta en Manga."
+
+        if nivel_max > 5:
+            narrativa = (
+                f"Segun el modelo, el nivel del agua alcanzara {nivel_max:.0f} cm en la hora "
+                f"{hora_pico:.0f} ({hora_pico/24:.1f} dias). "
+            )
+            if tendencia == "creciente":
+                narrativa += "La tendencia es creciente por la combinacion de lluvia y marea alta. "
+            elif tendencia == "decreciente":
+                narrativa += "El nivel esta en descenso. La lluvia disminuye y el drenaje actua. "
+            else:
+                narrativa += "El nivel se mantiene estable en este periodo. "
+            narrativa += f"Se recomienda: {recomendacion}"
+        else:
+            narrativa = (
+                "El modelo indica condiciones normales sin acumulacion significativa de agua. "
+                "El drenaje territorial funciona adecuadamente. "
+                f"Recomendacion: {recomendacion}"
+            )
 
         # 6. Guardar prediccion en SQLite
         try:
@@ -292,6 +352,12 @@ async def predecir(
             puntos=puntos,
             meteorologia_resumen=MeteorologiaResumen(**meteo_summary),
             ecuacion=ECUACION_DISPLAY,
+            nivel_actual_cm=round(nivel_actual, 2),
+            nivel_maximo_cm=round(nivel_max, 2),
+            hora_pico=round(hora_pico, 1),
+            tendencia=tendencia,
+            narrativa=narrativa,
+            recomendacion=recomendacion,
         )
 
     except ValueError as exc:

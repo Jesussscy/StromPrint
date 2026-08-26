@@ -1,52 +1,46 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: [
-    "./app/**/*.{js,ts,jsx,tsx,mdx}",
-  ],
+  content: ["./app/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
     extend: {
       colors: {
-        abyss: "#080C14",
-        "abyss-2": "#0D1420",
-        "abyss-3": "#111B2C",
-        cyan: {
-          DEFAULT: "#00F3FF",
-          dim: "#00B8C4",
-          glow: "rgba(0, 243, 255, 0.35)",
+        navy: {
+          DEFAULT: "#0B132B",
+          light: "#1C2B4A",
+          lighter: "#243B5E",
         },
-        warn: {
-          DEFAULT: "#FF7700",
-          glow: "rgba(255, 119, 0, 0.35)",
+        primary: "#1D3557",
+        accent: "#00B4D8",
+        "accent-bright": "#00F3FF",
+        surface: "#F8F9FA",
+        "surface-dark": "#0B132B",
+        risk: {
+          normal: "#2A9D8F",
+          alerta: "#E9C46A",
+          emergencia: "#E63946",
+          critico: "#7B2CBF",
         },
-        critical: {
-          DEFAULT: "#FF0055",
-          glow: "rgba(255, 0, 85, 0.4)",
-        },
-        mist: "#7C8BA1",
-        fog: "#B8C4D6",
+        mist: "#94A3B8",
+        fog: "#E2E8F0",
       },
       fontFamily: {
-        display: ["var(--font-display)", "sans-serif"],
-        body: ["var(--font-body)", "sans-serif"],
-        mono: ["var(--font-mono)", "monospace"],
-      },
-      backdropBlur: {
-        xs: "2px",
+        display: ['"Space Grotesk"', "system-ui", "sans-serif"],
+        body: ['"Inter"', "system-ui", "sans-serif"],
+        mono: ['"IBM Plex Mono"', "monospace"],
       },
       boxShadow: {
-        "glow-cyan": "0 0 24px rgba(0, 243, 255, 0.25)",
-        "glow-warn": "0 0 24px rgba(255, 119, 0, 0.25)",
-        "glow-critical": "0 0 28px rgba(255, 0, 85, 0.35)",
-        glass: "0 8px 32px rgba(0, 0, 0, 0.45)",
+        glass: "0 8px 32px rgba(0, 0, 0, 0.12)",
+        "glass-dark": "0 8px 32px rgba(0, 0, 0, 0.45)",
+        glow: "0 0 40px rgba(0, 180, 216, 0.15)",
       },
       animation: {
-        "pulse-slow": "pulse 3.2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-        scan: "scan 4s linear infinite",
+        "pulse-slow": "pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        float: "float 6s ease-in-out infinite",
       },
       keyframes: {
-        scan: {
-          "0%": { transform: "translateY(-100%)" },
-          "100%": { transform: "translateY(100%)" },
+        float: {
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-8px)" },
         },
       },
     },

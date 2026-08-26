@@ -39,10 +39,13 @@ export interface SimulationRequestParams {
 export interface PuntoPrediccion {
   tiempo_hora: number;
   nivel_agua_cm: number;
-  estado: "Normal" | "Alerta" | "Inundacion Critica";
+  estado: "Normal" | "Alerta" | "Emergencia" | "Critico";
   lluvia_mm_h: number;
   marea_cm: number;
   viento_efecto_cm: number;
+  f_lluvia: number;
+  f_marea: number;
+  f_viento: number;
   saturacion_suelo: number;
   eficiencia_drenaje: number;
   velocidad_cambio: number;
@@ -64,6 +67,12 @@ export interface PrediccionResponse {
   puntos: PuntoPrediccion[];
   meteorologia_resumen: MeteorologiaResumen;
   ecuacion: string;
+  nivel_actual_cm: number;
+  nivel_maximo_cm: number;
+  hora_pico: number;
+  tendencia: "creciente" | "decreciente" | "estable";
+  narrativa: string;
+  recomendacion: string;
 }
 
 export interface PrediccionGuardada {
@@ -145,31 +154,46 @@ export function fetchPredicciones(limit = 10): Promise<{ predicciones: Prediccio
 
 export function riskColor(estado: string): string {
   switch (estado) {
-    case "Inundacion Critica":
+    case "Critico":
     case "critical":
-      return "#FF0055";
-    case "Alerta":
+      return "#9333EA";
+    case "Emergencia":
     case "high":
-      return "#FF7700";
+      return "#DC2626";
+    case "Alerta":
     case "moderate":
-      return "#F5C518";
+      return "#EAB308";
     default:
-      return "#00F3FF";
+      return "#22C55E";
   }
 }
 
 export function riskLabel(estado: string): string {
   switch (estado) {
-    case "Inundacion Critica":
+    case "Critico":
     case "critical":
-      return "Inundacion Critica";
-    case "Alerta":
+      return "Critico";
+    case "Emergencia":
     case "high":
-      return "Alerta";
+      return "Emergencia";
+    case "Alerta":
     case "moderate":
-      return "Moderado";
+      return "Alerta";
     default:
       return "Normal";
+  }
+}
+
+export function riskIcon(estado: string): string {
+  switch (estado) {
+    case "Critico":
+      return "\u26A0";
+    case "Emergencia":
+      return "\uD83D\uDEA8";
+    case "Alerta":
+      return "\u26A0\uFE0F";
+    default:
+      return "\u2705";
   }
 }
 
@@ -197,6 +221,7 @@ export interface DaySummary {
   dayLabel: string;
   lluviaTotal: number;
   nivelMaximo: number;
+  horaPico: number;
   estadoDominante: string;
   horasConLluvia: number;
   horasTotales: number;
@@ -217,6 +242,10 @@ export function computeDaySummaries(puntos: PuntoPrediccion[]): DaySummary[] {
     const nivelMaximo = Math.max(...dayPoints.map((p) => p.nivel_agua_cm));
     const horasConLluvia = dayPoints.filter((p) => p.lluvia_mm_h > 0.1).length;
 
+    const maxPoint = dayPoints.reduce((max, p) =>
+      p.nivel_agua_cm > max.nivel_agua_cm ? p : max
+    );
+
     // Estado dominante (mayoritario)
     const stateCounts = new Map<string, number>();
     for (const p of dayPoints) {
@@ -229,6 +258,7 @@ export function computeDaySummaries(puntos: PuntoPrediccion[]): DaySummary[] {
       dayLabel: dayLabel(dayIdx * 24),
       lluviaTotal: Math.round(lluviaTotal * 10) / 10,
       nivelMaximo: Math.round(nivelMaximo * 10) / 10,
+      horaPico: maxPoint.tiempo_hora,
       estadoDominante,
       horasConLluvia,
       horasTotales: dayPoints.length,

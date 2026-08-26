@@ -139,7 +139,7 @@ class SimulationResponse(BaseModel):
 class PrediccionRequest(BaseModel):
     horas_pronostico: int = Field(default=72, ge=1, le=168)
     intensidad_lluvia_mm_h: Optional[float] = Field(default=None, ge=0.0, le=200.0)
-    nivel_marea_cm: float = Field(default=8.0, ge=0.0, le=50.0)
+    nivel_marea_cm: float = Field(default=8.0, ge=0.0, le=100.0)
     usar_datos_meteo: bool = Field(default=True)
 
 

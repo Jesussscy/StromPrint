@@ -5,8 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const NAV_LINKS = [
   { href: "#como-funciona", label: "Cómo funciona" },
-  { href: "#dashboard", label: "Datos en vivo" },
-  { href: "#tecnologia", label: "Tecnología" },
+  { href: "#datos", label: "Datos" },
+  { href: "#panel-vivo", label: "Panel en vivo" },
+  { href: "/ciencia", label: "Ciencia" },
   { href: "#contacto", label: "Contacto" },
 ];
 
@@ -49,7 +50,7 @@ export default function Navbar() {
               {link.label}
             </a>
           ))}
-          <a href="#dashboard" className="btn-primary text-sm !py-2 !px-4">
+          <a href="#panel-vivo" className="btn-primary text-sm !py-2 !px-4">
             Ver panel en vivo
           </a>
         </div>
@@ -58,7 +59,7 @@ export default function Navbar() {
         <button
           className="md:hidden flex flex-col gap-1.5 p-2"
           onClick={() => setMobileOpen(!mobileOpen)}
-          aria-label="Menu"
+          aria-label="Menú"
         >
           <span className={`h-0.5 w-5 bg-navy transition ${mobileOpen ? "rotate-45 translate-y-2" : ""}`} />
           <span className={`h-0.5 w-5 bg-navy transition ${mobileOpen ? "opacity-0" : ""}`} />
@@ -86,7 +87,7 @@ export default function Navbar() {
                   {link.label}
                 </a>
               ))}
-              <a href="#dashboard" className="btn-primary text-sm !py-2 text-center">
+              <a href="#panel-vivo" className="btn-primary text-sm !py-2 text-center">
                 Ver panel en vivo
               </a>
             </div>

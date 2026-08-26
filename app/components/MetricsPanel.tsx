@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Area,
+  Bar,
   Line,
   ComposedChart,
   ResponsiveContainer,
@@ -11,6 +12,7 @@ import {
   Tooltip,
   CartesianGrid,
   Legend,
+  ReferenceLine,
 } from "recharts";
 import type { PuntoPrediccion, PrediccionResponse } from "@/app/lib/api";
 import { riskColor, riskLabel, formatHourShort } from "@/app/lib/api";
@@ -145,27 +147,30 @@ export default function MetricsPanel({ punto, prediccion, isLoading, error }: Me
               <ComposedChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="gradWater" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2A9D8F" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#2A9D8F" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#00B4D8" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#00B4D8" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.08)" />
                 <XAxis dataKey="hora" stroke="#475569" tick={{ fontSize: 9, fill: "#94A3B8" }} tickLine={false} tickFormatter={(h: number) => formatHourShort(h)} />
-                <YAxis stroke="#475569" tick={{ fontSize: 9, fill: "#94A3B8" }} tickLine={false} />
+                <YAxis stroke="#475569" tick={{ fontSize: 9, fill: "#94A3B8" }} tickLine={false} label={{ value: "cm", position: "insideTopLeft", offset: 10, style: { fontSize: 9, fill: "#64748B" } }} />
                 <Tooltip
                   contentStyle={{ background: "#1C2B4A", border: "1px solid rgba(148,163,184,0.2)", borderRadius: 8, fontSize: 11, color: "#E2E8F0" }}
                   labelFormatter={(h) => `Hora ${h}`}
                   formatter={(value: number, name: string) => {
                     if (name === "nivel") return [`${value.toFixed(1)} cm`, "Nivel H(t)"];
-                    if (name === "f_lluvia") return [`${value.toFixed(1)} cm`, "F_lluvia"];
-                    if (name === "f_marea") return [`${value.toFixed(1)} cm`, "F_marea"];
+                    if (name === "f_lluvia") return [`${value.toFixed(1)} mm/h`, "Lluvia"];
+                    if (name === "f_marea") return [`${value.toFixed(1)} cm`, "Marea"];
                     return [value, name];
                   }}
                 />
                 <Legend wrapperStyle={{ fontSize: 10, color: "#94A3B8" }} iconType="line" />
-                <Area type="monotone" dataKey="nivel" stroke="#2A9D8F" strokeWidth={2.5} fill="url(#gradWater)" dot={false} name="Nivel H(t)" isAnimationActive={false} />
-                <Line type="monotone" dataKey="f_lluvia" stroke="#00B4D8" strokeWidth={1.5} dot={false} strokeDasharray="6 3" name="F_lluvia (cm)" isAnimationActive={false} />
-                <Line type="monotone" dataKey="f_marea" stroke="#6366F1" strokeWidth={1.5} dot={false} strokeDasharray="3 3" name="F_marea (cm)" isAnimationActive={false} />
+                <ReferenceLine y={30} stroke="#E9C46A" strokeDasharray="6 4" strokeWidth={1} label={{ value: "Alerta", position: "right", style: { fontSize: 8, fill: "#E9C46A" } }} />
+                <ReferenceLine y={60} stroke="#E63946" strokeDasharray="6 4" strokeWidth={1} label={{ value: "Emergencia", position: "right", style: { fontSize: 8, fill: "#E63946" } }} />
+                <ReferenceLine y={100} stroke="#7B2CBF" strokeDasharray="6 4" strokeWidth={1} label={{ value: "Crítico", position: "right", style: { fontSize: 8, fill: "#7B2CBF" } }} />
+                <Area type="monotone" dataKey="nivel" stroke="#00B4D8" strokeWidth={2.5} fill="url(#gradWater)" dot={false} name="Nivel H(t)" isAnimationActive={false} />
+                <Bar dataKey="f_lluvia" fill="#00B4D8" opacity={0.3} name="Lluvia (mm/h)" isAnimationActive={false} />
+                <Line type="monotone" dataKey="f_marea" stroke="#94A3B8" strokeWidth={1.5} dot={false} strokeDasharray="3 3" name="Marea (cm)" isAnimationActive={false} />
               </ComposedChart>
             </ResponsiveContainer>
           ) : (

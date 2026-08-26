@@ -3,15 +3,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import Navbar from "@/app/components/Navbar";
-import Canvas3D from "@/app/components/Canvas3D";
+import LeafletMap from "@/app/components/LeafletMap";
 import TimelineSlider from "@/app/components/TimelineSlider";
 import MetricsPanel from "@/app/components/MetricsPanel";
 import WeatherBadge from "@/app/components/WeatherBadge";
 import ForecastDayCard from "@/app/components/ForecastDayCard";
+import ForecastChart from "@/app/components/ForecastChart";
 import {
   predecir,
   computeDaySummaries,
-  riskColor,
   type PrediccionResponse,
 } from "@/app/lib/api";
 
@@ -22,7 +22,7 @@ const FADE_UP = {
   transition: { duration: 0.6 },
 };
 
-/* ─── Landing Sections ──────────────────────────────────────────────── */
+/* ─── Hero ────────────────────────────────────────────────────────────── */
 
 function HeroSection() {
   return (
@@ -50,7 +50,7 @@ function HeroSection() {
               Cartagena de Indias.
             </p>
             <div className="mt-8 flex flex-wrap gap-4">
-              <a href="#dashboard" className="btn-primary">
+              <a href="#panel-vivo" className="btn-primary">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><polygon points="4,2 14,8 4,14" /></svg>
                 Explorar panel en vivo
               </a>
@@ -108,6 +108,8 @@ function HeroSection() {
   );
 }
 
+/* ─── El Problema ──────────────────────────────────────────────────────── */
+
 function ProblemSection() {
   return (
     <section className="section-padding bg-white">
@@ -116,7 +118,7 @@ function ProblemSection() {
           <p className="font-mono text-xs uppercase tracking-widest text-accent mb-3">El problema</p>
           <h2 className="section-title">Cartagena se inunda.<br />La comunidad necesita respuestas.</h2>
           <p className="section-subtitle mx-auto">
-            El Barrio Manga, ubicado en una peninsula costera a solo 1.2 msnm,
+            El Barrio Manga, ubicado en una península costera a solo 1.2 msnm,
             sufre inundaciones recurrentes durante la temporada de lluvias
             (Ago-Nov). El drenaje actual es insuficiente.
           </p>
@@ -154,6 +156,8 @@ function ProblemSection() {
   );
 }
 
+/* ─── Cómo Funciona ────────────────────────────────────────────────────── */
+
 function HowItWorksSection() {
   return (
     <section id="como-funciona" className="section-padding bg-surface">
@@ -162,7 +166,7 @@ function HowItWorksSection() {
           <p className="font-mono text-xs uppercase tracking-widest text-accent mb-3">La solución</p>
           <h2 className="section-title">Cómo funciona StormPrint</h2>
           <p className="section-subtitle mx-auto">
-            Tres pasos simples para convertir datos climáticos en decisiones
+            Tres pasos para convertir datos climáticos en decisiones
             que protegen vidas.
           </p>
         </motion.div>
@@ -171,7 +175,7 @@ function HowItWorksSection() {
             {
               step: "1",
               title: "Captura de datos",
-              desc: "Obtenemos en tiempo real la intensidad de lluvia, velocidad del viento, nivel de marea y humedad del suelo desde Open-Meteo.",
+              desc: "Estaciones meteorológicas DAVIS y pluviómetros miden lluvia, viento y temperatura cada minuto en puntos estratégicos de Manga. Las mareas se obtienen del NOAA.",
               icon: (
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#00B4D8" strokeWidth="1.5">
                   <circle cx="12" cy="12" r="10" />
@@ -182,7 +186,7 @@ function HowItWorksSection() {
             {
               step: "2",
               title: "Modelo predictivo",
-              desc: "Un sistema de ecuaciones diferenciales de segundo orden calcula la acumulación de agua H(t) usando Runge-Kutta de 4to orden.",
+              desc: "Un sistema de ecuaciones diferenciales de segundo orden calcula la acumulación de agua H(t) usando el método de Runge-Kutta de 4to orden.",
               icon: (
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1D3557" strokeWidth="1.5">
                   <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" />
@@ -218,9 +222,88 @@ function HowItWorksSection() {
   );
 }
 
+/* ─── Origen de los Datos ──────────────────────────────────────────────── */
+
+function DataSourceSection() {
+  return (
+    <section id="datos" className="section-padding bg-white">
+      <div className="mx-auto max-w-7xl">
+        <motion.div {...FADE_UP} className="text-center mb-12">
+          <p className="font-mono text-xs uppercase tracking-widest text-accent mb-3">Arquitectura de datos</p>
+          <h2 className="section-title">¿De dónde salen los datos?</h2>
+          <p className="section-subtitle mx-auto">
+            Combinamos fuentes de datos locales, satelitales y de modelos
+            globales para alimentar nuestro sistema predictivo.
+          </p>
+        </motion.div>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {[
+            {
+              title: "Estaciones Meteorológicas",
+              desc: "Sensores DAVIS y pluviómetros de balancín instalados en puntos estratégicos de Manga que miden lluvia, viento y temperatura cada minuto.",
+              icon: (
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00B4D8" strokeWidth="1.5">
+                  <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" />
+                  <circle cx="12" cy="12" r="4" />
+                </svg>
+              ),
+              color: "#00B4D8",
+            },
+            {
+              title: "Satélites y Modelos Globales",
+              desc: "API de Open-Meteo y datos del NOAA (Administración Nacional Oceánica y Atmosférica) para predicciones de lluvia y mareas a 7 días.",
+              icon: (
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1D3557" strokeWidth="1.5">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                </svg>
+              ),
+              color: "#1D3557",
+            },
+            {
+              title: "Topografía y Batimetría",
+              desc: "Modelos de Elevación Digital (DEM) del terreno de Cartagena para saber por dónde corre el agua y dónde se acumula.",
+              icon: (
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2A9D8F" strokeWidth="1.5">
+                  <path d="M3 20l5-10 4 6 4-4 5 8" />
+                  <line x1="3" y1="20" x2="21" y2="20" />
+                </svg>
+              ),
+              color: "#2A9D8F",
+            },
+            {
+              title: "Conexión IoT",
+              desc: "Los datos viajan por red 4G/5G a nuestro servidor en la nube para procesamiento en tiempo real con latencia menor a 30 segundos.",
+              icon: (
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6366F1" strokeWidth="1.5">
+                  <path d="M5 12.55a11 11 0 0 1 14.08 0" />
+                  <path d="M1.42 9a16 16 0 0 1 21.16 0" />
+                  <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
+                  <circle cx="12" cy="20" r="1" fill="#6366F1" />
+                </svg>
+              ),
+              color: "#6366F1",
+            },
+          ].map((item) => (
+            <motion.div key={item.title} {...FADE_UP} className="card-light group hover:shadow-lg transition-shadow">
+              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-surface" style={{ border: `1px solid ${item.color}22` }}>
+                {item.icon}
+              </div>
+              <h3 className="font-display text-base font-bold text-navy mb-1">{item.title}</h3>
+              <p className="text-sm text-slate-500 leading-relaxed">{item.desc}</p>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Beneficios ───────────────────────────────────────────────────────── */
+
 function BenefitsSection() {
   return (
-    <section className="section-padding bg-white">
+    <section className="section-padding bg-surface">
       <div className="mx-auto max-w-7xl">
         <motion.div {...FADE_UP} className="text-center mb-12">
           <p className="font-mono text-xs uppercase tracking-widest text-accent mb-3">Beneficios</p>
@@ -270,6 +353,8 @@ function BenefitsSection() {
   );
 }
 
+/* ─── Tecnología ───────────────────────────────────────────────────────── */
+
 function TechnologySection() {
   return (
     <section id="tecnologia" className="section-padding gradient-dark">
@@ -286,9 +371,9 @@ function TechnologySection() {
         <motion.div {...FADE_UP} className="card-dark mb-10">
           <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-6">
             {[
-              { label: "Datos climáticos", sub: "Open-Meteo API" },
-              { label: "Cálculo ODE", sub: "Runge-Kutta 45" },
-              { label: "Dashboard", sub: "React + Three.js" },
+              { label: "Estaciones + API", sub: "Sensores locales y Open-Meteo" },
+              { label: "Cálculo ODE", sub: "Runge-Kutta de 4to orden" },
+              { label: "Dashboard", sub: "React + Leaflet + Recharts" },
             ].map((step, i) => (
               <div key={step.label} className="flex items-center gap-4">
                 <div className="text-center">
@@ -310,8 +395,8 @@ function TechnologySection() {
 
         <div className="grid gap-4 md:grid-cols-3">
           {[
-            { title: "EDO de Segundo Orden", desc: "Modela la acumulación de agua como un sistema masa-resorte-amortiguador con forzamiento externo." },
-            { title: "Datos en Tiempo Real", desc: "Integra la API de Open-Meteo para obtener pronósticos horarios de lluvia, viento y temperatura." },
+            { title: "EDO de Segundo Orden", desc: "Modela la acumulación de agua como un sistema masa-resorte-amortiguador con forzamiento externo de lluvia y mareas." },
+            { title: "Datos en Tiempo Real", desc: "Integra la API de Open-Meteo para obtener pronósticos horarios de lluvia, viento y temperatura con cobertura global." },
             { title: "Modelo Territorial", desc: "La topografía de Manga (1.2 msnm) determina la capacidad de absorción y esclusión natural del agua." },
           ].map((item) => (
             <motion.div key={item.title} {...FADE_UP} className="rounded-xl bg-navy-light/50 p-5 border border-navy-lighter">
@@ -320,10 +405,47 @@ function TechnologySection() {
             </motion.div>
           ))}
         </div>
+
+        <motion.div {...FADE_UP} className="mt-8 text-center">
+          <a href="/ciencia" className="btn-outline !border-accent/30 !text-accent hover:!bg-accent/10">
+            Conocer el modelo matemático en detalle
+          </a>
+        </motion.div>
       </div>
     </section>
   );
 }
+
+/* ─── Pronóstico 48h ───────────────────────────────────────────────────── */
+
+function ForecastSection({ puntos }: { puntos: import("@/app/lib/api").PuntoPrediccion[] }) {
+  return (
+    <section id="pronostico" className="section-padding bg-surface">
+      <div className="mx-auto max-w-7xl">
+        <motion.div {...FADE_UP} className="text-center mb-8">
+          <p className="font-mono text-xs uppercase tracking-widest text-accent mb-3">Pronóstico</p>
+          <h2 className="section-title">Evolución del nivel en 48 horas</h2>
+          <p className="section-subtitle mx-auto">
+            Observá cómo el nivel del agua H(t) evoluciona a lo largo del tiempo
+            en función de la lluvia, la marea y la capacidad de drenaje.
+          </p>
+        </motion.div>
+
+        {puntos.length > 0 ? (
+          <ForecastChart puntos={puntos} />
+        ) : (
+          <motion.div {...FADE_UP} className="card-dark p-8 text-center">
+            <p className="text-slate-400 text-sm">
+              Desplazá el panel de monitoreo para ver la curva de pronóstico.
+            </p>
+          </motion.div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/* ─── CTA ──────────────────────────────────────────────────────────────── */
 
 function CTASection() {
   return (
@@ -342,7 +464,7 @@ function CTASection() {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
               Solicitar demo
             </a>
-            <a href="#tecnologia" className="btn-outline">
+            <a href="/ciencia" className="btn-outline">
               Ver documentación técnica
             </a>
           </div>
@@ -351,6 +473,8 @@ function CTASection() {
     </section>
   );
 }
+
+/* ─── Footer ───────────────────────────────────────────────────────────── */
 
 function FooterSection() {
   return (
@@ -376,7 +500,7 @@ function FooterSection() {
   );
 }
 
-/* ─── Dashboard Section (embedded) ──────────────────────────────────── */
+/* ─── Dashboard Embebido ───────────────────────────────────────────────── */
 
 const PLAYBACK_SPEED_MS = 200;
 
@@ -405,7 +529,7 @@ function DashboardEmbedded() {
       setPrediccion(result);
       setCurrentHour(0);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al cargar prediccion.");
+      setError(err instanceof Error ? err.message : "Error al cargar predicción.");
     } finally {
       setIsLoading(false);
     }
@@ -445,7 +569,7 @@ function DashboardEmbedded() {
           <div className="flex items-center gap-3">
             <span className="h-2 w-2 rounded-full bg-risk-normal animate-pulse-slow" />
             <p className="font-mono text-[10px] uppercase tracking-widest text-slate-400">
-              MONITOREO DE INUNDACIONES \u00b7 BARRIO MANGA
+              MONITOREO DE INUNDACIONES · BARRIO MANGA
             </p>
           </div>
           <WeatherBadge meteorologia={prediccion?.meteorologia_resumen ?? null} isLoading={isLoading} />
@@ -474,16 +598,16 @@ function DashboardEmbedded() {
       {/* Main Grid */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.2fr_1fr]">
         <div className="card-dark h-[380px] p-1 md:h-[500px]">
-          <Canvas3D punto={activePunto} />
+          <LeafletMap punto={activePunto} />
         </div>
         <MetricsPanel punto={activePunto} prediccion={prediccion} isLoading={isLoading} error={error} />
       </div>
 
-      {/* Forecast */}
+      {/* Forecast Cards */}
       {daySummaries.length > 0 && (
         <div className="mt-4">
           <p className="mb-3 font-mono text-[10px] uppercase tracking-widest text-slate-400">
-            Pronóstico 3 Días
+            Pronóstico por día
           </p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {daySummaries.slice(0, 3).map((s, i) => (
@@ -516,18 +640,27 @@ function Slider({ label, value, onChange, min, max, step, unit, color, disabled 
   );
 }
 
-/* ─── Main Page ─────────────────────────────────────────────────────── */
+/* ─── Página Principal ─────────────────────────────────────────────────── */
 
 export default function LandingPage() {
+  const [prediccion, setPrediccion] = useState<PrediccionResponse | null>(null);
+
+  useEffect(() => {
+    predecir({ horas_pronostico: 48, usar_datos_meteo: true })
+      .then(setPrediccion)
+      .catch(() => {});
+  }, []);
+
   return (
     <>
       <Navbar />
       <HeroSection />
       <ProblemSection />
       <HowItWorksSection />
+      <DataSourceSection />
 
-      {/* Dashboard Section */}
-      <section id="dashboard" className="section-padding gradient-dark">
+      {/* Panel en Vivo */}
+      <section id="panel-vivo" className="section-padding gradient-dark">
         <div className="mx-auto max-w-7xl mb-8">
           <motion.div {...FADE_UP} className="text-center">
             <p className="font-mono text-xs uppercase tracking-widest text-accent mb-3">Datos en vivo</p>
@@ -543,36 +676,13 @@ export default function LandingPage() {
         <DashboardEmbedded />
       </section>
 
-      <ForecastSection />
+      {/* Pronóstico 48h */}
+      <ForecastSection puntos={prediccion?.puntos ?? []} />
+
       <BenefitsSection />
       <TechnologySection />
       <CTASection />
       <FooterSection />
     </>
-  );
-}
-
-function ForecastSection() {
-  return (
-    <section className="section-padding bg-surface">
-      <div className="mx-auto max-w-7xl">
-        <motion.div {...FADE_UP} className="text-center mb-12">
-          <p className="font-mono text-xs uppercase tracking-widest text-accent mb-3">Pronóstico</p>
-          <h2 className="section-title">Próximas 48 horas</h2>
-          <p className="section-subtitle mx-auto">
-            El modelo calcula la evolución del nivel del agua combinando
-            lluvia, marea y capacidad de drenaje del barrio.
-          </p>
-        </motion.div>
-        <motion.div {...FADE_UP} className="card-dark p-6 text-center">
-          <p className="text-slate-400 text-sm">
-            El pronóstico se actualiza en tiempo real cuando desplazás el panel de monitoreo arriba.
-          </p>
-          <p className="text-slate-500 text-xs mt-2">
-            Cada tarjeta muestra: lluvia acumulada, altura máxima del nivel de agua, y estado de riesgo.
-          </p>
-        </motion.div>
-      </div>
-    </section>
   );
 }

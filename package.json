@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "vercel-build": "pip install numpy pygltflib -q && python scripts/generate_manga_model.py && next build"
+    "vercel-build": "next build"
   },
   "dependencies": {
     "next": "14.2.15",

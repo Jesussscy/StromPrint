@@ -66,7 +66,7 @@ export default function ForecastChart({ puntos }: ForecastChartProps) {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.1 }}
-      className="card-dark p-4"
+      className="glass rounded-2xl p-4"
     >
       <div className="flex items-center justify-between mb-3">
         <div>
@@ -92,24 +92,24 @@ export default function ForecastChart({ puntos }: ForecastChartProps) {
       <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto">
         {/* Rain bars */}
         {lluviaBars.map((bar, i) => (
-          <rect key={i} x={bar.x - 3} y={bar.y - bar.h} width="6" height={bar.h} fill="#00B4D8" opacity="0.25" rx="1" />
+          <rect key={i} x={bar.x - 3} y={bar.y - bar.h} width="6" height={bar.h} fill="#00D2FF" opacity="0.2" rx="1" />
         ))}
 
         {/* Risk threshold lines */}
-        <line x1={padL} y1={alertLine} x2={width - padR} y2={alertLine} stroke="#E9C46A" strokeWidth="1" strokeDasharray="6 4" opacity="0.6" />
-        <text x={padL - 4} y={alertLine + 3} textAnchor="end" fill="#E9C46A" fontSize="8" fontFamily="monospace">30 cm</text>
+        <line x1={padL} y1={alertLine} x2={width - padR} y2={alertLine} stroke="#FFD600" strokeWidth="1" strokeDasharray="6 4" opacity="0.6" />
+        <text x={padL - 4} y={alertLine + 3} textAnchor="end" fill="#FFD600" fontSize="8" fontFamily="monospace">30 cm</text>
 
-        <line x1={padL} y1={emergenciaLine} x2={width - padR} y2={emergenciaLine} stroke="#E63946" strokeWidth="1" strokeDasharray="6 4" opacity="0.6" />
-        <text x={padL - 4} y={emergenciaLine + 3} textAnchor="end" fill="#E63946" fontSize="8" fontFamily="monospace">60 cm</text>
+        <line x1={padL} y1={emergenciaLine} x2={width - padR} y2={emergenciaLine} stroke="#FF0055" strokeWidth="1" strokeDasharray="6 4" opacity="0.6" />
+        <text x={padL - 4} y={emergenciaLine + 3} textAnchor="end" fill="#FF0055" fontSize="8" fontFamily="monospace">60 cm</text>
 
-        <line x1={padL} y1={criticoLine} x2={width - padR} y2={criticoLine} stroke="#7B2CBF" strokeWidth="1" strokeDasharray="6 4" opacity="0.6" />
-        <text x={padL - 4} y={criticoLine + 3} textAnchor="end" fill="#7B2CBF" fontSize="8" fontFamily="monospace">100 cm</text>
+        <line x1={padL} y1={criticoLine} x2={width - padR} y2={criticoLine} stroke="#B000FF" strokeWidth="1" strokeDasharray="6 4" opacity="0.6" />
+        <text x={padL - 4} y={criticoLine + 3} textAnchor="end" fill="#B000FF" fontSize="8" fontFamily="monospace">100 cm</text>
 
         {/* Tide line */}
         <path d={mareaPath} fill="none" stroke="#94A3B8" strokeWidth="1.5" strokeDasharray="4 3" opacity="0.5" />
 
         {/* Water level line */}
-        <path d={waterPath} fill="none" stroke="#00B4D8" strokeWidth="2.5" strokeLinejoin="round" />
+        <path d={waterPath} fill="none" stroke="#00D2FF" strokeWidth="2.5" strokeLinejoin="round" />
 
         {/* Hour labels */}
         {hourLabels.map((l, i) => (
@@ -128,7 +128,7 @@ export default function ForecastChart({ puntos }: ForecastChartProps) {
         <text x={12} y={padT + (chartData?.plotH ?? 170) / 2} textAnchor="middle" fill="#64748B" fontSize="8" fontFamily="monospace" transform={`rotate(-90, 12, ${padT + (chartData?.plotH ?? 170) / 2})`}>Altura (cm)</text>
 
         {/* Zero line */}
-        <line x1={padL} y1={padT + chartData.plotH} x2={width - padR} y2={padT + chartData.plotH} stroke="#334155" strokeWidth="1" />
+        <line x1={padL} y1={padT + chartData.plotH} x2={width - padR} y2={padT + chartData.plotH} stroke="#1E293B" strokeWidth="1" />
       </svg>
     </motion.div>
   );

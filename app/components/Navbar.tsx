@@ -15,43 +15,32 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-lg border-b border-gray-100">
+    <nav className="fixed top-0 left-0 right-0 z-50 glass-subtle border-b border-cyan/10">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3 md:px-12">
         {/* Logo */}
         <a href="#" className="flex items-center gap-2">
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-            <circle cx="16" cy="16" r="15" stroke="#00B4D8" strokeWidth="2" />
-            <path
-              d="M16 8C16 8 10 15 10 19a6 6 0 0 0 12 0c0-4-6-11-6-11z"
-              fill="#00B4D8"
-              opacity="0.85"
-            />
-            <path
-              d="M8 22c2-2 4-1 6 0s4 2 6 0 4-2 6 0"
-              stroke="#1D3557"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              opacity="0.5"
-            />
+          <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+            <circle cx="16" cy="16" r="15" stroke="#00D2FF" strokeWidth="1.5" opacity="0.6" />
+            <path d="M16 8C16 8 10 15 10 19a6 6 0 0 0 12 0c0-4-6-11-6-11z" fill="#00D2FF" opacity="0.8" />
           </svg>
-          <span className="font-display text-lg font-bold text-navy">
-            Storm<span className="text-accent">Print</span>
+          <span className="font-display text-sm font-bold tracking-wider text-white">
+            STORM<span className="neon-text">{"//"}</span>PRINT
           </span>
         </a>
 
         {/* Desktop links */}
-        <div className="hidden md:flex items-center gap-8">
+        <div className="hidden md:flex items-center gap-6">
           {NAV_LINKS.map((link) => (
             <a
               key={link.href}
               href={link.href}
-              className="text-sm font-medium text-slate-600 hover:text-accent transition"
+              className="font-mono text-[11px] uppercase tracking-widest text-slate-400 hover:text-cyan transition"
             >
               {link.label}
             </a>
           ))}
-          <a href="#panel-vivo" className="btn-primary text-sm !py-2 !px-4">
-            Ver panel en vivo
+          <a href="#panel-vivo" className="glass-glow rounded-lg px-4 py-2 font-mono text-[11px] uppercase tracking-wider text-cyan hover:bg-cyan/10 transition">
+            Panel en vivo
           </a>
         </div>
 
@@ -61,9 +50,9 @@ export default function Navbar() {
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label="Menú"
         >
-          <span className={`h-0.5 w-5 bg-navy transition ${mobileOpen ? "rotate-45 translate-y-2" : ""}`} />
-          <span className={`h-0.5 w-5 bg-navy transition ${mobileOpen ? "opacity-0" : ""}`} />
-          <span className={`h-0.5 w-5 bg-navy transition ${mobileOpen ? "-rotate-45 -translate-y-2" : ""}`} />
+          <span className={`h-0.5 w-5 bg-cyan transition ${mobileOpen ? "rotate-45 translate-y-2" : ""}`} />
+          <span className={`h-0.5 w-5 bg-cyan transition ${mobileOpen ? "opacity-0" : ""}`} />
+          <span className={`h-0.5 w-5 bg-cyan transition ${mobileOpen ? "-rotate-45 -translate-y-2" : ""}`} />
         </button>
       </div>
 
@@ -74,7 +63,7 @@ export default function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-white border-b border-gray-100 overflow-hidden"
+            className="md:hidden glass-strong border-b border-cyan/10 overflow-hidden"
           >
             <div className="flex flex-col gap-3 px-6 py-4">
               {NAV_LINKS.map((link) => (
@@ -82,13 +71,13 @@ export default function Navbar() {
                   key={link.href}
                   href={link.href}
                   onClick={() => setMobileOpen(false)}
-                  className="text-sm font-medium text-slate-600 hover:text-accent transition"
+                  className="font-mono text-[11px] uppercase tracking-widest text-slate-400 hover:text-cyan transition"
                 >
                   {link.label}
                 </a>
               ))}
-              <a href="#panel-vivo" className="btn-primary text-sm !py-2 text-center">
-                Ver panel en vivo
+              <a href="#panel-vivo" className="glass-glow rounded-lg px-4 py-2 font-mono text-[11px] text-center uppercase tracking-wider text-cyan">
+                Panel en vivo
               </a>
             </div>
           </motion.div>

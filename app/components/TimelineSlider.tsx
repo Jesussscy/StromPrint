@@ -29,7 +29,7 @@ export default function TimelineSlider({ puntos, currentHour, onScrub, isPlaying
     return Array.from({ length: days + 1 }, (_, i) => i * 24);
   }, [maxHour]);
 
-  const trackColor = activePunto ? riskColor(activePunto.estado) : "#2A9D8F";
+  const trackColor = activePunto ? riskColor(activePunto.estado) : "#06b6d4";
 
   const riskHeatmap = useMemo(() => {
     if (puntos.length === 0) return [];
@@ -38,13 +38,13 @@ export default function TimelineSlider({ puntos, currentHour, onScrub, isPlaying
   }, [puntos]);
 
   return (
-    <div className="card-dark p-4 md:p-5">
+    <div className="glass rounded-2xl p-4 md:p-5">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
             onClick={onTogglePlay}
             aria-label={isPlaying ? "Pausar" : "Reproducir"}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-accent/30 bg-navy-light text-accent transition hover:border-accent hover:shadow-glow"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-cyan/30 glass-subtle text-cyan transition hover:border-cyan hover:shadow-glow"
           >
             {isPlaying ? (
               <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="2" y="1" width="4" height="12" /><rect x="8" y="1" width="4" height="12" /></svg>
@@ -63,8 +63,15 @@ export default function TimelineSlider({ puntos, currentHour, onScrub, isPlaying
 
         {activePunto && (
           <motion.div key={activePunto.estado} initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
-            className="rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-wider"
-            style={{ color: trackColor, border: `1px solid ${trackColor}55`, backgroundColor: `${trackColor}15` }}
+            className={`rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-wider border ${
+              activePunto.estado === "Normal"
+                ? "text-risk-normal border-risk-normal/30 bg-risk-normal/10"
+                : activePunto.estado === "Alerta"
+                ? "text-risk-alert border-risk-alert/30 bg-risk-alert/10"
+                : activePunto.estado === "Emergencia"
+                ? "text-risk-emergency border-risk-emergency/30 bg-risk-emergency/10"
+                : "text-risk-critical border-risk-critical/30 bg-risk-critical/10"
+            }`}
           >
             {activePunto.nivel_agua_cm.toFixed(1)} cm · {activePunto.estado}
           </motion.div>
@@ -80,7 +87,7 @@ export default function TimelineSlider({ puntos, currentHour, onScrub, isPlaying
       )}
 
       <div className="relative pt-1">
-        <div className="relative h-2 w-full overflow-hidden rounded-full bg-navy-lighter">
+        <div className="relative h-2 w-full overflow-hidden rounded-full" style={{ backgroundColor: "rgba(255,255,255,0.03)" }}>
           <motion.div className="absolute inset-y-0 left-0 rounded-full" style={{ backgroundColor: trackColor }}
             animate={{ width: `${progressPct}%` }} transition={{ type: "tween", duration: 0.15 }} />
         </div>

@@ -2,6 +2,8 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
+import TypingEffect from "@/app/components/TypingEffect";
+import DataFlowDiagram from "@/app/components/DataFlowDiagram";
 
 const FADE = {
   initial: { opacity: 0, y: 20 },
@@ -9,6 +11,8 @@ const FADE = {
   viewport: { once: true },
   transition: { duration: 0.5 },
 };
+
+const EQUATION = "H''(t) + c(t)·H'(t) + k(t)·H(t) = f_lluvia(t) + f_marea(t) + f_drenaje(t)";
 
 export default function CienciaPage() {
   return (
@@ -45,10 +49,15 @@ export default function CienciaPage() {
             modela el balance hídrico de una zona específica del Barrio Manga.
           </p>
 
-          <div className="card-light p-6 border-l-4 border-accent">
-            <p className="font-mono text-lg text-center text-navy leading-loose">
-              H″(t) + c(t)·H′(t) + k(t)·H(t) = f<sub>lluvia</sub>(t) + f<sub>marea</sub>(t) + f<sub>drenaje</sub>(t)
-            </p>
+          <div className="card-light p-6 border-l-4 border-cyan">
+            <div className="bg-ocean rounded-xl p-4 mb-4">
+              <p className="font-mono text-[10px] text-cyan/60 mb-2">Ecuación diferencial en tiempo real:</p>
+              <TypingEffect
+                text={EQUATION}
+                speed={40}
+                className="font-mono text-sm md:text-base text-cyan leading-relaxed"
+              />
+            </div>
           </div>
 
           <div className="mt-6 space-y-3">
@@ -106,6 +115,17 @@ mientras t < horas_pronostico:
         </motion.section>
 
         {/* Sección 3 */}
+        <motion.section {...FADE}>
+          <h2 className="font-display text-2xl font-bold text-navy mb-4">
+            3. Flujo de Datos en Tiempo Real
+          </h2>
+          <p className="text-slate-600 leading-relaxed mb-6">
+            Los datos viajan desde los sensores físicos hasta tu pantalla en menos de 30 segundos:
+          </p>
+          <DataFlowDiagram />
+        </motion.section>
+
+        {/* Sección 4 */}
         <motion.section {...FADE}>
           <h2 className="font-display text-2xl font-bold text-navy mb-4">
             3. Validación del Modelo

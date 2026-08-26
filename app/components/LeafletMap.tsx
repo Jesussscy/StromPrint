@@ -3,14 +3,16 @@
 import { useEffect, useRef } from "react";
 import type { PuntoPrediccion } from "@/app/lib/api";
 import { riskColor } from "@/app/lib/api";
+import "leaflet/dist/leaflet.css";
 
 interface LeafletMapProps {
   punto: PuntoPrediccion | null;
+  stormMode?: boolean;
 }
 
 const MANGA_CENTER: [number, number] = [10.4000, -75.5167];
 
-export default function LeafletMap({ punto }: LeafletMapProps) {
+export default function LeafletMap({ punto, stormMode }: LeafletMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
@@ -37,6 +39,34 @@ export default function LeafletMap({ punto }: LeafletMapProps) {
       }).addTo(map);
 
       mapInstanceRef.current = map;
+
+      const streetLabels = [
+        { text: "Calle 24", pos: [10.401, -75.517] as [number, number] },
+        { text: "Parque de Manga", pos: [10.399, -75.516] as [number, number] },
+        { text: "Av. Pedro de Heredia", pos: [10.402, -75.518] as [number, number] },
+      ];
+
+      streetLabels.forEach(({ text, pos }) => {
+        const labelIcon = L.divIcon({
+          className: "",
+          html: `<div class="glass" style="
+            border-radius: 6px;
+            padding: 2px 6px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 10px;
+            font-weight: 500;
+            color: #94a3b8;
+            white-space: nowrap;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+          ">${text}</div>`,
+          iconSize: [0, 0],
+          iconAnchor: [0, 12],
+        });
+        L.marker(pos, { icon: labelIcon, interactive: false }).addTo(map);
+      });
 
       setTimeout(() => map.invalidateSize(), 100);
     };
@@ -116,12 +146,20 @@ export default function LeafletMap({ punto }: LeafletMapProps) {
   return (
     <div className="relative h-full w-full rounded-2xl overflow-hidden">
       <div ref={mapRef} className="h-full w-full" />
-      <div className="pointer-events-none absolute bottom-3 left-3 font-mono text-[10px] uppercase tracking-widest text-slate-300 bg-navy/80 px-2 py-1 rounded-lg">
-        Visor territorial · Manga, Cartagena
+
+      {/* Storm mode overlay */}
+      {stormMode && (
+        <div className="absolute inset-0 z-[999] pointer-events-none bg-ocean/30 mix-blend-multiply animate-pulse-slow" />
+      )}
+
+      <div className="pointer-events-none absolute bottom-3 left-3 glass rounded-lg px-2 py-1">
+        <span className="font-mono text-[10px] uppercase tracking-widest text-slate-400">
+          Visor territorial · Manga, Cartagena
+        </span>
       </div>
       {punto && (
-        <div className="pointer-events-none absolute top-3 right-3 bg-navy/80 px-3 py-2 rounded-lg">
-          <p className="font-mono text-[9px] uppercase tracking-widest text-slate-400">Nivel H(t)</p>
+        <div className="pointer-events-none absolute top-3 right-3 glass rounded-lg px-3 py-2">
+          <p className="font-mono text-[9px] uppercase tracking-widest text-cyan">Nivel H(t)</p>
           <p className="font-display text-lg font-tabular" style={{ color: riskColor(punto.estado) }}>
             {punto.nivel_agua_cm.toFixed(1)}
             <span className="ml-1 text-xs text-slate-400">cm</span>

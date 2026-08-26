@@ -6,7 +6,7 @@
   "installCommand": "npm install && pip install -r requirements.txt",
   "functions": {
     "api/index.py": {
-      "runtime": "@vercel/python@8.0.0",
+      "runtime": "@vercel/python@6.1.6",
       "memory": 1024,
       "maxDuration": 10
     }

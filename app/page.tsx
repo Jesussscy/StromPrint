@@ -3,10 +3,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import Navbar from "@/app/components/Navbar";
-import AquaBackground from "@/app/components/AquaBackground";
+import TopographicMesh from "@/app/components/TopographicMesh";
 import ParticleCanvas from "@/app/components/ParticleCanvas";
+import CursorTracker from "@/app/components/CursorTracker";
 import LeafletMap from "@/app/components/LeafletMap";
-import Canvas3D from "@/app/components/Canvas3D";
 import TimelineSlider from "@/app/components/TimelineSlider";
 import MetricsPanel from "@/app/components/MetricsPanel";
 import WeatherBadge from "@/app/components/WeatherBadge";
@@ -16,6 +16,7 @@ import CommandCenter from "@/app/components/CommandCenter";
 import RainParticles from "@/app/components/RainParticles";
 import AlertDrawer from "@/app/components/AlertDrawer";
 import AnimatedCounter from "@/app/components/AnimatedCounter";
+import SummaryDashboard from "@/app/components/SummaryDashboard";
 import {
   predecir,
   computeDaySummaries,
@@ -33,8 +34,8 @@ const FADE = {
 
 function HeroSection() {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      <AquaBackground />
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden" style={{ background: "#020617" }}>
+      <TopographicMesh />
       <ParticleCanvas />
 
       <div className="relative z-10 mx-auto max-w-5xl px-6 text-center">
@@ -45,7 +46,7 @@ function HeroSection() {
           </div>
 
           <h1
-            className="glitch-title text-5xl md:text-7xl lg:text-8xl text-white mb-6"
+            className="title-storm glitch-title text-5xl md:text-7xl lg:text-8xl text-white mb-6"
             data-text="STORM//PRINT"
           >
             STORM<span className="neon-text">{"//"}</span>PRINT
@@ -59,7 +60,7 @@ function HeroSection() {
             {[
               { value: "98.7%", label: "Precisión" },
               { value: "24/7", label: "Monitoreo" },
-              { value: "48h", label: "Pronóstico" },
+              { value: "7 días", label: "Pronóstico" },
             ].map((stat) => (
               <div key={stat.label} className="glass rounded-xl px-5 py-3">
                 <p className="font-display text-xl font-bold neon-text">{stat.value}</p>
@@ -68,23 +69,25 @@ function HeroSection() {
             ))}
           </div>
 
-          <a href="#panel-vivo" className="group inline-flex items-center gap-3">
-            <div className="relative flex h-16 w-16 items-center justify-center">
-              <svg className="absolute inset-0" viewBox="0 0 64 64">
-                <circle cx="32" cy="32" r="30" fill="none" stroke="rgba(0,210,255,0.2)" strokeWidth="1" />
-                <circle cx="32" cy="32" r="30" fill="none" stroke="#00D2FF" strokeWidth="2" strokeDasharray="188" strokeDashoffset="47" className="origin-center -rotate-90 group-hover:animate-spin" style={{ animationDuration: "3s" }} />
-              </svg>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="#00D2FF"><polygon points="8,5 19,12 8,19" /></svg>
-            </div>
-            <span className="font-mono text-xs uppercase tracking-widest text-cyan group-hover:text-cyan-bright transition">
-              Iniciar simulación
-            </span>
-          </a>
+          {/* CTA Button */}
+          <motion.a
+            href="#panel-vivo"
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            className="group inline-flex items-center gap-3 rounded-2xl px-8 py-4 font-mono text-sm uppercase tracking-widest text-ocean-deep font-bold transition-all"
+            style={{
+              background: "linear-gradient(135deg, #00E5FF 0%, #00B4D8 50%, #0077B6 100%)",
+              boxShadow: "0 0 30px rgba(0, 229, 255, 0.3), 0 0 60px rgba(0, 229, 255, 0.1)",
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="8,5 19,12 8,19" /></svg>
+            Iniciar Simulación
+          </motion.a>
         </motion.div>
       </div>
 
       {/* Bottom fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-ocean to-transparent" />
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#020617] to-transparent" />
     </section>
   );
 }
@@ -225,7 +228,7 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
     setError(null);
     try {
       const result = await predecir({
-        horas_pronostico: 48,
+        horas_pronostico: 168,
         intensidad_lluvia_mm_h: usarMeteo ? undefined : lluvia,
         nivel_marea_cm: marea,
         usar_datos_meteo: usarMeteo,
@@ -297,11 +300,10 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
         </div>
       </div>
 
-      {/* Main Grid: Map + 3D + Metrics */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1fr_1fr]">
-        <div className="glass-strong rounded-2xl h-[380px] p-1 md:h-[500px] overflow-hidden relative">
+      {/* Main Grid: Map + Metrics */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr_1fr]">
+        <div className="glass-strong rounded-2xl h-[380px] p-1 md:h-[520px] overflow-hidden relative">
           <LeafletMap punto={activePunto} stormMode={stormMode} />
-          {/* Storm simulation button */}
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -315,7 +317,7 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
             {stormMode ? (
               <span className="flex items-center gap-2">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2" width="20" height="20" rx="2" /></svg>
-                Detener simulación
+                Detener tormenta
               </span>
             ) : (
               <span className="flex items-center gap-2">
@@ -324,9 +326,6 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
               </span>
             )}
           </motion.button>
-        </div>
-        <div className="glass-strong rounded-2xl h-[380px] md:h-[500px] overflow-hidden">
-          <Canvas3D punto={activePunto} stormMode={stormMode} waterLevelOverride={activePunto ? activePunto.nivel_agua_cm / 100 : undefined} />
         </div>
         <MetricsPanel punto={activePunto} prediccion={prediccion} isLoading={isLoading} error={error} />
       </div>
@@ -337,8 +336,8 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
           <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.15em] text-slate-500">
             Pronóstico por día
           </p>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {daySummaries.slice(0, 3).map((s, i) => (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
+            {daySummaries.map((s, i) => (
               <ForecastDayCard key={s.dayIndex} summary={s} index={i} />
             ))}
           </div>
@@ -349,6 +348,13 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
       <div className="mt-4">
         <TimelineSlider puntos={prediccion?.puntos ?? []} currentHour={currentHour} onScrub={setCurrentHour} isPlaying={isPlaying} onTogglePlay={() => setIsPlaying((p) => !p)} />
       </div>
+
+      {/* 7-Day Summary Dashboard */}
+      {prediccion && prediccion.puntos.length > 0 && (
+        <div className="mt-6">
+          <SummaryDashboard puntos={prediccion.puntos} daySummaries={daySummaries} />
+        </div>
+      )}
     </div>
   );
 }
@@ -376,9 +382,9 @@ function ForecastSection({ puntos }: { puntos: import("@/app/lib/api").PuntoPred
       <div className="mx-auto max-w-6xl">
         <motion.div {...FADE} className="text-center mb-8">
           <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-cyan mb-4">Pronóstico</p>
-          <h2 className="font-display text-3xl md:text-4xl font-bold text-white mb-4">Evolución del nivel en 48 horas</h2>
+          <h2 className="font-display text-3xl md:text-4xl font-bold text-white mb-4">Evolución del nivel en 7 días</h2>
           <p className="text-slate-400 max-w-2xl mx-auto">
-            Curva de pronóstico con líneas de umbral de riesgo.
+            Curva de pronóstico horario con líneas de umbral de riesgo.
           </p>
         </motion.div>
         {puntos.length > 0 ? (
@@ -550,7 +556,7 @@ export default function LandingPage() {
   const [stormMode, setStormMode] = useState(false);
 
   useEffect(() => {
-    predecir({ horas_pronostico: 48, usar_datos_meteo: true })
+    predecir({ horas_pronostico: 168, usar_datos_meteo: true })
       .then(setPrediccion)
       .catch(() => {});
   }, []);
@@ -558,6 +564,7 @@ export default function LandingPage() {
   return (
     <>
       <Navbar />
+      <CursorTracker />
       <RainParticles active={stormMode} intensity={stormMode ? 0.8 : 0} />
       <AlertDrawer />
 

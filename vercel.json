@@ -3,7 +3,7 @@
   "framework": "nextjs",
   "buildCommand": "npm run vercel-build",
   "outputDirectory": ".next",
-  "installCommand": "npm install && pip install -r requirements.txt",
+  "installCommand": "npm install",
   "functions": {
     "api/index.py": {
       "runtime": "@vercel/python@6.1.6",

@@ -116,6 +116,38 @@ const HISTORICAL_MAX: number[] = [
   26, 22, 19, 16, 14, 12, 11, 10,
 ];
 
+function GlowingDot(props: Record<string, unknown>) {
+  const cx = props.cx as number | undefined;
+  const cy = props.cy as number | undefined;
+  const index = props.index as number | undefined;
+  if (typeof cx !== "number" || typeof cy !== "number") return null;
+  if (index !== 0) return null;
+  return (
+    <g>
+      <circle cx={cx} cy={cy} r={12} fill="rgba(0,210,255,0.15)" />
+      <circle cx={cx} cy={cy} r={6} fill="rgba(0,210,255,0.3)" />
+      <circle cx={cx} cy={cy} r={3} fill="#00E5FF" stroke="#00E5FF" strokeWidth={1.5} />
+    </g>
+  );
+}
+
+function PeakDot(props: Record<string, unknown>) {
+  const cx = props.cx as number | undefined;
+  const cy = props.cy as number | undefined;
+  const payload = props.payload as { nivel?: number } | undefined;
+  if (typeof cx !== "number" || typeof cy !== "number") return null;
+  if (!payload || (payload.nivel ?? 0) < 55) return null;
+  return (
+    <g>
+      <circle cx={cx} cy={cy} r={8} fill="rgba(255,0,85,0.2)" />
+      <circle cx={cx} cy={cy} r={4} fill="#FF0055" />
+      <text x={cx} y={cy - 12} textAnchor="middle" fill="#FF0055" fontSize={8} fontFamily="var(--font-mono)">
+        {(payload.nivel ?? 0).toFixed(0)}cm
+      </text>
+    </g>
+  );
+}
+
 function DrainageIndicator({ eficiencia_drenaje, saturacion_suelo }: { eficiencia_drenaje: number; saturacion_suelo: number }) {
   const pct = eficiencia_drenaje * 100;
   const satPct = saturacion_suelo * 100;
@@ -203,8 +235,8 @@ export default function MetricsPanel({ punto, prediccion, isLoading, error }: Me
               <ComposedChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="gradWater" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#00B4D8" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#00B4D8" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#00E5FF" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#00E5FF" stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,210,255,0.05)" />
@@ -222,11 +254,11 @@ export default function MetricsPanel({ punto, prediccion, isLoading, error }: Me
                   }}
                 />
                 <Legend wrapperStyle={{ fontSize: 10, color: "#94A3B8" }} iconType="line" />
-                <ReferenceLine y={30} stroke="#FFD600" strokeDasharray="6 4" strokeWidth={1} label={{ value: "Alerta", position: "right", style: { fontSize: 8, fill: "#FFD600" } }} />
-                <ReferenceLine y={60} stroke="#FF0055" strokeDasharray="6 4" strokeWidth={1} label={{ value: "Emergencia", position: "right", style: { fontSize: 8, fill: "#FF0055" } }} />
-                <ReferenceLine y={100} stroke="#B000FF" strokeDasharray="6 4" strokeWidth={1} label={{ value: "Crítico", position: "right", style: { fontSize: 8, fill: "#B000FF" } }} />
-                <Area type="monotone" dataKey="nivel" stroke="#00B4D8" strokeWidth={2.5} fill="url(#gradWater)" dot={false} name="Nivel H(t)" isAnimationActive={false} />
-                <Bar dataKey="f_lluvia" fill="#00B4D8" opacity={0.3} name="Lluvia (mm/h)" isAnimationActive={false} />
+                <ReferenceLine y={30} stroke="#FFD600" strokeDasharray="6 4" strokeWidth={1.5} label={{ value: "Alerta", position: "right", style: { fontSize: 8, fill: "#FFD600" } }} />
+                <ReferenceLine y={60} stroke="#FF0055" strokeDasharray="6 4" strokeWidth={1.5} label={{ value: "Emergencia", position: "right", style: { fontSize: 8, fill: "#FF0055" } }} />
+                <ReferenceLine y={100} stroke="#B000FF" strokeDasharray="6 4" strokeWidth={1.5} label={{ value: "Crítico", position: "right", style: { fontSize: 8, fill: "#B000FF" } }} />
+                <Area type="monotone" dataKey="nivel" stroke="#00E5FF" strokeWidth={2.5} fill="url(#gradWater)" dot={<PeakDot />} activeDot={{ r: 5, fill: "#00E5FF", stroke: "#00E5FF", strokeWidth: 2 }} name="Nivel H(t)" isAnimationActive={false} />
+                <Bar dataKey="f_lluvia" fill="#00D2FF" opacity={0.2} name="Lluvia (mm/h)" isAnimationActive={false} />
                 <Line type="monotone" dataKey="f_marea" stroke="#94A3B8" strokeWidth={1.5} dot={false} strokeDasharray="3 3" name="Marea (cm)" isAnimationActive={false} />
                 <Line type="monotone" dataKey="historical" stroke="#FF0055" strokeWidth={1.5} dot={false} strokeDasharray="4 4" strokeOpacity={0.4} name="Máx histórico" isAnimationActive={false} />
               </ComposedChart>

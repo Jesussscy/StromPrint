@@ -4,7 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import Navbar from "@/app/components/Navbar";
 import AquaBackground from "@/app/components/AquaBackground";
+import ParticleCanvas from "@/app/components/ParticleCanvas";
 import LeafletMap from "@/app/components/LeafletMap";
+import Canvas3D from "@/app/components/Canvas3D";
 import TimelineSlider from "@/app/components/TimelineSlider";
 import MetricsPanel from "@/app/components/MetricsPanel";
 import WeatherBadge from "@/app/components/WeatherBadge";
@@ -33,6 +35,7 @@ function HeroSection() {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       <AquaBackground />
+      <ParticleCanvas />
 
       <div className="relative z-10 mx-auto max-w-5xl px-6 text-center">
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
@@ -153,7 +156,7 @@ function HowItWorksSection() {
             { step: "02", title: "Modelo", desc: "EDO de segundo orden resuelta con Runge-Kutta de 4to orden. Precisión: 98.7%.", icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00D2FF" strokeWidth="1.5"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" /><circle cx="12" cy="12" r="4" /></svg> },
             { step: "03", title: "Acción", desc: "Dashboard en tiempo real con niveles de riesgo, recomendaciones y rutas de evacuación.", icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FF0055" strokeWidth="1.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg> },
           ].map((item) => (
-            <motion.div key={item.step} {...FADE} className="glass rounded-2xl p-6 text-center hud-connector">
+            <motion.div key={item.step} {...FADE} className="glass rounded-2xl p-6 text-center hud-connector float-card group hover:border-cyan/25 transition-all duration-300">
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl glass-glow">
                 {item.icon}
               </div>
@@ -187,7 +190,7 @@ function DataSourceSection() {
             { title: "Topografía y Batimetría", desc: "Modelos de Elevación Digital del terreno de Cartagena.", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00D2FF" strokeWidth="1.5"><path d="M3 20l5-10 4 6 4-4 5 8" /><line x1="3" y1="20" x2="21" y2="20" /></svg> },
             { title: "Conexión IoT", desc: "Datos por 4G/5G al servidor en la nube. Latencia < 30 segundos.", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00D2FF" strokeWidth="1.5"><path d="M5 12.55a11 11 0 0 1 14.08 0" /><path d="M1.42 9a16 16 0 0 1 21.16 0" /><path d="M8.53 16.11a6 6 0 0 1 6.95 0" /><circle cx="12" cy="20" r="1" fill="#00D2FF" /></svg> },
           ].map((item) => (
-            <motion.div key={item.title} {...FADE} className="glass rounded-2xl p-5 group hover:border-cyan/25 transition-all duration-300">
+            <motion.div key={item.title} {...FADE} className="glass rounded-2xl p-5 group hover:border-cyan/25 transition-all duration-300 float-card">
               <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl glass-glow">
                 {item.icon}
               </div>
@@ -294,8 +297,8 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
         </div>
       </div>
 
-      {/* Main Grid: Map + Metrics */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.3fr_1fr]">
+      {/* Main Grid: Map + 3D + Metrics */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1fr_1fr]">
         <div className="glass-strong rounded-2xl h-[380px] p-1 md:h-[500px] overflow-hidden relative">
           <LeafletMap punto={activePunto} stormMode={stormMode} />
           {/* Storm simulation button */}
@@ -321,6 +324,9 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
               </span>
             )}
           </motion.button>
+        </div>
+        <div className="glass-strong rounded-2xl h-[380px] md:h-[500px] overflow-hidden">
+          <Canvas3D punto={activePunto} stormMode={stormMode} waterLevelOverride={activePunto ? activePunto.nivel_agua_cm / 100 : undefined} />
         </div>
         <MetricsPanel punto={activePunto} prediccion={prediccion} isLoading={isLoading} error={error} />
       </div>

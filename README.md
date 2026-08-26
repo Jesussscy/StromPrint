@@ -21,7 +21,7 @@ StormPrint/
 │       ├── Canvas3D.tsx         Visor 3D (react-three-fiber + drei)
 │       ├── TimelineSlider.tsx   Control temporal 0–168h (Framer Motion)
 │       └── MetricsPanel.tsx     Tarjetas de riesgo + gráfico H(t)
-├── public/models/manga_model.glb
+├── public/models/Map.glb
 ├── vercel.json
 ├── requirements.txt
 ├── package.json
@@ -94,9 +94,6 @@ proxy) apuntando `/api/v1/*` hacia `http://localhost:8000`, ya que en
 
 ## Modelo 3D
 
-`public/models/manga_model.glb` incluido es un placeholder mínimo pero válido
-(dos planos: `Territory_Manga` y `WaterLevel_Animated`) generado con
-`pygltflib`, para que el visor 3D funcione end-to-end sin depender de un
-asset externo. Sustitúyelo por un modelo real (fotogrametría/GIS de Manga)
-conservando el nombre de nodo `WaterLevel_Animated`, que es el que
-`Canvas3D.tsx` anima en elevación y color según `H(t)`.
+`public/models/Map.glb` es el modelo territorial de Manga, Cartagena de Indias.
+`Canvas3D.tsx` busca un nodo con nombre que contenga "water" o "agua" para animar
+su elevación y color según `H(t)`. Si no lo encuentra, anima el primer mesh disponible.

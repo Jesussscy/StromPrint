@@ -27,6 +27,68 @@ function WeatherIcon({ nivel }: { nivel: number }) {
   );
 }
 
+function ProgressRing({ nivel, color }: { nivel: number; color: string }) {
+  const r = 38;
+  const stroke = 4;
+  const nr = r - stroke / 2;
+  const circ = nr * 2 * Math.PI;
+  const pct = Math.min(nivel / 100, 1);
+  const offset = circ - pct * circ;
+
+  return (
+    <svg width={r * 2} height={r * 2} className="block">
+      <circle
+        stroke="rgba(255,255,255,0.06)"
+        fill="none"
+        strokeWidth={stroke}
+        r={nr}
+        cx={r}
+        cy={r}
+      />
+      <circle
+        stroke={color}
+        fill="none"
+        strokeWidth={stroke}
+        strokeLinecap="round"
+        strokeDasharray={`${circ} ${circ}`}
+        style={{
+          strokeDashoffset: offset,
+          transition: "stroke-dashoffset 1s ease",
+          transform: "rotate(-90deg)",
+          transformOrigin: "50% 50%",
+          filter: `drop-shadow(0 0 6px ${color})`,
+        }}
+        r={nr}
+        cx={r}
+        cy={r}
+      />
+      <text
+        x={r}
+        y={r - 4}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fill={color}
+        fontSize="18"
+        fontWeight="bold"
+        fontFamily="var(--font-display)"
+      >
+        {nivel.toFixed(0)}
+      </text>
+      <text
+        x={r}
+        y={r + 14}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fill="#94A3B8"
+        fontSize="9"
+        fontFamily="var(--font-mono)"
+      >
+        cm
+      </text>
+    </svg>
+  );
+}
+
 function MiniBarChart({ lluviaMax }: { lluviaMax: number }) {
   const bars = [
     Math.max(0.1, lluviaMax * 0.3),
@@ -64,42 +126,42 @@ export default function ForecastDayCard({ summary, index }: ForecastDayCardProps
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: 0.1 * index }}
-      className="glass rounded-2xl p-4"
+      className="glass rounded-2xl p-4 flex flex-col items-center"
     >
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between w-full mb-2">
         <div>
           <p className="font-mono text-[10px] uppercase tracking-widest text-slate-400">{summary.dayLabel}</p>
           <p className="font-display text-lg text-white font-bold">Día {summary.dayIndex + 1}</p>
         </div>
-        <div className="flex items-center gap-3">
-          <WeatherIcon nivel={summary.nivelMaximo} />
-          <div className="text-right">
-            <p className="font-display text-xl font-bold font-tabular" style={{ color: accent }}>
-              {summary.nivelMaximo.toFixed(0)}<span className="text-xs text-slate-400 ml-0.5">cm</span>
-            </p>
-            <p className="font-mono text-[9px] uppercase tracking-wider" style={{ color: accent }}>{estadoText}</p>
-          </div>
-        </div>
+        <WeatherIcon nivel={summary.nivelMaximo} />
       </div>
 
-      <MiniBarChart lluviaMax={summary.lluviaTotal} />
+      <ProgressRing nivel={summary.nivelMaximo} color={accent} />
 
-      <div className="flex flex-col gap-2 mt-3">
+      <p className="font-mono text-[9px] uppercase tracking-wider mt-2" style={{ color: accent }}>
+        {estadoText}
+      </p>
+
+      <div className="w-full mt-3">
+        <MiniBarChart lluviaMax={summary.lluviaTotal} />
+      </div>
+
+      <div className="flex flex-col gap-1.5 mt-3 w-full">
         <div className="flex items-center justify-between">
-          <span className="font-mono text-[10px] text-slate-400">Lluvia acumulada</span>
+          <span className="font-mono text-[10px] text-slate-400">Lluvia</span>
           <span className="font-mono text-[11px] text-slate-500 font-tabular">{summary.lluviaTotal.toFixed(1)} mm</span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="font-mono text-[10px] text-slate-400">Horas con lluvia</span>
+          <span className="font-mono text-[10px] text-slate-400">Horas lluvia</span>
           <span className="font-mono text-[11px] text-slate-500 font-tabular">{summary.horasConLluvia}h / {summary.horasTotales}h</span>
         </div>
       </div>
 
-      <div className="mt-3">
+      <div className="w-full mt-3">
         <div className="relative h-1.5 w-full overflow-hidden rounded-full" style={{ backgroundColor: "rgba(255,255,255,0.03)" }}>
           <motion.div
             className="absolute inset-y-0 left-0 rounded-full"
-            style={{ backgroundColor: accent }}
+            style={{ backgroundColor: accent, boxShadow: `0 0 8px ${accent}` }}
             initial={{ width: 0 }}
             animate={{ width: `${rainPct}%` }}
             transition={{ duration: 0.8, delay: 0.2 * index }}

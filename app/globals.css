@@ -221,6 +221,43 @@ body {
   clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
 }
 
+/* ─── Light Sweep (Scroll Reveal) ────────────────────────────────────────── */
+
+.light-sweep {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 210, 255, 0.08) 45%,
+    rgba(0, 210, 255, 0.15) 50%,
+    rgba(0, 210, 255, 0.08) 55%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: sweep 3s ease-in-out forwards;
+}
+
+@keyframes sweep {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ─── Float Animation ────────────────────────────────────────────────────── */
+
+.float-card {
+  animation: float-gentle 6s ease-in-out infinite;
+}
+
+.float-card:nth-child(2) { animation-delay: -2s; }
+.float-card:nth-child(3) { animation-delay: -4s; }
+
+@keyframes float-gentle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
 /* ─── Slider Styling ────────────────────────────────────────────────────── */
 
 input[type="range"] {

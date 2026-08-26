@@ -6,9 +6,9 @@
   "installCommand": "npm install && pip install -r requirements.txt",
   "functions": {
     "api/index.py": {
-      "runtime": "python3.12",
+      "runtime": "@vercel/python@3.12",
       "memory": 1024,
-      "maxDuration": 30
+      "maxDuration": 10
     }
   },
   "rewrites": [

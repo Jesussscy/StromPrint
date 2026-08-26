@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "vercel-build": "pip install -r requirements.txt && next build"
+    "vercel-build": "python scripts/generate_manga_model.py && next build"
   },
   "dependencies": {
     "next": "14.2.15",

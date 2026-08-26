@@ -95,7 +95,7 @@ export default function Canvas3D({ punto }: Canvas3DProps) {
 
         <Suspense fallback={<LoadingFallback />}>
           <MangaModel punto={punto} />
-          <Environment preset="night" />
+          <Environment files="/hdri/dikhololo_night_1k.hdr" />
         </Suspense>
 
         <OrbitControls

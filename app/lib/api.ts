@@ -181,15 +181,15 @@ export function riskColor(estado: string): string {
   switch (estado) {
     case "Critico":
     case "critical":
-      return "#9333EA";
+      return "#B000FF";
     case "Emergencia":
     case "high":
-      return "#DC2626";
+      return "#FF0055";
     case "Alerta":
     case "moderate":
-      return "#EAB308";
+      return "#FFD600";
     default:
-      return "#22C55E";
+      return "#00E5FF";
   }
 }
 

@@ -37,7 +37,7 @@ export default function ConvolucionVisual() {
         Cómo la analítica &lsquo;predice&rsquo; la lluvia sin paso a paso
       </h3>
       <p className="text-slate-400 text-sm leading-relaxed mb-5">
-        En vez de avanzar de a 1 segundo como RK4, la solución analítica usa la
+        En vez de integrar paso a paso, la solución analítica usa la
         <strong className="text-white"> integral de convolución</strong>: multiplica la fuerza de lluvia por la
         respuesta del barrio y suma todo el historial. Explora los tres pasos:
       </p>
@@ -74,13 +74,13 @@ export default function ConvolucionVisual() {
 
       <div className="mt-4 grid gap-2 sm:grid-cols-3 text-center text-[11px]">
         <div className="rounded-lg bg-[#0A1119] p-2 text-slate-500">
-          <span className="text-white font-semibold">RK4:</span> 96 × 3600 pasos de integración
+          <span className="text-white font-semibold">Tramos:</span> coeficientes c(t), k(t) constantes
         </div>
         <div className="rounded-lg bg-[#0A1119] p-2 text-slate-500">
           <span className="text-white font-semibold">Analítica:</span> 96 evaluaciones de la integral
         </div>
         <div className="rounded-lg bg-[#0A1119] p-2 text-emerald-400/80">
-          Resultado: <span className="text-white font-semibold">error ≈ 0.0001 cm</span>
+          Resultado: <span className="text-white font-semibold">curva cerrada exacta</span>
         </div>
       </div>
     </div>

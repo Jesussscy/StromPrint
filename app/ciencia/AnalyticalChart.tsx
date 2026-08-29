@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import {
   Line,
+  Area,
   ComposedChart,
   ResponsiveContainer,
   XAxis,
@@ -17,7 +18,7 @@ import { compararMetodos, ComparacionResponse } from "@/app/lib/api";
 
 const KaTeXBlock = dynamic(() => import("./KaTeXBlock"), { ssr: false });
 
-export default function ComparisonChart() {
+export default function AnalyticalChart() {
   const [resultado, setResultado] = useState<ComparacionResponse | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +38,7 @@ export default function ComparisonChart() {
         if (activo) setResultado(res);
       })
       .catch((e: Error) => {
-        if (activo) setError(e.message || "No se pudo cargar la comparación.");
+        if (activo) setError(e.message || "No se pudo cargar la solución analítica.");
       })
       .finally(() => {
         if (activo) setCargando(false);
@@ -49,29 +50,34 @@ export default function ComparisonChart() {
 
   const chartData = useMemo(() => {
     if (!resultado) return [];
-    const min = Math.min(resultado.horas.length, resultado.numerico_cm.length, resultado.analitico_cm.length);
-    const data: { hora: number; numerico: number; analitico: number }[] = [];
-    for (let i = 0; i < min; i++) {
+    const data: { hora: number; nivel: number }[] = [];
+    for (let i = 0; i < resultado.horas.length; i++) {
       data.push({
         hora: resultado.horas[i],
-        numerico: parseFloat(resultado.numerico_cm[i].toFixed(3)),
-        analitico: parseFloat(resultado.analitico_cm[i].toFixed(3)),
+        nivel: parseFloat(resultado.analitico_cm[i].toFixed(3)),
       });
     }
     return data;
   }, [resultado]);
+
+  const pico = useMemo(() => {
+    if (!chartData.length) return null;
+    return chartData.reduce((max, p) => (p.nivel > max.nivel ? p : max), chartData[0]);
+  }, [chartData]);
+
+  const parametros = resultado?.parametros ?? {};
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_220px]">
       {/* Chart */}
       <div className="glass rounded-2xl p-4">
         <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-slate-500 mb-3">
-          Comparativa: solve_ivp (RK45) vs Solución analítica por tramos
+          Curva de la solución analítica por tramos — H(t)
         </p>
         <div className="h-[300px]">
           {cargando || !resultado ? (
             <div className="flex h-full items-center justify-center text-sm text-slate-500">
-              {cargando ? "Resolviendo ambos métodos…" : "Sin datos"}
+              {cargando ? "Resolviendo la solución analítica…" : "Sin datos"}
             </div>
           ) : error ? (
             <div className="flex h-full items-center justify-center text-sm text-risk-emergency">
@@ -81,8 +87,8 @@ export default function ComparisonChart() {
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="gradNumerico" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#00E5FF" stopOpacity={0.12} />
+                  <linearGradient id="gradAnalit" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#00E5FF" stopOpacity={0.25} />
                     <stop offset="95%" stopColor="#00E5FF" stopOpacity={0} />
                   </linearGradient>
                 </defs>
@@ -110,15 +116,17 @@ export default function ComparisonChart() {
                     backdropFilter: "blur(12px)",
                   }}
                   labelFormatter={(h) => `Hora ${h}`}
-                  formatter={(value: number, name: string) => {
-                    if (name === "numerico") return [`${value} cm`, "Numérico (RK45)"];
-                    if (name === "analitico") return [`${value} cm`, "Analítico (Duhamel)"];
-                    return [value, name];
-                  }}
+                  formatter={(value: number | string) => [`${Number(value).toFixed(2)} cm`, "Nivel H(t)"]}
                 />
                 <Legend wrapperStyle={{ fontSize: 10, color: "#94A3B8" }} iconType="line" />
-                <Line type="monotone" dataKey="numerico" stroke="#00E5FF" strokeWidth={2.5} dot={false} name="numerico" isAnimationActive={false} />
-                <Line type="monotone" dataKey="analitico" stroke="#B000FF" strokeWidth={2} dot={false} strokeDasharray="6 4" name="analitico" isAnimationActive={false} />
+                <ReferenceLine
+                  y={60}
+                  stroke="#FF0055"
+                  strokeDasharray="6 4"
+                  strokeWidth={1.5}
+                  label={{ value: "Emergencia", position: "right", style: { fontSize: 8, fill: "#FF0055" } }}
+                />
+                <Area type="monotone" dataKey="nivel" stroke="#00E5FF" strokeWidth={2.5} fill="url(#gradAnalit)" dot={false} name="Nivel H(t)" isAnimationActive={false} />
               </ComposedChart>
             </ResponsiveContainer>
           )}
@@ -147,21 +155,37 @@ export default function ComparisonChart() {
         </div>
       </div>
 
-      {/* Error stats */}
+      {/* Stats analíticas */}
       <div className="flex flex-col gap-3">
-        {[
-          { label: "Error promedio", value: resultado ? `${resultado.error_promedio_cm.toFixed(4)} cm` : "—", color: "#00E5FF" },
-          { label: "Error máximo", value: resultado ? `${resultado.error_maximo_cm.toFixed(4)} cm` : "—", color: "#FFD600" },
-          { label: "RMSE", value: resultado ? `${resultado.error_rmse_cm.toFixed(4)} cm` : "—", color: "#B000FF" },
-          { label: "Puntos", value: resultado ? `${resultado.puntos}` : "—", color: "#00FF87" },
-        ].map((stat) => (
-          <div key={stat.label} className="glass rounded-xl p-4">
-            <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-slate-500 mb-1">{stat.label}</p>
-            <p className="font-display text-lg font-bold font-tabular" style={{ color: stat.color }}>{stat.value}</p>
-          </div>
-        ))}
+        <div className="glass rounded-xl p-4">
+          <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-slate-500 mb-1">Pico máximo</p>
+          <p className="font-display text-2xl font-bold font-tabular" style={{ color: "#00E5FF" }}>
+            {pico ? `${pico.nivel.toFixed(1)} cm` : "—"}
+          </p>
+          <p className="font-mono text-[10px] text-slate-500">
+            {pico ? `hora ${pico.hora}h` : ""}
+          </p>
+        </div>
 
-        {/* Derivación clave */}
+        <div className="glass rounded-xl p-4">
+          <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-slate-500 mb-1">Masa (m)</p>
+          <p className="font-display text-lg font-bold font-tabular text-white">
+            {parametros.mass != null ? `${parametros.mass} kg` : "—"}
+          </p>
+        </div>
+        <div className="glass rounded-xl p-4">
+          <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-slate-500 mb-1">Amortiguamiento (c)</p>
+          <p className="font-display text-lg font-bold font-tabular text-white">
+            {parametros.damping != null ? `${parametros.damping} N·s/m` : "—"}
+          </p>
+        </div>
+        <div className="glass rounded-xl p-4">
+          <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-slate-500 mb-1">Rigidez (k)</p>
+          <p className="font-display text-lg font-bold font-tabular text-white">
+            {parametros.stiffness != null ? `${parametros.stiffness} N/m` : "—"}
+          </p>
+        </div>
+
         <div className="glass rounded-xl p-4 text-center">
           <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-slate-500 mb-2">
             Solución particular (Duhamel)

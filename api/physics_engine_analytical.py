@@ -321,7 +321,7 @@ class PhysicsEngineAnalytical:
                      parametrizable para proposito academico.
           return_derivative: incluir 'dH_dt' en cada registro.
         """
-        t_eval = np.arange(0.0, duration_hours + resolution_hours, resolution_hours)
+        t_eval = np.arange(0.0, duration_hours, resolution_hours)
 
         H0, V0 = 0.0, 0.0
         records: List[dict] = []

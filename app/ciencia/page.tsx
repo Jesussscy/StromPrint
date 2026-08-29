@@ -5,13 +5,12 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import InteractiveEquation from "./InteractiveEquation";
 import ValidationChart from "./ValidationChart";
-import ComparisonChart from "./ComparisonChart";
+import AnalyticalChart from "./AnalyticalChart";
 import ParametrosVariables from "./ParametrosVariables";
 import ConvolucionVisual from "./ConvolucionVisual";
 import AnalyticalWave3D from "./AnalyticalWave3D";
 import DataFlowDiagram from "@/app/components/DataFlowDiagram";
 
-const SyntaxHighlighter = dynamic(() => import("react-syntax-highlighter").then((mod) => mod.default), { ssr: false });
 const KaTeXBlock = dynamic(() => import("./KaTeXBlock"), { ssr: false });
 
 const FADE = {
@@ -19,49 +18,6 @@ const FADE = {
   whileInView: { opacity: 1, y: 0 },
   viewport: { once: true },
   transition: { duration: 0.5 },
-};
-
-const RK4_CODE = `# Runge-Kutta de 4to Orden (RK4)
-# Resuelve: H''(t) = f(t, H, H')
-
-h = paso_de_tiempo          # ej. 1 segundo
-t = 0.0
-H = nivel_inicial           # cm
-H_prime = velocidad_inicial
-
-mientras t < horas_pronostico:
-
-    k1_v = f_aceleracion(t, H, H_prime)
-    k1_x = H_prime
-
-    k2_v = f_aceleracion(t + h/2, H + h*k1_x/2, H_prime + h*k1_v/2)
-    k2_x = H_prime + h*k1_v/2
-
-    k3_v = f_aceleracion(t + h/2, H + h*k2_x/2, H_prime + h*k2_v/2)
-    k3_x = H_prime + h*k2_v/2
-
-    k4_v = f_aceleracion(t + h, H + h*k3_x, H_prime + h*k3_v)
-    k4_x = H_prime + h*k3_v
-
-    H_prime = H_prime + (h/6)(k1_v + 2*k2_v + 2*k3_v + k4_v)
-    H = H + (h/6)(k1_x + 2*k2_x + 2*k3_x + k4_x)
-
-    t = t + h
-    registrar(H, t)`;
-
-const RK4_THEME: Record<string, React.CSSProperties> = {
-  'code[class*="language-"]': { color: "#E2E8F0", fontFamily: "'JetBrains Mono', monospace", fontSize: "12px", lineHeight: "1.7" },
-  'pre[class*="language-"]': { background: "transparent", margin: 0, padding: 0 },
-  comment: { color: "#475569" },
-  keyword: { color: "#B000FF" },
-  string: { color: "#00FF87" },
-  number: { color: "#FFD600" },
-  function: { color: "#00E5FF" },
-  operator: { color: "#94A3B8" },
-  variable: { color: "#FF0055" },
-  "class-name": { color: "#00E5FF" },
-  punctuation: { color: "#64748B" },
-  boolean: { color: "#FFD600" },
 };
 
 export default function CienciaPage() {
@@ -112,51 +68,16 @@ export default function CienciaPage() {
           <InteractiveEquation />
         </motion.section>
 
-        {/* 2. Solución Numérica */}
+        {/* 2. Solución Analítica */}
         <motion.section {...FADE}>
           <div className="flex items-center gap-3 mb-6">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg glass-glow">
               <span className="font-display text-sm font-bold text-cyan">02</span>
             </div>
-            <h2 className="font-display text-2xl font-bold text-white">Solución Numérica — Runge-Kutta</h2>
-          </div>
-          <p className="text-slate-400 leading-relaxed mb-6">
-            Esta ecuación es imposible de resolver con lápiz y papel. Usamos el
-            <strong className="text-white"> Método de Runge-Kutta de 4º orden (RK4)</strong>:
-            divide el tiempo en pasos de 1 segundo, calcula 4 pendientes por paso, las promedia
-            y avanza. Al hacer esto 48,600 veces (13.5 horas), obtenemos la curva completa.
-          </p>
-
-          {/* Syntax-highlighted code */}
-          <div className="glass-strong rounded-2xl overflow-hidden">
-            <div className="flex items-center gap-2 px-4 py-2.5 border-b border-cyan/10">
-              <div className="h-2.5 w-2.5 rounded-full bg-risk-emergency" />
-              <div className="h-2.5 w-2.5 rounded-full bg-risk-alert" />
-              <div className="h-2.5 w-2.5 rounded-full bg-risk-normal" />
-              <span className="font-mono text-[10px] text-slate-500 ml-2">rk4_solver.py</span>
-            </div>
-            <div className="p-4 overflow-x-auto">
-              {SyntaxHighlighter ? (
-                <SyntaxHighlighter language="python" style={RK4_THEME} showLineNumbers={false} wrapLines>
-                  {RK4_CODE}
-                </SyntaxHighlighter>
-              ) : (
-                <pre className="font-mono text-xs text-slate-400 whitespace-pre">{RK4_CODE}</pre>
-              )}
-            </div>
-          </div>
-        </motion.section>
-
-        {/* 3. Solución Analítica */}
-        <motion.section {...FADE}>
-          <div className="flex items-center gap-3 mb-6">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg glass-glow">
-              <span className="font-display text-sm font-bold text-cyan">03</span>
-            </div>
             <h2 className="font-display text-2xl font-bold text-white">Solución Analítica por Tramos</h2>
           </div>
           <p className="text-slate-400 leading-relaxed mb-6">
-            StormPrint también resuelve el modelo de forma <strong className="text-white">analítica por tramos</strong>.
+            StormPrint resuelve el modelo mediante una solución <strong className="text-white">analítica por tramos</strong>.
             Dividimos el tiempo en intervalos donde <code className="font-mono text-cyan">c(t)</code> y{" "}
             <code className="font-mono text-cyan">k(t)</code> son constantes y, en cada tramo, la ecuación
             característica <code className="font-mono">m·r² + c·r + k = 0</code> da una solución cerrada
@@ -177,10 +98,10 @@ export default function CienciaPage() {
           </div>
 
           <p className="text-slate-400 leading-relaxed mb-6">
-            Aquí te mostramos ambas curvas en vivo. Nota que al hacer los tramos muy pequeños el resultado
-            es prácticamente idéntico al método numérico — la diferencia es de fracciones de milímetro:
+            Aquí tienes la curva resultante en vivo. Ajustá el número de tramos para ver cómo se refina
+            la solución. Los parámetros físicos del sistema se muestran a la derecha:
           </p>
-          <ComparisonChart />
+          <AnalyticalChart />
 
           {/* Parámetros c(t)/k(t) + explicación de la convolución + vista 3D */}
           <div className="mt-6 grid gap-6 lg:grid-cols-2">
@@ -192,11 +113,11 @@ export default function CienciaPage() {
           </div>
         </motion.section>
 
-        {/* 4. Flujo de Datos */}
+        {/* 3. Flujo de Datos */}
         <motion.section {...FADE}>
           <div className="flex items-center gap-3 mb-6">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg glass-glow">
-              <span className="font-display text-sm font-bold text-cyan">04</span>
+              <span className="font-display text-sm font-bold text-cyan">03</span>
             </div>
             <h2 className="font-display text-2xl font-bold text-white">Flujo de Datos en Tiempo Real</h2>
           </div>
@@ -208,11 +129,11 @@ export default function CienciaPage() {
           </div>
         </motion.section>
 
-        {/* 5. Validación */}
+        {/* 4. Validación */}
         <motion.section {...FADE}>
           <div className="flex items-center gap-3 mb-6">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg glass-glow">
-              <span className="font-display text-sm font-bold text-cyan">05</span>
+              <span className="font-display text-sm font-bold text-cyan">04</span>
             </div>
             <h2 className="font-display text-2xl font-bold text-white">Validación del Modelo</h2>
           </div>
@@ -223,11 +144,11 @@ export default function CienciaPage() {
           <ValidationChart />
         </motion.section>
 
-        {/* 6. Hardware y Software */}
+        {/* 5. Hardware y Software */}
         <motion.section {...FADE}>
           <div className="flex items-center gap-3 mb-6">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg glass-glow">
-              <span className="font-display text-sm font-bold text-cyan">06</span>
+              <span className="font-display text-sm font-bold text-cyan">05</span>
             </div>
             <h2 className="font-display text-2xl font-bold text-white">Hardware y Software</h2>
           </div>
@@ -265,7 +186,7 @@ export default function CienciaPage() {
               </h3>
               <div className="space-y-3">
                 {[
-                  { icon: "🐍", name: "Python + NumPy", desc: "Cálculo matricial de RK4", color: "#FFD600" },
+                  { icon: "🐍", name: "Python + NumPy", desc: "Solución analítica por tramos y convolución", color: "#FFD600" },
                   { icon: "📊", name: "Scikit-learn", desc: "Corrección de errores en tiempo real", color: "#00E5FF" },
                   { icon: "⚡", name: "FastAPI", desc: "Servidor de alta disponibilidad", color: "#00FF87" },
                   { icon: "⚛", name: "React + Leaflet", desc: "Interfaz de usuario interactiva", color: "#B000FF" },

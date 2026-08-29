@@ -312,7 +312,7 @@ def run_simulation(
         d2H = (F - c_t * dH - k_t * H) / p.mass
         return [dH, d2H]
 
-    t_eval = np.arange(0, duration_hours + resolution_hours, resolution_hours)
+    t_eval = np.arange(0, duration_hours, resolution_hours)
 
     solution = solve_ivp(
         fun=system,

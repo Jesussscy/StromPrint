@@ -193,7 +193,7 @@ function DrainageIndicator({ eficiencia_drenaje, saturacion_suelo }: { eficienci
 }
 
 export default function MetricsPanel({ punto, prediccion, isLoading, error }: MetricsPanelProps) {
-  const accent = punto ? riskColor(punto.estado) : "#2A9D8F";
+  const accent = punto ? riskColor(punto.estado) : "#00E5FF";
 
   const chartData = prediccion
     ? prediccion.puntos.map((p, i) => ({

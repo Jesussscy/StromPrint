@@ -18,6 +18,11 @@ import AnimatedCounter from "@/app/components/AnimatedCounter";
 import SummaryDashboard from "@/app/components/SummaryDashboard";
 import NotificationBanner from "@/app/components/NotificationBanner";
 import CesiumMap from "@/app/components/CesiumMap";
+import WaterLevelBars from "@/app/components/WaterLevelBars";
+import WeatherStation from "@/app/components/WeatherStation";
+import NotificationsCenter from "@/app/components/NotificationsCenter";
+import HistoryPanel from "@/app/components/HistoryPanel";
+import MobileBottomNav from "@/app/components/MobileBottomNav";
 import {
   predecir,
   computeDaySummaries,
@@ -333,6 +338,17 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
         <MetricsPanel punto={activePunto} prediccion={prediccion} isLoading={isLoading} error={error} />
       </div>
 
+      {/* Barras de nivel de agua en tiempo real */}
+      <div className="mt-4">
+        <WaterLevelBars
+          nivelAguaCm={activePunto?.nivel_agua_cm ?? 0}
+          punto={activePunto}
+          zonasCriticas={
+            (prediccion?.puntos ?? []).filter((p) => p.nivel_agua_cm >= 100).length > 0 ? 3 : 0
+          }
+        />
+      </div>
+
       {/* Forecast Cards */}
       {daySummaries.length > 0 && (
         <div className="mt-4">
@@ -595,10 +611,45 @@ export default function LandingPage() {
 
       <ForecastSection puntos={prediccion?.puntos ?? []} />
       <NarrativeSection />
+
+      {/* Estación Meteorológica */}
+      <section id="meteo" className="relative py-24 px-6">
+        <div className="mx-auto max-w-6xl">
+          <motion.div {...FADE} className="text-center mb-12">
+            <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-cyan mb-4">Datos meteorológicos</p>
+            <h2 className="font-display text-3xl md:text-4xl font-bold text-white">Estación Meteorológica — Manga</h2>
+          </motion.div>
+          <WeatherStation />
+        </div>
+      </section>
+
+      {/* Centro de Notificaciones */}
+      <section id="notificaciones" className="relative py-24 px-6">
+        <div className="mx-auto max-w-6xl">
+          <motion.div {...FADE} className="text-center mb-12">
+            <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-cyan mb-4">Alertas automáticas</p>
+            <h2 className="font-display text-3xl md:text-4xl font-bold text-white">Centro de Notificaciones</h2>
+          </motion.div>
+          <NotificationsCenter />
+        </div>
+      </section>
+
+      {/* Historial */}
+      <section id="historial" className="relative py-24 px-6">
+        <div className="mx-auto max-w-6xl">
+          <motion.div {...FADE} className="text-center mb-12">
+            <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-cyan mb-4">Datos históricos</p>
+            <h2 className="font-display text-3xl md:text-4xl font-bold text-white">Historial y Predicciones</h2>
+          </motion.div>
+          <HistoryPanel />
+        </div>
+      </section>
+
       <TechnologySection />
       <CTASection />
       <FooterSection />
       <CommandCenter />
+      <MobileBottomNav />
     </>
   );
 }

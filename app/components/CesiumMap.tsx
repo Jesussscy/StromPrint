@@ -275,8 +275,8 @@ export default function CesiumMap({ nivelAguaCm = 0, onSelectZona }: CesiumMapPr
         const alturaMax = entity.properties.alturaMaxima.getValue();
         const inundado = nivelAguaCm >= alturaMax;
         entity.polygon.material = inundado
-          ? Cesium.Color.RED.withAlpha(0.7)
-          : Cesium.Color.GREEN.withAlpha(0.35);
+          ? Cesium.Color.fromCssColorString(riesgoColorHex(clasificarNivel(nivelAguaCm))).withAlpha(0.7)
+          : Cesium.Color.fromCssColorString("#00E5FF").withAlpha(0.35);
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -309,10 +309,10 @@ export default function CesiumMap({ nivelAguaCm = 0, onSelectZona }: CesiumMapPr
       <div className="absolute bottom-4 right-4 z-10 glass rounded-xl p-4 text-xs text-white">
         <p className="font-display font-bold text-cyan mb-2">Nivel de Riesgo</p>
         {[
-          { c: "#FF0055", l: "Crítico (≥100 cm)" },
-          { c: "#FF7700", l: "Emergencia (60-99 cm)" },
-          { c: "#F3F300", l: "Alerta (30-59 cm)" },
-          { c: "#00FF55", l: "Normal (<30 cm)" },
+          { c: "#B000FF", l: "Crítico (≥100 cm)" },
+          { c: "#FF0055", l: "Emergencia (60-99 cm)" },
+          { c: "#FFD600", l: "Alerta (30-59 cm)" },
+          { c: "#00E5FF", l: "Normal (<30 cm)" },
         ].map((r) => (
           <div key={r.l} className="flex items-center gap-2 mb-1">
             <span className="inline-block w-3 h-3 rounded" style={{ background: r.c }} />
@@ -324,16 +324,43 @@ export default function CesiumMap({ nivelAguaCm = 0, onSelectZona }: CesiumMapPr
       {/* Info de zona seleccionada */}
       {selectedZona && (
         <div className="absolute bottom-4 left-4 z-10 glass rounded-xl p-4 max-w-xs">
-          <p className="font-display font-bold text-sm text-white">{selectedZona.nombre}</p>
-          <p className="text-xs text-slate-300 mt-1">
-            Altura riesgo: {selectedZona.altura_maxima} cm
-          </p>
-          <p
-            className="text-xs font-bold mt-1"
-            style={{ color: riesgoColorHex(selectedZona.nivel_riesgo) }}
-          >
-            {selectedZona.nivel_riesgo.toUpperCase()}
-          </p>
+          <div className="flex items-center justify-between gap-3">
+            <p className="font-display font-bold text-sm text-white">{selectedZona.nombre}</p>
+            <button
+              onClick={() => { setSelectedZona(null); if (onSelectZona) onSelectZona(null); }}
+              aria-label="Cerrar detalle"
+              className="text-slate-500 hover:text-white transition-colors"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="mt-2 space-y-1.5 text-xs text-slate-300">
+            <p>
+              <span className="text-slate-500">Altura actual: </span>
+              <span className="font-bold font-tabular">{selectedZona.altura_maxima} cm</span>
+            </p>
+            <p>
+              <span className="text-slate-500">Riesgo: </span>
+              <span className="font-bold uppercase" style={{ color: riesgoColorHex(selectedZona.nivel_riesgo) }}>
+                {selectedZona.nivel_riesgo}
+              </span>
+            </p>
+            <p>
+              <span className="text-slate-500">Viviendas afectadas: </span>
+              <span className="font-bold font-tabular">
+                {viviendasAfectadas(selectedZona.nivel_riesgo)}
+              </span>
+            </p>
+            <p>
+              <span className="text-slate-500">Evacuación recomendada: </span>
+              <span
+                className="font-bold"
+                style={{ color: requiereEvacuacion(selectedZona.nivel_riesgo) ? "#FF0055" : "#00E5FF" }}
+              >
+                {requiereEvacuacion(selectedZona.nivel_riesgo) ? "✔️ SÍ" : "✖️ No"}
+              </span>
+            </p>
+          </div>
         </div>
       )}
 
@@ -355,26 +382,29 @@ function calcularCentro(coords: [number, number][]) {
 function cesiumRiskColor(Cesium: any, nivel: string) {
   switch (nivel) {
     case "critico":
-      return Cesium.Color.RED;
+      return Cesium.Color.fromCssColorString("#B000FF");
     case "emergencia":
-      return Cesium.Color.ORANGE;
+      return Cesium.Color.fromCssColorString("#FF0055");
     case "alerta":
-      return Cesium.Color.YELLOW;
+      return Cesium.Color.fromCssColorString("#FFD600");
     default:
-      return Cesium.Color.GREEN;
+      return Cesium.Color.fromCssColorString("#00E5FF");
   }
 }
 
 function riesgoColorHex(nivel: string) {
-  switch (nivel) {
+  switch (nivel.toLowerCase()) {
     case "critico":
-      return "#FF0055";
+    case "critical":
+      return "#B000FF";
     case "emergencia":
-      return "#FF7700";
+    case "high":
+      return "#FF0055";
     case "alerta":
-      return "#F3F300";
+    case "moderate":
+      return "#FFD600";
     default:
-      return "#00FF55";
+      return "#00E5FF";
   }
 }
 
@@ -383,4 +413,17 @@ function clasificarNivel(nivelCm: number): string {
   if (nivelCm >= 60) return "Emergencia";
   if (nivelCm >= 30) return "Alerta";
   return "Normal";
+}
+
+function viviendasAfectadas(nivel: string): number {
+  switch (nivel) {
+    case "critico": return 320;
+    case "emergencia": return 145;
+    case "alerta": return 62;
+    default: return 12;
+  }
+}
+
+function requiereEvacuacion(nivel: string): boolean {
+  return nivel === "critico" || nivel === "emergencia";
 }

@@ -107,10 +107,10 @@ export default function SummaryDashboard({ puntos, daySummaries }: SummaryDashbo
           Distribución de Riesgo — {puntos.length} horas
         </p>
         <div className="space-y-2">
-          <RiskBar count={horasNormal} total={puntos.length} label="Normal" color="#22C55E" />
-          <RiskBar count={horasAlerta} total={puntos.length} label="Alerta" color="#EAB308" />
-          <RiskBar count={horasEmergencia} total={puntos.length} label="Emergencia" color="#DC2626" />
-          <RiskBar count={horasCritico} total={puntos.length} label="Crítico" color="#9333EA" />
+          <RiskBar count={horasNormal} total={puntos.length} label="Normal" color="#00E5FF" />
+          <RiskBar count={horasAlerta} total={puntos.length} label="Alerta" color="#FFD600" />
+          <RiskBar count={horasEmergencia} total={puntos.length} label="Emergencia" color="#FF0055" />
+          <RiskBar count={horasCritico} total={puntos.length} label="Crítico" color="#B000FF" />
         </div>
       </div>
 

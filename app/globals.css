@@ -19,13 +19,6 @@
 
 * { box-sizing: border-box; }
 
-/* Hide native cursor on desktop */
-@media (min-width: 1024px) {
-  a, button, input, [role="button"], select, textarea, .cursor-pointer, .cursor-pointer * {
-    cursor: none !important;
-  }
-}
-
 html {
   scroll-behavior: smooth;
   background: var(--ocean-deep);

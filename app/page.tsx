@@ -18,6 +18,7 @@ import AnimatedCounter from "@/app/components/AnimatedCounter";
 import SummaryDashboard from "@/app/components/SummaryDashboard";
 import NotificationBanner from "@/app/components/NotificationBanner";
 import CesiumMap from "@/app/components/CesiumMap";
+import ZonasMangaPanel from "@/app/components/ZonasMangaPanel";
 import WaterLevelBars from "@/app/components/WaterLevelBars";
 import WeatherStation from "@/app/components/WeatherStation";
 import HistoryPanel from "@/app/components/HistoryPanel";
@@ -227,7 +228,13 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
   const [marea, setMarea] = useState(8);
   const [drenaje, setDrenaje] = useState(70);
   const [usarMeteo, setUsarMeteo] = useState(true);
+  const [zonaEnfocada, setZonaEnfocada] = useState<number | null>(null);
+  const [heatmapVisible, setHeatmapVisible] = useState(true);
   const playbackRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const onSelectZona = useCallback((z: { id: number } | null) => {
+    setZonaEnfocada(z ? z.id : null);
+  }, []);
 
   const loadPrediction = useCallback(async () => {
     setIsLoading(true);
@@ -241,6 +248,9 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
       });
       setPrediccion(result);
       setCurrentHour(0);
+      // La simulación NO avanza sola: queda en pausa en la hora 0 para que el
+      // usuario controle cuándo iniciar la reproducción (Play o Simular).
+      setIsPlaying(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al cargar predicción.");
     } finally {
@@ -292,25 +302,49 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-3">
           <Slider label="Lluvia" value={lluvia} onChange={setLluvia} min={0} max={50} step={0.1} unit="mm/h" color="#00F3FF" disabled={usarMeteo} />
-          <Slider label="Marea" value={marea} onChange={setMarea} min={0} max={100} step={0.5} unit="cm" color="#B000FF" />
-          <Slider label="Drenaje" value={drenaje} onChange={setDrenaje} min={0} max={100} step={1} unit="%" color="#00E5FF" />
+          <Slider label="Marea" value={marea} onChange={setMarea} min={0} max={100} step={0.5} unit="cm" color="#B000FF" disabled={usarMeteo} />
+          <Slider label="Drenaje" value={drenaje} onChange={setDrenaje} min={0} max={100} step={1} unit="%" color="#00E5FF" disabled={usarMeteo} />
         </div>
         <div className="flex items-center justify-between">
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" checked={usarMeteo} onChange={(e) => setUsarMeteo(e.target.checked)} className="accent-cyan" />
             <span className="text-xs text-slate-500">Usar datos meteorológicos reales</span>
           </label>
-          <button onClick={loadPrediction} disabled={isLoading} className="glass-glow rounded-lg px-4 py-2 font-mono text-[11px] uppercase tracking-wider text-cyan hover:bg-cyan/10 transition">
-            {isLoading ? "Calculando..." : "Simular"}
-          </button>
+          {usarMeteo ? (
+            <span className="flex items-center gap-2 font-mono text-[11px] text-slate-500">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+              Simulación bloqueada · meteo en vivo
+            </span>
+          ) : (
+            <button onClick={loadPrediction} disabled={isLoading} className="glass-glow rounded-lg px-4 py-2 font-mono text-[11px] uppercase tracking-wider text-cyan hover:bg-cyan/10 transition">
+              {isLoading ? "Calculando..." : "Simular"}
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Main Grid: Map + Metrics */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr_1fr]">
-        <div className="glass-strong rounded-2xl h-[420px] p-1 md:h-[560px] overflow-hidden relative">
+      {/* Main Grid: Map + Zonas + Metrics */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.7fr_1fr]">
+        <div className="glass-strong rounded-2xl h-[460px] p-1 md:h-[640px] overflow-hidden relative">
           {/* Visor 3D de Cesium exclusivo para el panel en vivo */}
-          <CesiumMap nivelAguaCm={activePunto?.nivel_agua_cm ?? 0} />
+          <CesiumMap
+            nivelAguaCm={activePunto?.nivel_agua_cm ?? 0}
+            nivelMaximoCm={prediccion?.nivel_maximo_cm ?? 100}
+            heatmapVisible={heatmapVisible}
+            focusZonaId={zonaEnfocada}
+            onSelectZona={onSelectZona}
+          />
+
+          {/* Toggle capa de calor */}
+          <button
+            onClick={() => setHeatmapVisible((v) => !v)}
+            className={`absolute top-14 right-3 z-10 rounded-lg px-3 py-2 text-[10px] font-mono uppercase tracking-wider transition flex items-center gap-1.5 ${
+              heatmapVisible ? "glass-glow text-cyan" : "glass text-slate-500"
+            }`}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3c.5 2.5-1 4-2.5 5C7.5 9.5 6 11 6 14a6 6 0 0 0 12 0c0-2-1-4-2-5" /></svg>
+            Calor
+          </button>
 
           <motion.button
             whileHover={{ scale: 1.05 }}
@@ -335,7 +369,16 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
             )}
           </motion.button>
         </div>
-        <MetricsPanel punto={activePunto} prediccion={prediccion} isLoading={isLoading} error={error} />
+
+        <div className="flex flex-col gap-4 min-w-0">
+          <ZonasMangaPanel
+            nivelAguaCm={activePunto?.nivel_agua_cm ?? 0}
+            nivelMaximoCm={prediccion?.nivel_maximo_cm ?? 100}
+            selectedId={zonaEnfocada}
+            onSelect={onSelectZona}
+          />
+          <MetricsPanel punto={activePunto} prediccion={prediccion} isLoading={isLoading} error={error} />
+        </div>
       </div>
 
       {/* Barras de nivel de agua en tiempo real */}

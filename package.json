@@ -16,6 +16,7 @@
     "@types/katex": "^0.16.8",
     "@types/leaflet": "^1.9.22",
     "@types/react-syntax-highlighter": "^15.5.13",
+    "cesium": "^1.144.0",
     "clsx": "2.1.1",
     "framer-motion": "11.11.9",
     "katex": "^0.18.4",

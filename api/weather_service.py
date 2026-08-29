@@ -9,7 +9,10 @@ Open-Meteo es una API publica, open-source, sin registro requerido.
 No comercial: hasta 10,000 llamadas/dia. Attribution: CC BY 4.0.
 """
 
+import json
 import logging
+import os
+from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
 import httpx
@@ -282,3 +285,177 @@ def get_weather_summary(hourly_data: List[Dict], horas: int = 72) -> Dict[str, A
         "dias_lluviosos": compute_consecutive_rainy_days(daily_data),
         "horas_con_lluvia": sum(1 for p in precip if p > 0.1),
     }
+
+
+class WeatherService:
+    """
+    Servicio meteorologico robusto con cache local de 30 min y fallback
+    a datos simulados si la API de Open-Meteo no responde.
+
+    Reutiliza las funciones modulares de este modulo (fetch_weather_forecast,
+    get_weather_summary, extract_simulation_params) -> capa de resiliencia
+    sin duplicar logica.
+    """
+
+    # Cache de 30 minutos (1800 s) para reducir llamadas a Open-Meteo
+    CACHE_TTL_SECONDS = 1800
+    CACHE_FILE = (
+        "/tmp/stormprint_weather_cache.json"
+        if os.getenv("VERCEL")
+        else "weather_cache.json"
+    )
+
+    def __init__(self):
+        self.default_cm = 8.0  # nivel medio del mar para marea (cm)
+
+    async def get_weather(self, force_refresh: bool = False) -> Dict[str, Any]:
+        """
+        Obtiene un resumen meteorologico enriquecido para Manga, Cartagena.
+
+        Estrategia:
+          1. Cache local (si es reciente y no se fuerza refresh)
+          2. Open-Meteo (principal)
+          3. Datos simulados (fallback garantizado)
+        """
+        if not force_refresh:
+            cached = self._load_cache()
+            if cached is not None:
+                logger.info("WeatherService: usando cache local")
+                return cached
+
+        data = await self._fetch_from_openmeteo()
+        if data is None:
+            logger.warning("WeatherService: usando datos simulados (fallback)")
+            data = self._generate_fallback_data()
+        else:
+            self._store_cache(data)
+
+        return data
+
+    async def _fetch_from_openmeteo(self) -> Optional[Dict[str, Any]]:
+        """Consulta Open-Meteo y enriquece con resumen y parametros."""
+        try:
+            forecast = await fetch_weather_forecast(forecast_days=3)
+        except Exception as exc:
+            logger.error("WeatherService: Open-Meteo fallo: %s", exc)
+            return None
+
+        if not forecast or not forecast.get("hourly"):
+            return None
+
+        hourly = forecast["hourly"]
+        summary = get_weather_summary(hourly, horas=72)
+        parametros = extract_simulation_params(
+            hourly_data=hourly,
+            horas_pronostico=72,
+            nivel_marea_cm=self.default_cm,
+        )
+
+        daily = forecast.get("daily", [])
+        today = daily[0] if daily else {}
+        now = datetime.now()
+
+        actual = hourly[0] if hourly else {}
+        dias_lluviosos = summary.get("dias_lluviosos", 0)
+        humedad_suelo = min(100.0, round((parametros.get("soil_humidity", 0.3) * 100), 1))
+
+        return {
+            "source": "open-meteo",
+            "timestamp": now.isoformat(),
+            "lat": MANGA_LAT,
+            "lon": MANGA_LON,
+            "temperatura": round(actual.get("temperature_2m", 28.0), 1),
+            "humedad": round(actual.get("relative_humidity_2m", 80.0), 1),
+            "precipitacion_actual_mm_h": round(actual.get("rain", 0.0), 2),
+            "velocidad_viento_kmh": round(actual.get("wind_speed_10m", 0.0), 1),
+            "direccion_viento_deg": round(actual.get("wind_direction_10m", 0.0), 1),
+            "dias_lluviosos_consecutivos": dias_lluviosos,
+            "humedad_suelo_pct": humedad_suelo,
+            "lluvia_total_mm": summary.get("lluvia_total_mm", 0.0),
+            "temp_max_c": summary.get("temp_max_c", 30.0),
+            "temp_min_c": summary.get("temp_min_c", 24.0),
+            "viento_max_kmh": summary.get("viento_max_kmh", 0.0),
+            "lluvia_manana_mm": daily[1].get("rain_sum", 0.0) if len(daily) > 1 else 0.0,
+            "parametros_simulacion": parametros,
+            "pronostico": [
+                {
+                    "dia": d.get("date"),
+                    "lluvia_mm": d.get("rain_sum", 0.0),
+                    "temp_max_c": d.get("temperature_2m_max", 30.0),
+                }
+                for d in daily[:3]
+            ],
+        }
+
+    def _generate_fallback_data(self) -> Dict[str, Any]:
+        """Datos simulados realistas (Cartagena) cuando Open-Meteo no responde."""
+        now = datetime.now()
+        hora = now.hour
+        # Mas lluvia en la tarde (14-18h) — patron tipico de Cartagena
+        lluvia_base = 2.0 if 14 <= hora <= 18 else 0.5
+
+        parametros = {
+            "storm_peak_hour": 12.0,
+            "storm_intensity": lluvia_base,
+            "rain_duration_h": 4.0,
+            "mean_sea_level": self.default_cm,
+            "wind_direction_deg": 180.0,
+            "wind_speed_kmh": 8.0,
+            "soil_humidity": 0.5,
+            "consecutive_rainy_days": 2,
+        }
+
+        return {
+            "source": "simulated",
+            "timestamp": now.isoformat(),
+            "lat": MANGA_LAT,
+            "lon": MANGA_LON,
+            "temperatura": round(28 + (hora - 6) / 24 * 4, 1),
+            "humedad": round(75 + (hora - 6) / 24 * 10, 1),
+            "precipitacion_actual_mm_h": round(lluvia_base, 2),
+            "velocidad_viento_kmh": round(5 + (hora - 6) / 24 * 10, 1),
+            "direccion_viento_deg": round(180 + (hora % 24) * 5, 1),
+            "dias_lluviosos_consecutivos": 2,
+            "humedad_suelo_pct": 65.0,
+            "lluvia_total_mm": round(15 + (hora - 6) / 24 * 5, 1),
+            "temp_max_c": 30.0,
+            "temp_min_c": 24.0,
+            "viento_max_kmh": round(15 + (hora - 6) / 24 * 8, 1),
+            "lluvia_manana_mm": 5.0,
+            "parametros_simulacion": parametros,
+            "pronostico": [
+                {
+                    "dia": (now + timedelta(days=i)).date().isoformat(),
+                    "lluvia_mm": 5 + i * 2,
+                    "temp_max_c": 30 + i,
+                }
+                for i in range(3)
+            ],
+        }
+
+    def _load_cache(self) -> Optional[Dict[str, Any]]:
+        """Lee y valida el cache local (devuelve None si es viejo/invalido)."""
+        try:
+            if not os.path.exists(self.CACHE_FILE):
+                return None
+            with open(self.CACHE_FILE, "r", encoding="utf-8") as fh:
+                data = json.load(fh)
+            ts = datetime.fromisoformat(data.get("timestamp", "2000-01-01"))
+            if (datetime.now() - ts).total_seconds() > self.CACHE_TTL_SECONDS:
+                return None
+            return data
+        except Exception as exc:
+            logger.debug("WeatherService: cache invalido: %s", exc)
+            return None
+
+    def _store_cache(self, data: Dict[str, Any]) -> None:
+        """Persiste el cache local (no bloquear el flujo si falla)."""
+        try:
+            with open(self.CACHE_FILE, "w", encoding="utf-8") as fh:
+                json.dump(data, fh)
+        except Exception as exc:
+            logger.debug("WeatherService: no se pudo guardar cache: %s", exc)
+
+
+# Instancia singleton reutilizable por toda la app
+weather_service = WeatherService()

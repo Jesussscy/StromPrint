@@ -5,9 +5,11 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import InteractiveEquation from "./InteractiveEquation";
 import ValidationChart from "./ValidationChart";
+import ComparisonChart from "./ComparisonChart";
 import DataFlowDiagram from "@/app/components/DataFlowDiagram";
 
 const SyntaxHighlighter = dynamic(() => import("react-syntax-highlighter").then((mod) => mod.default), { ssr: false });
+const KaTeXBlock = dynamic(() => import("./KaTeXBlock"), { ssr: false });
 
 const FADE = {
   initial: { opacity: 0, y: 20 },
@@ -142,11 +144,47 @@ export default function CienciaPage() {
           </div>
         </motion.section>
 
-        {/* 3. Flujo de Datos */}
+        {/* 3. Solución Analítica */}
         <motion.section {...FADE}>
           <div className="flex items-center gap-3 mb-6">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg glass-glow">
               <span className="font-display text-sm font-bold text-cyan">03</span>
+            </div>
+            <h2 className="font-display text-2xl font-bold text-white">Solución Analítica por Tramos</h2>
+          </div>
+          <p className="text-slate-400 leading-relaxed mb-6">
+            StormPrint también resuelve el modelo de forma <strong className="text-white">analítica por tramos</strong>.
+            Dividimos el tiempo en intervalos donde <code className="font-mono text-cyan">c(t)</code> y{" "}
+            <code className="font-mono text-cyan">k(t)</code> son constantes y, en cada tramo, la ecuación
+            característica <code className="font-mono">m·r² + c·r + k = 0</code> da una solución cerrada
+            (suma de exponenciales, senos amortiguados o el caso crítico). El pulso de lluvia, al no tener
+            primitiva elemental, se resuelve con la{" "}
+            <strong className="text-white">integral de convolución de Duhamel</strong>:
+          </p>
+
+          <div className="glass-strong rounded-2xl p-6 mb-6 text-center">
+            <KaTeXBlock
+              math="m \cdot H''(t) + c \cdot H'(t) + k \cdot H(t) = F_{\text{lluvia}}(t) + F_{\text{marea}}(t)"
+              displayMode
+            />
+            <KaTeXBlock
+              math="H_p(t) = \int_0^t F(\tau)\, g(t-\tau)\, d\tau \qquad g(\tau)= \text{respuesta al impulso}"
+              displayMode
+            />
+          </div>
+
+          <p className="text-slate-400 leading-relaxed mb-6">
+            Aquí te mostramos ambas curvas en vivo. Nota que al hacer los tramos muy pequeños el resultado
+            es prácticamente idéntico al método numérico — la diferencia es de fracciones de milímetro:
+          </p>
+          <ComparisonChart />
+        </motion.section>
+
+        {/* 4. Flujo de Datos */}
+        <motion.section {...FADE}>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg glass-glow">
+              <span className="font-display text-sm font-bold text-cyan">04</span>
             </div>
             <h2 className="font-display text-2xl font-bold text-white">Flujo de Datos en Tiempo Real</h2>
           </div>
@@ -158,11 +196,11 @@ export default function CienciaPage() {
           </div>
         </motion.section>
 
-        {/* 4. Validación */}
+        {/* 5. Validación */}
         <motion.section {...FADE}>
           <div className="flex items-center gap-3 mb-6">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg glass-glow">
-              <span className="font-display text-sm font-bold text-cyan">04</span>
+              <span className="font-display text-sm font-bold text-cyan">05</span>
             </div>
             <h2 className="font-display text-2xl font-bold text-white">Validación del Modelo</h2>
           </div>
@@ -173,11 +211,11 @@ export default function CienciaPage() {
           <ValidationChart />
         </motion.section>
 
-        {/* 5. Hardware y Software */}
+        {/* 6. Hardware y Software */}
         <motion.section {...FADE}>
           <div className="flex items-center gap-3 mb-6">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg glass-glow">
-              <span className="font-display text-sm font-bold text-cyan">05</span>
+              <span className="font-display text-sm font-bold text-cyan">06</span>
             </div>
             <h2 className="font-display text-2xl font-bold text-white">Hardware y Software</h2>
           </div>

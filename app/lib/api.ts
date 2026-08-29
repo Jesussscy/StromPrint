@@ -150,6 +150,31 @@ export function fetchPredicciones(limit = 10): Promise<{ predicciones: Prediccio
   });
 }
 
+export interface ComparacionResponse {
+  horas: number[];
+  numerico_cm: number[];
+  analitico_cm: number[];
+  error_promedio_cm: number;
+  error_maximo_cm: number;
+  error_rmse_cm: number;
+  puntos: number;
+  subtramos: number;
+  parametros: Record<string, number>;
+  ecuacion?: string;
+}
+
+export function compararMetodos(params: {
+  duration_hours?: number;
+  storm_peak_hour?: number;
+  storm_intensity?: number;
+  subtramos?: number;
+}): Promise<ComparacionResponse> {
+  return stormprintFetch<ComparacionResponse>("/api/v1/comparacion", {
+    method: "POST",
+    body: JSON.stringify(params),
+  });
+}
+
 // --- Utilidades de UI ---
 
 export function riskColor(estado: string): string {

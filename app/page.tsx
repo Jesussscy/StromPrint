@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import dynamic from "next/dynamic";
 import Navbar from "@/app/components/Navbar";
 import TopographicMesh from "@/app/components/TopographicMesh";
 import ParticleCanvas from "@/app/components/ParticleCanvas";
@@ -17,6 +18,7 @@ import RainParticles from "@/app/components/RainParticles";
 import AlertDrawer from "@/app/components/AlertDrawer";
 import AnimatedCounter from "@/app/components/AnimatedCounter";
 import SummaryDashboard from "@/app/components/SummaryDashboard";
+import NotificationBanner from "@/app/components/NotificationBanner";
 import {
   predecir,
   computeDaySummaries,
@@ -29,6 +31,16 @@ const FADE = {
   viewport: { once: true, margin: "-40px" },
   transition: { duration: 0.5 },
 };
+
+// Visor 3D (Cesium). Carga diferida para no inflar el bundle inicial.
+const CesiumMap = dynamic(() => import("@/app/components/CesiumMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-full w-full items-center justify-center glass bg-ocean/40">
+      <span className="font-mono text-xs text-cyan">Cargando visor Cesium…</span>
+    </div>
+  ),
+});
 
 /* ─── HERO ─────────────────────────────────────────────────────────────── */
 
@@ -221,6 +233,7 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
   const [marea, setMarea] = useState(8);
   const [drenaje, setDrenaje] = useState(70);
   const [usarMeteo, setUsarMeteo] = useState(true);
+  const [visor, setVisor] = useState<"leaflet" | "cesium">("leaflet");
   const playbackRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const loadPrediction = useCallback(async () => {
@@ -302,30 +315,59 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
 
       {/* Main Grid: Map + Metrics */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr_1fr]">
-        <div className="glass-strong rounded-2xl h-[380px] p-1 md:h-[520px] overflow-hidden relative">
-          <LeafletMap punto={activePunto} stormMode={stormMode} />
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={onToggleStorm}
-            className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] rounded-xl px-6 py-3 font-mono text-[11px] uppercase tracking-wider transition-all duration-300 ${
-              stormMode
-                ? "glass-glow text-risk-emergency border-risk-emergency/30"
-                : "glass-glow text-cyan"
-            }`}
-          >
-            {stormMode ? (
-              <span className="flex items-center gap-2">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2" width="20" height="20" rx="2" /></svg>
-                Detener tormenta
-              </span>
-            ) : (
-              <span className="flex items-center gap-2">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21" /></svg>
-                Simular tormenta
-              </span>
-            )}
-          </motion.button>
+        <div className="glass-strong rounded-2xl h-[420px] p-1 md:h-[560px] overflow-hidden relative">
+          {/* Visor toggle: Leaflet / Cesium 3D */}
+          <div className="absolute top-3 left-1/2 z-[1001] -translate-x-1/2 flex gap-1 rounded-lg glass p-1">
+            {(
+              [
+                { id: "leaflet", label: "2D" },
+                { id: "cesium", label: "3D" },
+              ] as const
+            ).map((v) => (
+              <button
+                key={v.id}
+                onClick={() => setVisor(v.id)}
+                className={`rounded-md px-3 py-1 font-mono text-[10px] uppercase tracking-wider transition ${
+                  visor === v.id
+                    ? "bg-cyan/20 text-cyan shadow-glow"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                {v.label}
+              </button>
+            ))}
+          </div>
+
+          {visor === "cesium" ? (
+            <CesiumMap nivelAguaCm={activePunto?.nivel_agua_cm ?? 0} />
+          ) : (
+            <LeafletMap punto={activePunto} stormMode={stormMode} />
+          )}
+
+          {visor === "leaflet" && (
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={onToggleStorm}
+              className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] rounded-xl px-6 py-3 font-mono text-[11px] uppercase tracking-wider transition-all duration-300 ${
+                stormMode
+                  ? "glass-glow text-risk-emergency border-risk-emergency/30"
+                  : "glass-glow text-cyan"
+              }`}
+            >
+              {stormMode ? (
+                <span className="flex items-center gap-2">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2" width="20" height="20" rx="2" /></svg>
+                  Detener tormenta
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21" /></svg>
+                  Simular tormenta
+                </span>
+              )}
+            </motion.button>
+          )}
         </div>
         <MetricsPanel punto={activePunto} prediccion={prediccion} isLoading={isLoading} error={error} />
       </div>
@@ -565,6 +607,7 @@ export default function LandingPage() {
     <>
       <Navbar />
       <CursorTracker />
+      <NotificationBanner />
       <RainParticles active={stormMode} intensity={stormMode ? 0.8 : 0} />
       <AlertDrawer />
 

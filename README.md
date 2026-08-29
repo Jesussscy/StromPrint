@@ -11,7 +11,8 @@ StormPrint/
 │   ├── index.py            Entrypoint, rutas, validación Pydantic V2
 │   ├── database.py         SQLite async (SQLAlchemy 2 + aiosqlite)
 │   ├── security.py         Auth por API key, rate limiting, headers, CORS
-│   └── physics_engine.py   EDO de 2do orden (SciPy solve_ivp, RK45)
+│   ├── physics_engine.py   EDO de 2do orden (SciPy solve_ivp, RK45)
+│   └── physics_engine_analytical.py  Solución analítica por tramos (Duhamel)
 ├── app/                    Next.js 14 App Router (React 18 + TS)
 │   ├── layout.tsx
 │   ├── page.tsx             Dashboard
@@ -47,6 +48,22 @@ Se resuelve numéricamente con `scipy.integrate.solve_ivp` (Runge-Kutta 45),
 persistiendo cada paso de tiempo en SQLite (`FloodRecord`).
 
 Umbrales de riesgo: `< 15cm` bajo · `15–30cm` moderado · `30–45cm` alto · `≥ 45cm` crítico.
+
+## Solución analítica (académica)
+
+`physics_engine_analytical.py` resuelve la misma EDO de forma **analítica por tramos**
+con fines educativos, sin sustituir a `solve_ivp` en producción:
+
+- Divide el tiempo en tramos donde `c(t)` y `k(t)` son constantes.
+- En cada tramo usa la ecuación característica `m·r² + c·r + k = 0` y la solución
+  homogénea cerrada (sobreamortiguada / crítico / subamortiguado).
+- El forzamiento se resuelve con la integral de convolución de **Duhamel**
+  `H_p(t) = ∫₀ᵗ F(τ)·g(t−τ) dτ` (única parte numérica).
+- Ajusta las constantes de la homogénea para satisfacer condiciones iniciales.
+
+`POST /api/v1/comparacion` ejecuta ambos métodos y devuelve ambas curvas más las
+métricas de error (promedio, máximo, RMSE) para contrastarlas en la UI de `/ciencia`.
+Verificación: `python -m api.physics_engine_analytical`.
 
 ## Seguridad (OWASP Top 10)
 

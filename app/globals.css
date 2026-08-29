@@ -305,3 +305,25 @@ input[type="range"]::-moz-range-thumb {
 @layer utilities {
   .text-balance { text-wrap: balance; }
 }
+
+/* ─── Cesium ────────────────────────────────────────────────────────────── */
+
+.cesium-viewer {
+  font-family: 'Inter', 'Space Grotesk', sans-serif;
+  background: var(--ocean-deep);
+}
+
+.cesium-viewer-bottom {
+  display: none !important;
+}
+
+.cesium-widget-credits,
+.cesium-credit-logoContainer,
+.cesium-widget-credits .cesium-credit-expand-link {
+  display: none !important;
+}
+
+.cesium-viewer-toolbar {
+  display: none !important;
+}
+

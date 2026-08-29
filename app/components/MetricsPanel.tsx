@@ -55,7 +55,7 @@ function RiskSemaphore({ estado }: { estado: string }) {
           style={{ borderColor: c.color, boxShadow: `0 0 20px ${c.color}40` }}
         >
           <span className="font-display text-lg font-bold font-tabular" style={{ color: c.color }}>
-            {estado === "Normal" ? "✓" : estado === "Alerta" ? "!" : estado === "Emergencia" ? "!!" : "!!!"}
+            {estado === "Normal" ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg> : estado === "Alerta" ? "!" : estado === "Emergencia" ? "!!" : "!!!"}
           </span>
         </div>
       </div>
@@ -78,7 +78,7 @@ function KPI({ label, value, unit, trend, color, icon }: {
         <span className="text-xs text-slate-500">{unit}</span>
         {trend && (
           <span className="text-xs" style={{ color: trend === "up" ? "#E63946" : trend === "down" ? "#2A9D8F" : "#64748B" }}>
-            {trend === "up" ? "↑" : trend === "down" ? "↓" : "→"}
+            {trend === "up" ? <svg className="inline-block -mt-0.5" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></svg> : trend === "down" ? <svg className="inline-block -mt-0.5" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6" /><polyline points="17 18 23 18 23 12" /></svg> : <svg className="inline-block -mt-0.5" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12" /></svg>}
           </span>
         )}
       </div>
@@ -258,7 +258,7 @@ export default function MetricsPanel({ punto, prediccion, isLoading, error }: Me
                 <ReferenceLine y={60} stroke="#FF0055" strokeDasharray="6 4" strokeWidth={1.5} label={{ value: "Emergencia", position: "right", style: { fontSize: 8, fill: "#FF0055" } }} />
                 <ReferenceLine y={100} stroke="#B000FF" strokeDasharray="6 4" strokeWidth={1.5} label={{ value: "Crítico", position: "right", style: { fontSize: 8, fill: "#B000FF" } }} />
                 <Area type="monotone" dataKey="nivel" stroke="#00E5FF" strokeWidth={2.5} fill="url(#gradWater)" dot={<PeakDot />} activeDot={{ r: 5, fill: "#00E5FF", stroke: "#00E5FF", strokeWidth: 2 }} name="Nivel H(t)" isAnimationActive={false} />
-                <Bar dataKey="f_lluvia" fill="#00D2FF" opacity={0.2} name="Lluvia (mm/h)" isAnimationActive={false} />
+                <Bar dataKey="f_lluvia" fill="#00F3FF" opacity={0.2} name="Lluvia (mm/h)" isAnimationActive={false} />
                 <Line type="monotone" dataKey="f_marea" stroke="#94A3B8" strokeWidth={1.5} dot={false} strokeDasharray="3 3" name="Marea (cm)" isAnimationActive={false} />
                 <Line type="monotone" dataKey="historical" stroke="#FF0055" strokeWidth={1.5} dot={false} strokeDasharray="4 4" strokeOpacity={0.4} name="Máx histórico" isAnimationActive={false} />
               </ComposedChart>

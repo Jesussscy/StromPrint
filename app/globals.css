@@ -6,8 +6,8 @@
 
 :root {
   --ocean: #050A0F;
-  --ocean-deep: #020617;
-  --ocean-mid: #0A1628;
+  --ocean-deep: #050A0F;
+  --ocean-mid: #0A1119;
   --cyan: #00D2FF;
   --cyan-dim: #00A8CC;
   --cyan-bright: #00F0FF;
@@ -319,4 +319,3 @@ input[type="range"]::-moz-range-thumb {
 .cesium-viewer-toolbar {
   display: none !important;
 }
-

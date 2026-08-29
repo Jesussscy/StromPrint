@@ -6,10 +6,10 @@ module.exports = {
       colors: {
         ocean: {
           DEFAULT: "#050A0F",
-          deep: "#030710",
-          mid: "#0A1628",
-          light: "#0F1F3A",
-          surface: "#132240",
+          deep: "#050A0F",
+          mid: "#0A1119",
+          light: "#101B2E",
+          surface: "#14213A",
           glow: "#00D2FF",
         },
         cyan: {

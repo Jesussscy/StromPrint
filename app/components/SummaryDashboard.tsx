@@ -61,7 +61,7 @@ export default function SummaryDashboard({ puntos, daySummaries }: SummaryDashbo
   return (
     <div className="glass-strong rounded-2xl p-5">
       <div className="flex items-center gap-2 mb-5">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00D2FF" strokeWidth="1.5">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00F3FF" strokeWidth="1.5">
           <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" />
         </svg>
         <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-cyan">
@@ -82,8 +82,8 @@ export default function SummaryDashboard({ puntos, daySummaries }: SummaryDashbo
           label="Promedio"
           value={avgNivel.toFixed(1)}
           unit="cm"
-          color="#00D2FF"
-          icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00D2FF" strokeWidth="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>}
+          color="#00F3FF"
+          icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00F3FF" strokeWidth="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>}
         />
         <Stat
           label="Lluvia total"

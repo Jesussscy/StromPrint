@@ -40,7 +40,7 @@ export default function Canvas3D({ punto, stormMode = false, waterLevelOverride 
         <fog attach="fog" args={["#050A0F", 8, 20]} />
         <ambientLight intensity={0.5} />
         <directionalLight position={[3, 6, 3]} intensity={0.9} color="#B8DFFF" />
-        <pointLight position={[-3, 2, -3]} intensity={0.4} color="#00D2FF" />
+        <pointLight position={[-3, 2, -3]} intensity={0.4} color="#00F3FF" />
 
         <Suspense fallback={<LoadingFallback />}>
           <CityModel
@@ -78,7 +78,7 @@ export default function Canvas3D({ punto, stormMode = false, waterLevelOverride 
       {stormMode && (
         <div className="pointer-events-none absolute top-3 left-3 glass rounded-lg px-3 py-2 border border-red-500/40">
           <p className="font-mono text-[9px] uppercase tracking-widest text-red-400 animate-pulse">
-            ⚡ Simulación Activa
+            <svg className="inline-block mr-1 -mt-0.5" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg> Simulación Activa
           </p>
         </div>
       )}

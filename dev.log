@@ -1,0 +1,85 @@
+
+> stormprint@1.0.0 dev
+> next dev
+
+  ▲ Next.js 14.2.15
+  - Local:        http://localhost:3000
+
+ ✓ Starting...
+ ✓ Ready in 2.8s
+ ○ Compiling / ...
+(node:28468) [DEP0060] DeprecationWarning: The `util._extend` API is deprecated. Please use Object.assign() instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ Compiled / in 17.8s (5129 modules)
+ GET / 200 in 18336ms
+ ○ Compiling /ciencia ...
+ ✓ Compiled /ciencia in 14.2s (6423 modules)
+ GET /ciencia 200 in 14725ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 1885ms (3388 modules)
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 2347ms
+ ✓ Compiled in 3.3s (3184 modules)
+ ✓ Compiled in 610ms (3184 modules)
+ ○ Compiling / ...
+ ✓ Compiled / in 832ms (2548 modules)
+ GET / 200 in 1387ms
+ GET / 200 in 200ms
+ ✓ Compiled in 12.2s (5732 modules)
+ ✓ Compiled in 3.7s (5732 modules)
+ ✓ Compiled in 2.9s (5732 modules)
+ GET / 200 in 1080ms
+ GET / 200 in 960ms
+ GET / 200 in 579ms
+ GET / 200 in 165ms
+ GET / 200 in 194ms
+ GET / 200 in 249ms
+ GET / 200 in 128ms
+ GET / 200 in 103ms
+ ✓ Compiled in 6s (5732 modules)
+ ✓ Compiled in 3.2s (5732 modules)
+ ✓ Compiled in 4.9s (5732 modules)
+ ✓ Compiled in 8.1s (5732 modules)
+ ✓ Compiled in 2.2s (3184 modules)
+ ✓ Compiled in 1513ms (3184 modules)
+ ✓ Compiled in 1831ms (3184 modules)
+ ✓ Compiled in 4s (5732 modules)
+ GET / 200 in 1024ms
+ ✓ Compiled in 13.2s (5732 modules)
+ ✓ Compiled in 10.1s (5732 modules)
+ ✓ Compiled in 1417ms (5732 modules)
+ ✓ Compiled in 1530ms (5732 modules)
+ ✓ Compiled in 1556ms (5732 modules)
+ ✓ Compiled in 2.8s (5732 modules)
+ ✓ Compiled in 2.4s (5732 modules)
+ ✓ Compiled in 2.3s (5732 modules)
+ ✓ Compiled in 1578ms (5732 modules)
+ ✓ Compiled in 2.8s (5732 modules)
+ ✓ Compiled in 1420ms (5732 modules)
+ ✓ Compiled in 5.8s (5732 modules)
+ ✓ Compiled in 1262ms (5732 modules)
+ ✓ Compiled in 1284ms (5732 modules)
+ ✓ Compiled in 1624ms (5732 modules)
+ ✓ Compiled in 1464ms (5732 modules)
+ ✓ Compiled in 1348ms (5732 modules)
+ ✓ Compiled in 5.4s (3184 modules)
+ ✓ Compiled in 930ms (3184 modules)
+ ✓ Compiled in 1285ms (3184 modules)
+ GET / 200 in 795ms
+ ○ Compiling /ciencia ...
+ ✓ Compiled /ciencia in 8.6s (3165 modules)
+ GET /ciencia 200 in 10421ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 16s (5735 modules)
+ GET / 200 in 3983ms
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 16980ms
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 45ms
+ GET / 200 in 114ms
+ GET / 200 in 592ms
+ ✓ Compiled in 11.2s (5732 modules)
+ ✓ Compiled in 1382ms (5732 modules)
+ ✓ Compiled in 1637ms (5732 modules)
+ ✓ Compiled in 1328ms (5732 modules)
+ GET / 200 in 289ms
+ ✓ Compiled in 2.3s (5732 modules)
+ ✓ Compiled in 821ms (5732 modules)
+ GET / 200 in 205ms

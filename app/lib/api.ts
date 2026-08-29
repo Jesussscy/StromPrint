@@ -85,6 +85,7 @@ export interface PrediccionGuardada {
   peak_hour: number;
   risk_level: string;
   ecuacion: string;
+  data_source?: "real" | "simulado" | string;
 }
 
 // --- Fetch helpers ---

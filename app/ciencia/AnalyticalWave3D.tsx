@@ -62,7 +62,7 @@ export default function AnalyticalWave3D() {
         H(t) sobre el territorio en las 96 horas de pronóstico.
       </p>
 
-      <div className="h-[300px] rounded-xl overflow-hidden bg-gradient-to-b from-[#0A1119] to-[#070B12]">
+      <div className="h-[300px] rounded-xl overflow-hidden bg-gradient-to-b from-ocean-mid to-ocean">
         <Canvas camera={{ position: [8, 5, 9], fov: 40 }}>
           <ambientLight intensity={0.6} />
           <pointLight position={[10, 10, 10]} />

@@ -66,7 +66,7 @@ function TronGrid() {
       {lines.map((pts, i) => {
         const geo = new THREE.BufferGeometry().setFromPoints(pts);
         return <lineSegments key={i} geometry={geo}>
-          <lineBasicMaterial color="#00D2FF" transparent opacity={0.08} />
+          <lineBasicMaterial color="#00F3FF" transparent opacity={0.08} />
         </lineSegments>;
       })}
     </group>
@@ -116,7 +116,7 @@ function RainSystem({ active }: { active: boolean }) {
           itemSize={3}
         />
       </bufferGeometry>
-      <pointsMaterial color="#00D2FF" size={0.02} transparent opacity={0.6} sizeAttenuation />
+      <pointsMaterial color="#00F3FF" size={0.02} transparent opacity={0.6} sizeAttenuation />
     </points>
   );
 }

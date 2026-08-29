@@ -170,7 +170,7 @@ export default function CommandCenter() {
         className="relative ml-auto flex h-14 w-14 items-center justify-center rounded-2xl glass-glow cursor-pointer"
       >
         <div className="absolute inset-0 rounded-2xl bg-cyan/5 animate-glow-pulse" />
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00D2FF" strokeWidth="1.5" className="relative z-10">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00F3FF" strokeWidth="1.5" className="relative z-10">
           <circle cx="12" cy="12" r="10" />
           <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
           <line x1="12" y1="17" x2="12.01" y2="17" />

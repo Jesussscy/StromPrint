@@ -1,11 +1,11 @@
 "use client";
 
 const ITEMS = [
-  { href: "#panel-vivo", icon: "📊", label: "Panel" },
-  { href: "#meteo", icon: "🌦️", label: "Clima" },
-  { href: "#notificaciones", icon: "🔔", label: "Alertas" },
-  { href: "#historial", icon: "📈", label: "Historial" },
-  { href: "#datos", icon: "🛰️", label: "Datos" },
+  { href: "#panel-vivo", label: "Panel" },
+  { href: "#meteo", label: "Clima" },
+  { href: "#notificaciones", label: "Alertas" },
+  { href: "#historial", label: "Historial" },
+  { href: "#datos", label: "Datos" },
 ];
 
 function IconChart() {

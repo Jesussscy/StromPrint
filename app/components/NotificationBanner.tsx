@@ -88,16 +88,20 @@ export const NotificationBanner = () => {
     }
   };
 
-  const getIcon = (tipo: string) => {
+  const getIcon = (tipo: string): React.ReactNode => {
+    const common = {
+      width: 22, height: 22, viewBox: "0 0 24 24", fill: "none",
+      stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const,
+    };
     switch (tipo) {
       case 'error':
-        return '🚨';
+        return <svg {...common}><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>;
       case 'warning':
-        return '⚠️';
+        return <svg {...common}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>;
       case 'success':
-        return '✅';
+        return <svg {...common}><polyline points="20 6 9 17 4 12" /></svg>;
       default:
-        return 'ℹ️';
+        return <svg {...common}><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>;
     }
   };
 
@@ -132,12 +136,14 @@ export const NotificationBanner = () => {
                   <div className="flex gap-1 mt-1.5">
                     {notif.email_enviado && (
                       <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] uppercase tracking-wide">
-                        📧 email
+                          <svg className="inline-block mr-1 -mt-0.5" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
+                          email
                       </span>
                     )}
                     {notif.webhook_enviado && (
                       <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] uppercase tracking-wide">
-                        🔗 webhook
+                          <svg className="inline-block mr-1 -mt-0.5" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
+                          webhook
                       </span>
                     )}
                   </div>
@@ -148,7 +154,7 @@ export const NotificationBanner = () => {
                 aria-label="Cerrar notificacion"
                 className="text-white/50 hover:text-white transition-colors"
               >
-                ✕
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
               </button>
             </div>
           </motion.div>

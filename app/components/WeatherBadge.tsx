@@ -11,7 +11,7 @@ interface WeatherBadgeProps {
 function WeatherIcon({ lluvia }: { lluvia: number }) {
   if (lluvia > 5) {
     return (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00D2FF" strokeWidth="2">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00F3FF" strokeWidth="2">
         <path d="M20 17.58A5 5 0 0 0 18 8h-1.26A8 8 0 1 0 4 16.25" />
         <line x1="8" y1="16" x2="8.01" y2="21" /><line x1="12" y1="18" x2="12.01" y2="23" /><line x1="16" y1="16" x2="16.01" y2="21" />
       </svg>
@@ -25,7 +25,7 @@ function WeatherIcon({ lluvia }: { lluvia: number }) {
     );
   }
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00D2FF" strokeWidth="2">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00F3FF" strokeWidth="2">
       <circle cx="12" cy="12" r="5" />
       <line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" />
       <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
@@ -56,7 +56,7 @@ export default function WeatherBadge({ meteorologia, isLoading }: WeatherBadgePr
       </div>
       <div className="h-4 w-px bg-cyan/10" />
       <div className="flex items-center gap-1.5">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#00D2FF" strokeWidth="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" /></svg>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#00F3FF" strokeWidth="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" /></svg>
         <span className="font-mono text-[10px] text-slate-300 font-tabular">{meteorologia.lluvia_total_mm.toFixed(1)} mm</span>
       </div>
       <div className="h-4 w-px bg-cyan/10" />

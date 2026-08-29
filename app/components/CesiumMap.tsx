@@ -63,13 +63,22 @@ const ZONAS_MANGA: ZonaInundacion[] = [
   },
 ];
 
+// Puntos de mayor riesgo de inundación dentro de Manga
+const PUNTOS_RIESGO: { lat: number; lng: number; nombre: string; alturaRefer: number }[] = [
+  { lat: 10.3999, lng: -75.5159, nombre: "Callejón del Muelle", alturaRefer: 15 },
+  { lat: 10.4003, lng: -75.5152, nombre: "Av. Santander", alturaRefer: 18 },
+  { lat: 10.3988, lng: -75.5172, nombre: "Plaza Principal", alturaRefer: 25 },
+  { lat: 10.3991, lng: -75.5161, nombre: "Malecón", alturaRefer: 30 },
+  { lat: 10.3979, lng: -75.5183, nombre: "Costanera Oeste", alturaRefer: 12 },
+  { lat: 10.3971, lng: -75.5186, nombre: "Bocana Sur", alturaRefer: 22 },
+];
+
 interface CesiumMapProps {
   nivelAguaCm?: number;
   onSelectZona?: (zona: ZonaInundacion | null) => void;
 }
 
 // Rectangulo geografico del barrio Manga, Cartagena (lat/lng bounds)
-// Se usa para mantener la camara centrada EXCLUSIVAMENTE en Manga.
 const MANGA_BOUNDS = {
   west: -75.525,
   south: 10.393,
@@ -77,17 +86,12 @@ const MANGA_BOUNDS = {
   north: 10.408,
 };
 
-// Centroide de Manga
 const MANGA_CENTER = { lat: (10.393 + 10.408) / 2, lng: (-75.525 + -75.508) / 2 }; // 10.4005, -75.5165
 
-function dentroDeManga(longitudeDeg: number, latitudeDeg: number): boolean {
-  return (
-    longitudeDeg >= MANGA_BOUNDS.west &&
-    longitudeDeg <= MANGA_BOUNDS.east &&
-    latitudeDeg >= MANGA_BOUNDS.south &&
-    latitudeDeg <= MANGA_BOUNDS.north
-  );
-}
+// Ganancia visual: el nivel viene en cm (0-~130) y lo escalamos a metros
+// visibles en 3D para que la subida del agua se aprecie claramente.
+const VISUAL_GAIN = 0.6; // 100 cm -> 60 m; 30 cm -> 18 m
+const BASE_ALTURA = 0.8; // altura mínima para ver siempre las zonas en seco
 
 export default function CesiumMap({ nivelAguaCm = 0, onSelectZona }: CesiumMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -96,6 +100,7 @@ export default function CesiumMap({ nivelAguaCm = 0, onSelectZona }: CesiumMapPr
   const screenSpaceHandlerRef = useRef<{ destroy: () => void } | null>(null);
   const [selectedZona, setSelectedZona] = useState<ZonaInundacion | null>(null);
   const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelado = false;
@@ -103,11 +108,6 @@ export default function CesiumMap({ nivelAguaCm = 0, onSelectZona }: CesiumMapPr
     async function init() {
       if (!containerRef.current || viewerRef.current) return;
 
-      // Import dinámico (solo cliente) para no romper el build de Next/SSR.
-      // Se tipa como any: la API pública de Cesium (fromProviderAsync/fromUrl)
-      // avanza más rápido que sus tipos de TypeScript.
-      // CESIUM_BASE_URL global apunta a /cesium (assets copiados en public/cesium)
-      // para que Cesium resuelva Workers/Assets/Widgets sin depender de Ion.
       (globalThis as any).CESIUM_BASE_URL = "/cesium";
       const Cesium: any = await import("cesium");
       if (cancelado) return;
@@ -115,12 +115,12 @@ export default function CesiumMap({ nivelAguaCm = 0, onSelectZona }: CesiumMapPr
 
       try {
         const viewer = new Cesium.Viewer(containerRef.current, {
-          // Sin token de Ion: elipsoide + imágenes de OpenStreetMap
           baseLayer: Cesium.ImageryLayer.fromProviderAsync(
-            Cesium.UrlTemplateImageryProvider.fromUrl(
-              "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-              { subdomains: ["a", "b", "c"], maximumLevel: 19 }
-            )
+            new Cesium.UrlTemplateImageryProvider({
+              url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+              subdomains: ["a", "b", "c"],
+              maximumLevel: 19,
+            })
           ),
           baseLayerPicker: false,
           timeline: false,
@@ -135,54 +135,71 @@ export default function CesiumMap({ nivelAguaCm = 0, onSelectZona }: CesiumMapPr
           creditContainer: document.createElement("div"),
         });
 
-        viewer.scene.globe.enableLighting = false;
+        // Iluminación + atmósfera para un look 3D rico
+        viewer.scene.globe.enableLighting = true;
+        viewer.scene.highDynamicRange = true;
+        viewer.scene.globe.depthTestAgainstTerrain = false;
 
-        viewer.camera.flyTo({
-          destination: Cesium.Cartesian3.fromDegrees(MANGA_CENTER.lng, MANGA_CENTER.lat, 900),
+        // Terreno 3D real (ArcGIS World Elevation, sin token de Ion).
+        // Si falla, seguimos con el elipsoide por defecto (no rompe el mapa).
+        try {
+          const provider = await Cesium.ArcGISTiledElevationTerrainProvider.fromUrl(
+            "https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer"
+          );
+          viewer.terrainProvider = provider;
+        } catch (e) {
+          console.warn("Terreno 3D no disponible, usando elipsoide.", e);
+        }
+
+        // Cámara oblicua que muestra el 3D
+        viewer.camera.setView({
+          destination: Cesium.Cartesian3.fromDegrees(MANGA_CENTER.lng, MANGA_CENTER.lat, 1400),
           orientation: {
-            heading: Cesium.Math.toRadians(0),
-            pitch: Cesium.Math.toRadians(-45),
+            heading: Cesium.Math.toRadians(-20),
+            pitch: Cesium.Math.toRadians(-32),
             roll: 0,
           },
         });
 
-        // Mantener la camara dentro de Manga (no permitir alejarse a otra parte de Cartagena)
-        let clampManga = false;
-        const cameraChanged = () => {
-          if (!clampManga) return;
-          const carto = viewer.camera.positionCartographic;
-          if (!Cesium.defined(carto)) return;
-          if (!dentroDeManga(Cesium.Math.toDegrees(carto.longitude), Cesium.Math.toDegrees(carto.latitude))) {
-            viewer.camera.flyTo({
-              destination: Cesium.Cartesian3.fromDegrees(MANGA_CENTER.lng, MANGA_CENTER.lat, 900),
-              orientation: {
-                heading: Cesium.Math.toRadians(0),
-                pitch: Cesium.Math.toRadians(-45),
-                roll: 0,
-              },
-            });
-          }
-        };
-        viewer.camera.changed.addEventListener(cameraChanged);
-        setTimeout(() => {
-          clampManga = true;
-        }, 3000);
+        // Permitir órbita/zoom/pan libre (controles por defecto de Cesium) —
+        // ya no se "bloquea" la cámara, el usuario puede moverse por Manga.
+        viewer.scene.screenSpaceCameraController.enableCollisionDetection = true;
+        viewer.scene.screenSpaceCameraController.minimumZoomDistance = 250;
+        viewer.scene.screenSpaceCameraController.maximumZoomDistance = 4000;
 
-        // Polígonos extrúidos por zona
+        // ── Borde / delimitación de Manga ─────────────────────────────
+        const bordePositions = [
+          Cesium.Cartesian3.fromDegrees(MANGA_BOUNDS.west, MANGA_BOUNDS.south, 0),
+          Cesium.Cartesian3.fromDegrees(MANGA_BOUNDS.east, MANGA_BOUNDS.south, 0),
+          Cesium.Cartesian3.fromDegrees(MANGA_BOUNDS.east, MANGA_BOUNDS.north, 0),
+          Cesium.Cartesian3.fromDegrees(MANGA_BOUNDS.west, MANGA_BOUNDS.north, 0),
+        ];
+        viewer.entities.add({
+          polygon: {
+            hierarchy: new Cesium.PolygonHierarchy(bordePositions),
+            height: 0,
+            extrudedHeight: 0.12,
+            material: Cesium.Color.fromCssColorString("#00E5FF").withAlpha(0.05),
+            outline: true,
+            outlineColor: Cesium.Color.fromCssColorString("#00E5FF").withAlpha(0.9),
+            outlineWidth: 3,
+          },
+        });
+
+        // ── Polígonos extrúidos por zona (columnas de inundación) ────
         const entidadesZona: Record<string, any> = {};
         ZONAS_MANGA.forEach((zona) => {
           const positions = zona.coordenadas.map(([lat, lng]) =>
             Cesium.Cartesian3.fromDegrees(lng, lat, 0)
           );
           const color = cesiumRiskColor(Cesium, zona.nivel_riesgo);
-          const alturaMetros = Math.max(2, zona.altura_maxima / 100);
 
           const entity = viewer.entities.add({
             name: zona.nombre,
             polygon: {
               hierarchy: new Cesium.PolygonHierarchy(positions),
               height: 0,
-              extrudedHeight: alturaMetros,
+              extrudedHeight: BASE_ALTURA,
               material: color.withAlpha(0.55),
               outline: true,
               outlineColor: color,
@@ -197,24 +214,63 @@ export default function CesiumMap({ nivelAguaCm = 0, onSelectZona }: CesiumMapPr
           });
           entidadesZona[zona.id] = entity;
 
-          // Etiqueta centrada
           const centro = calcularCentro(zona.coordenadas);
           viewer.entities.add({
-            position: Cesium.Cartesian3.fromDegrees(centro[1], centro[0], alturaMetros + 2),
+            position: Cesium.Cartesian3.fromDegrees(centro[1], centro[0], BASE_ALTURA + 2),
             label: {
-              text: `${zona.nombre}\n${zona.altura_maxima} cm`,
-              font: "14px sans-serif",
+              text: `${zona.nombre}`,
+              font: "13px Exo, sans-serif",
               fillColor: Cesium.Color.WHITE,
               outlineColor: Cesium.Color.BLACK,
-              outlineWidth: 2,
+              outlineWidth: 3,
               style: Cesium.LabelStyle.FILL_AND_OUTLINE,
               verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-              pixelOffset: new Cesium.Cartesian2(0, -10),
+              pixelOffset: new Cesium.Cartesian2(0, -8),
+              distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 4000),
             },
           });
         });
 
-        // Manejo de clic correcto (ScreenSpaceEventHandler + pick)
+        // ── Superficie global de agua (sube/baja con el nivel) ───────
+        const superficieAgua = viewer.entities.add({
+          polygon: {
+            hierarchy: new Cesium.PolygonHierarchy(bordePositions),
+            height: 0,
+            extrudedHeight: 0.05,
+            material: new Cesium.ColorMaterialProperty(
+              Cesium.Color.fromCssColorString("#00A8E8").withAlpha(0.35)
+            ),
+            classificationType: Cesium.ClassificationType.BOTH,
+          },
+        });
+
+        // ── Puntos con mayor riesgo de inundación ─────────────────────
+        PUNTOS_RIESGO.forEach((p) => {
+          const alturaPunto = Math.max(2, (p.alturaRefer / 100) * 60);
+          viewer.entities.add({
+            position: Cesium.Cartesian3.fromDegrees(p.lng, p.lat, alturaPunto),
+            point: {
+              pixelSize: 9,
+              color: Cesium.Color.fromCssColorString("#FF0055"),
+              outlineColor: Cesium.Color.WHITE,
+              outlineWidth: 2,
+              heightReference: Cesium.HeightReference.NONE,
+            },
+            label: {
+              text: p.nombre,
+              font: "11px Exo, sans-serif",
+              fillColor: Cesium.Color.WHITE,
+              outlineColor: Cesium.Color.BLACK,
+              outlineWidth: 3,
+              style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+              verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+              pixelOffset: new Cesium.Cartesian2(0, -14),
+              distanceDisplayCondition: new Cesium.DistanceDisplayCondition(50, 4000),
+            },
+          });
+        });
+
+        // ── Manejo de clic en las zonas ───────────────────────────────
         const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
         handler.setInputAction((movement: any) => {
           const picked = viewer.scene.pick(movement.position);
@@ -228,7 +284,7 @@ export default function CesiumMap({ nivelAguaCm = 0, onSelectZona }: CesiumMapPr
           if (zonaSel) {
             const centro = calcularCentro(zonaSel.coordenadas);
             viewer.camera.flyTo({
-              destination: Cesium.Cartesian3.fromDegrees(centro[1], centro[0], 600),
+              destination: Cesium.Cartesian3.fromDegrees(centro[1], centro[0], 900),
               duration: 1,
             });
           }
@@ -240,11 +296,16 @@ export default function CesiumMap({ nivelAguaCm = 0, onSelectZona }: CesiumMapPr
         }
 
         viewerRef.current = { viewer, destroy: () => viewer.destroy() };
+        // Guardar referencias para el animador de nivel de agua
+        (viewerRef.current as any).entidadesZona = entidadesZona;
+        (viewerRef.current as any).superficieAgua = superficieAgua;
         screenSpaceHandlerRef.current = handler;
         setCargando(false);
       } catch (err) {
         if (!cancelado) {
           setCargando(false);
+          setError(err instanceof Error ? err.message : String(err));
+          console.error("CesiumMap init error:", err);
         }
       }
     }
@@ -265,26 +326,116 @@ export default function CesiumMap({ nivelAguaCm = 0, onSelectZona }: CesiumMapPr
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Reflejar el nivel de agua actual en los polígonos
+  // ── Animador suave del nivel de agua (sube/baja con transición) ─────
+  // Objetivo + valor interpolado para que el cambio se note con fluidez.
+  const objetivoAguaRef = useRef(nivelAguaCm);
+  const aguaActualRef = useRef(nivelAguaCm);
+  const rafRef = useRef<number | null>(null);
+
   useEffect(() => {
+    objetivoAguaRef.current = nivelAguaCm;
+    // El visor aún no está listo; el raf arranca cuando cargue.
     if (!viewerRef.current || !cesiumRef.current) return;
+    // Si ya hay un bucle corriendo, sólo actualizamos el objetivo.
+    if (rafRef.current) return;
+
     const Cesium = cesiumRef.current;
     const viewer = viewerRef.current.viewer;
-    viewer.entities.values.forEach((entity: any) => {
-      if (entity.polygon && entity.properties && entity.properties.alturaMaxima) {
-        const alturaMax = entity.properties.alturaMaxima.getValue();
-        const inundado = nivelAguaCm >= alturaMax;
-        entity.polygon.material = inundado
-          ? Cesium.Color.fromCssColorString(riesgoColorHex(clasificarNivel(nivelAguaCm))).withAlpha(0.7)
-          : Cesium.Color.fromCssColorString("#00E5FF").withAlpha(0.35);
+    const superficieAgua = (viewerRef.current as any).superficieAgua;
+    if (!superficieAgua) return;
+
+    const step = () => {
+      rafRef.current = null;
+      if (!viewerRef.current) return;
+      const dif = objetivoAguaRef.current - aguaActualRef.current;
+      const vel = Math.abs(dif) > 0.05 ? Math.sign(dif) * Math.max(0.5, Math.abs(dif) * 0.12) : dif;
+      aguaActualRef.current += vel;
+
+      const nivel = aguaActualRef.current;
+      const colorNivel = Cesium.Color.fromCssColorString(riesgoColorHex(clasificarNivel(nivel)));
+
+      viewer.entities.values.forEach((entity: any) => {
+        if (!entity.polygon || !entity.properties) return;
+        const alturaMax = entity.properties.alturaMaxima?.getValue?.();
+        const inundado = alturaMax != null && nivel >= alturaMax;
+        const alturaMetros = Math.max(BASE_ALTURA, nivel * VISUAL_GAIN);
+        entity.polygon.extrudedHeight = new Cesium.ConstantProperty(alturaMetros);
+        entity.polygon.material = new Cesium.ColorMaterialProperty(
+          inundado
+            ? Cesium.Color.clone(colorNivel).withAlpha(0.75)
+            : Cesium.Color.fromCssColorString("#00E5FF").withAlpha(0.5)
+        );
+      });
+
+      const aguaMetros = Math.max(0.05, nivel * VISUAL_GAIN);
+      superficieAgua.polygon.extrudedHeight = new Cesium.ConstantProperty(aguaMetros);
+      superficieAgua.polygon.material = new Cesium.ColorMaterialProperty(
+        Cesium.Color.fromCssColorString("#00A8E8").withAlpha(nivel > 0.5 ? 0.4 : 0.1)
+      );
+
+      if (Math.abs(objetivoAguaRef.current - aguaActualRef.current) > 0.05) {
+        rafRef.current = requestAnimationFrame(step);
+      } else {
+        aguaActualRef.current = objetivoAguaRef.current;
       }
-    });
+    };
+    rafRef.current = requestAnimationFrame(step);
+
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nivelAguaCm]);
+  }, [nivelAguaCm, cargando]);
+
+  // Re-centrar la cámara en Manga (botón manual, el usuario puede moverse libre)
+  function recentrar() {
+    const Viewer: any = viewerRef.current;
+    const Cesium: any = cesiumRef.current;
+    if (!Viewer || !Cesium) return;
+    Viewer.viewer.camera.flyTo({
+      destination: Cesium.Cartesian3.fromDegrees(MANGA_CENTER.lng, MANGA_CENTER.lat, 1400),
+      orientation: {
+        heading: Cesium.Math.toRadians(-20),
+        pitch: Cesium.Math.toRadians(-32),
+        roll: 0,
+      },
+      duration: 1.2,
+    });
+  }
 
   return (
     <div className="relative w-full h-full min-h-[520px]">
       <div ref={containerRef} className="absolute inset-0 rounded-2xl overflow-hidden" />
+
+      {/* Cargando */}
+      {cargando && !error && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-ocean-deep">
+          <div className="text-center">
+            <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-cyan border-t-transparent" />
+            <p className="font-mono text-[10px] uppercase tracking-widest text-cyan">Cargando modelo 3D…</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error del mapa */}
+      {error && (
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-ocean-deep px-6 text-center">
+          <p className="font-mono text-[10px] uppercase tracking-widest text-risk-emergency mb-2">No se pudo cargar el mapa 3D</p>
+          <p className="max-w-md text-xs text-slate-400">{error}</p>
+        </div>
+      )}
+
+      {/* Botón re-centrar en Manga */}
+      {!cargando && !error && (
+        <button
+          onClick={recentrar}
+          className="absolute top-3 right-3 z-10 glass rounded-lg px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-cyan hover:bg-cyan/10 transition flex items-center gap-1.5"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+          Manga
+        </button>
+      )}
 
       {/* HUD — Nivel actual de lluvia/inundación en Manga */}
       <div className="absolute top-3 left-3 z-10 glass rounded-xl px-4 py-3 text-white">
@@ -295,7 +446,7 @@ export default function CesiumMap({ nivelAguaCm = 0, onSelectZona }: CesiumMapPr
           <span className="font-display text-2xl font-bold leading-none">
             {nivelAguaCm.toFixed(1)}
           </span>
-          <span className="text-xs text-slate-300">cm nivel actual</span>
+          <span className="text-xs text-slate-300">cm</span>
         </div>
         <p
           className="mt-1 text-[11px] font-bold uppercase tracking-wider"
@@ -303,6 +454,7 @@ export default function CesiumMap({ nivelAguaCm = 0, onSelectZona }: CesiumMapPr
         >
           {clasificarNivel(nivelAguaCm)}
         </p>
+        <p className="mt-1 text-[10px] text-slate-500">Arrastrá para girar · scroll para acercar</p>
       </div>
 
       {/* Leyenda */}
@@ -319,6 +471,10 @@ export default function CesiumMap({ nivelAguaCm = 0, onSelectZona }: CesiumMapPr
             <span className="text-slate-300">{r.l}</span>
           </div>
         ))}
+        <div className="mt-1 pt-1 border-t border-cyan/10 flex items-center gap-2">
+          <span className="inline-block w-2 h-2 rounded-full" style={{ background: "#FF0055" }} />
+          <span className="text-slate-400">Punto de inundación</span>
+        </div>
       </div>
 
       {/* Info de zona seleccionada */}
@@ -331,12 +487,12 @@ export default function CesiumMap({ nivelAguaCm = 0, onSelectZona }: CesiumMapPr
               aria-label="Cerrar detalle"
               className="text-slate-500 hover:text-white transition-colors"
             >
-              ✕
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
             </button>
           </div>
           <div className="mt-2 space-y-1.5 text-xs text-slate-300">
             <p>
-              <span className="text-slate-500">Altura actual: </span>
+              <span className="text-slate-500">Altura umbral: </span>
               <span className="font-bold font-tabular">{selectedZona.altura_maxima} cm</span>
             </p>
             <p>
@@ -357,16 +513,14 @@ export default function CesiumMap({ nivelAguaCm = 0, onSelectZona }: CesiumMapPr
                 className="font-bold"
                 style={{ color: requiereEvacuacion(selectedZona.nivel_riesgo) ? "#FF0055" : "#00E5FF" }}
               >
-                {requiereEvacuacion(selectedZona.nivel_riesgo) ? "✔️ SÍ" : "✖️ No"}
+                {requiereEvacuacion(selectedZona.nivel_riesgo) ? (
+                  <><svg className="inline-block mr-1 -mt-0.5" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#00E5FF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>SÍ</>
+                ) : (
+                  <><svg className="inline-block mr-1 -mt-0.5" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FF0055" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>No</>
+                )}
               </span>
             </p>
           </div>
-        </div>
-      )}
-
-      {cargando && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center glass bg-ocean/40">
-          <span className="font-mono text-xs text-cyan">Cargando visor Cesium…</span>
         </div>
       )}
     </div>

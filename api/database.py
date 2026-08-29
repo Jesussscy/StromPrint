@@ -10,7 +10,7 @@ import json
 import os
 from typing import AsyncGenerator, List, Optional
 
-from sqlalchemy import Float, Integer, String, DateTime, select, delete
+from sqlalchemy import Float, Integer, String, DateTime, select, delete, text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -76,6 +76,7 @@ class PredictionRecord(Base):
     peak_hour: Mapped[float] = mapped_column(Float, nullable=False)
     risk_level: Mapped[str] = mapped_column(String(24), nullable=False, index=True)
     ecuacion: Mapped[str] = mapped_column(String(500), nullable=False)
+    data_source: Mapped[str] = mapped_column(String(24), nullable=True, default="simulado")
 
     def to_dict(self) -> dict:
         return {
@@ -88,6 +89,7 @@ class PredictionRecord(Base):
             "peak_hour": round(self.peak_hour, 1),
             "risk_level": self.risk_level,
             "ecuacion": self.ecuacion,
+            "data_source": self.data_source or "simulado",
         }
 
 
@@ -97,6 +99,12 @@ class PredictionRecord(Base):
 async def init_db() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # Migración ligera: añade la columna data_source a tablas predictions existentes
+        try:
+            await conn.execute(text("ALTER TABLE predictions ADD COLUMN data_source VARCHAR(24)"))
+        except Exception:
+            # La columna ya existe (o la BD es read-only) — ignoramos.
+            pass
 
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
@@ -159,6 +167,7 @@ async def persist_prediction(
     peak_hour: float,
     risk_level: str,
     ecuacion: str,
+    data_source: str = "simulado",
 ) -> None:
     record = PredictionRecord(
         horas_pronostico=horas_pronostico,
@@ -168,6 +177,7 @@ async def persist_prediction(
         peak_hour=peak_hour,
         risk_level=risk_level,
         ecuacion=ecuacion,
+        data_source=data_source,
     )
     session.add(record)
     await session.commit()

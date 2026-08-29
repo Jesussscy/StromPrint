@@ -10,7 +10,7 @@ export default function AquaBackground() {
       <svg className="absolute bottom-0 left-0 w-[200%] opacity-[0.04]" viewBox="0 0 1440 320" preserveAspectRatio="none">
         <path
           fill="none"
-          stroke="#00D2FF"
+          stroke="#00F3FF"
           strokeWidth="1.5"
           className="animate-wave-slow"
           d="M0,224 C360,180 720,280 1080,224 C1260,196 1350,240 1440,224 L1440,320 L0,320 Z"
@@ -19,7 +19,7 @@ export default function AquaBackground() {
       <svg className="absolute bottom-0 left-0 w-[200%] opacity-[0.03]" viewBox="0 0 1440 320" preserveAspectRatio="none">
         <path
           fill="none"
-          stroke="#00D2FF"
+          stroke="#00F3FF"
           strokeWidth="1"
           className="animate-wave"
           d="M0,256 C480,200 960,312 1440,256 L1440,320 L0,320 Z"

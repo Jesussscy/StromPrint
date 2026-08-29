@@ -20,7 +20,6 @@ import NotificationBanner from "@/app/components/NotificationBanner";
 import CesiumMap from "@/app/components/CesiumMap";
 import WaterLevelBars from "@/app/components/WaterLevelBars";
 import WeatherStation from "@/app/components/WeatherStation";
-import CentroAlertas from "@/app/components/CentroAlertas";
 import HistoryPanel from "@/app/components/HistoryPanel";
 import MobileBottomNav from "@/app/components/MobileBottomNav";
 import {
@@ -36,11 +35,11 @@ const FADE = {
   transition: { duration: 0.5 },
 };
 
-/* ─── HERO ─────────────────────────────────────────────────────────────── */
+/* ——— HERO ——————————————————————————————————————————————————————————————— */
 
 function HeroSection() {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden" style={{ background: "#020617" }}>
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden" style={{ background: "var(--ocean-deep)" }}>
       <TopographicMesh />
       <ParticleCanvas />
 
@@ -93,12 +92,12 @@ function HeroSection() {
       </div>
 
       {/* Bottom fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#020617] to-transparent" />
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-ocean-deep to-transparent" />
     </section>
   );
 }
 
-/* ─── EL PROBLEMA ───────────────────────────────────────────────────────── */
+/* ——— EL PROBLEMA ————————————————————————————————————————————————————————— */
 
 function ProblemSection() {
   return (
@@ -135,7 +134,7 @@ function ProblemSection() {
           {[
             { num: "01", title: "Cambio Climático", desc: "Lluvias torrenciales en el Caribe colombiano han aumentado un 30% en la última década.", color: "#FF0055" },
             { num: "02", title: "Infraestructura Limitada", desc: "Alcantarillas sin dimensionar, calles angostas y canales obstruidos.", color: "#FFD600" },
-            { num: "03", title: "Sin Datos en Tiempo Real", desc: "No existe un sistema que combine clima, mareas y topografía para alertar antes.", color: "#00D2FF" },
+            { num: "03", title: "Sin Datos en Tiempo Real", desc: "No existe un sistema que combine clima, mareas y topografía para alertar antes.", color: "#00F3FF" },
           ].map((item) => (
             <motion.div key={item.num} {...FADE} className="glass rounded-2xl p-6 group hover:border-cyan/25 transition-all duration-300">
               <span className="font-display text-5xl font-black" style={{ color: item.color, opacity: 0.15 }}>{item.num}</span>
@@ -149,7 +148,7 @@ function ProblemSection() {
   );
 }
 
-/* ─── CÓMO FUNCIONA ────────────────────────────────────────────────────── */
+/* ——— CÓMO FUNCIONA —————————————————————————————————————————————————————— */
 
 function HowItWorksSection() {
   return (
@@ -162,8 +161,8 @@ function HowItWorksSection() {
 
         <div className="grid gap-8 md:grid-cols-3">
           {[
-            { step: "01", title: "Captura", desc: "Estaciones DAVIS y pluviómetros miden lluvia, viento y temperatura cada minuto. Mareas del NOAA.", icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00D2FF" strokeWidth="1.5"><circle cx="12" cy="12" r="10" /><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg> },
-            { step: "02", title: "Modelo", desc: "Solución analítica por tramos con la integral de convolución de Duhamel. Sin integración paso a paso. Precisión: 98.7%.", icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00D2FF" strokeWidth="1.5"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" /><circle cx="12" cy="12" r="4" /></svg> },
+            { step: "01", title: "Captura", desc: "Estaciones DAVIS y pluviómetros miden lluvia, viento y temperatura cada minuto. Mareas del NOAA.", icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00F3FF" strokeWidth="1.5"><circle cx="12" cy="12" r="10" /><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg> },
+            { step: "02", title: "Modelo", desc: "Solución analítica por tramos con la integral de convolución de Duhamel. Sin integración paso a paso. Precisión: 98.7%.", icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00F3FF" strokeWidth="1.5"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" /><circle cx="12" cy="12" r="4" /></svg> },
             { step: "03", title: "Acción", desc: "Dashboard en tiempo real con niveles de riesgo, recomendaciones y rutas de evacuación.", icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FF0055" strokeWidth="1.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg> },
           ].map((item) => (
             <motion.div key={item.step} {...FADE} className="glass rounded-2xl p-6 text-center hud-connector float-card group hover:border-cyan/25 transition-all duration-300">
@@ -181,7 +180,7 @@ function HowItWorksSection() {
   );
 }
 
-/* ─── ORIGEN DE DATOS ───────────────────────────────────────────────────── */
+/* ——— ORIGEN DE DATOS ————————————————————————————————————————————————————— */
 
 function DataSourceSection() {
   return (
@@ -195,10 +194,10 @@ function DataSourceSection() {
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {[
-            { title: "Estaciones Meteorológicas", desc: "Sensores DAVIS y pluviómetros de balancín en puntos estratégicos de Manga.", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00D2FF" strokeWidth="1.5"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" /><circle cx="12" cy="12" r="4" /></svg> },
-            { title: "Satélites y Modelos Globales", desc: "API de Open-Meteo y datos del NOAA para predicciones a 7 días.", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00D2FF" strokeWidth="1.5"><circle cx="12" cy="12" r="10" /><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg> },
-            { title: "Topografía y Batimetría", desc: "Modelos de Elevación Digital del terreno de Cartagena.", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00D2FF" strokeWidth="1.5"><path d="M3 20l5-10 4 6 4-4 5 8" /><line x1="3" y1="20" x2="21" y2="20" /></svg> },
-            { title: "Conexión IoT", desc: "Datos por 4G/5G al servidor en la nube. Latencia < 30 segundos.", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00D2FF" strokeWidth="1.5"><path d="M5 12.55a11 11 0 0 1 14.08 0" /><path d="M1.42 9a16 16 0 0 1 21.16 0" /><path d="M8.53 16.11a6 6 0 0 1 6.95 0" /><circle cx="12" cy="20" r="1" fill="#00D2FF" /></svg> },
+            { title: "Estaciones Meteorológicas", desc: "Sensores DAVIS y pluviómetros de balancín en puntos estratégicos de Manga.", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00F3FF" strokeWidth="1.5"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" /><circle cx="12" cy="12" r="4" /></svg> },
+            { title: "Satélites y Modelos Globales", desc: "API de Open-Meteo y datos del NOAA para predicciones a 7 días.", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00F3FF" strokeWidth="1.5"><circle cx="12" cy="12" r="10" /><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg> },
+            { title: "Topografía y Batimetría", desc: "Modelos de Elevación Digital del terreno de Cartagena.", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00F3FF" strokeWidth="1.5"><path d="M3 20l5-10 4 6 4-4 5 8" /><line x1="3" y1="20" x2="21" y2="20" /></svg> },
+            { title: "Conexión IoT", desc: "Datos por 4G/5G al servidor en la nube. Latencia < 30 segundos.", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00F3FF" strokeWidth="1.5"><path d="M5 12.55a11 11 0 0 1 14.08 0" /><path d="M1.42 9a16 16 0 0 1 21.16 0" /><path d="M8.53 16.11a6 6 0 0 1 6.95 0" /><circle cx="12" cy="20" r="1" fill="#00F3FF" /></svg> },
           ].map((item) => (
             <motion.div key={item.title} {...FADE} className="glass rounded-2xl p-5 group hover:border-cyan/25 transition-all duration-300 float-card">
               <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl glass-glow">
@@ -214,7 +213,7 @@ function DataSourceSection() {
   );
 }
 
-/* ─── PANEL EN VIVO (HUD) ──────────────────────────────────────────────── */
+/* ——— PANEL EN VIVO (HUD) ———————————————————————————————————————————————— */
 
 const PLAYBACK_SPEED_MS = 200;
 
@@ -292,7 +291,7 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-3">
-          <Slider label="Lluvia" value={lluvia} onChange={setLluvia} min={0} max={50} step={0.1} unit="mm/h" color="#00D2FF" disabled={usarMeteo} />
+          <Slider label="Lluvia" value={lluvia} onChange={setLluvia} min={0} max={50} step={0.1} unit="mm/h" color="#00F3FF" disabled={usarMeteo} />
           <Slider label="Marea" value={marea} onChange={setMarea} min={0} max={100} step={0.5} unit="cm" color="#B000FF" />
           <Slider label="Drenaje" value={drenaje} onChange={setDrenaje} min={0} max={100} step={1} unit="%" color="#00E5FF" />
         </div>
@@ -394,7 +393,7 @@ function Slider({ label, value, onChange, min, max, step, unit, color, disabled 
   );
 }
 
-/* ─── PRONÓSTICO 48H ───────────────────────────────────────────────────── */
+/* ——— PRONÓSTICO 48H ————————————————————————————————————————————————————— */
 
 function ForecastSection({ puntos }: { puntos: import("@/app/lib/api").PuntoPrediccion[] }) {
   return (
@@ -419,7 +418,7 @@ function ForecastSection({ puntos }: { puntos: import("@/app/lib/api").PuntoPred
   );
 }
 
-/* ─── NARRATIVA (Timeline) ─────────────────────────────────────────────── */
+/* ——— NARRATIVA (Timeline) ——————————————————————————————————————————————— */
 
 function NarrativeSection() {
   const events = [
@@ -458,7 +457,7 @@ function NarrativeSection() {
   );
 }
 
-/* ─── TECNOLOGÍA ────────────────────────────────────────────────────────── */
+/* ——— TECNOLOGÍA —————————————————————————————————————————————————————————— */
 
 function TechnologySection() {
   return (
@@ -486,7 +485,7 @@ function TechnologySection() {
                   <p className="text-[10px] text-slate-500">{step.sub}</p>
                 </div>
                 {i < 2 && (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00D2FF" strokeWidth="1.5" className="shrink-0 mt-[-16px] opacity-40">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00F3FF" strokeWidth="1.5" className="shrink-0 mt-[-16px] opacity-40">
                     <path d="M5 12h14M12 5l7 7-7 7" />
                   </svg>
                 )}
@@ -518,7 +517,7 @@ function TechnologySection() {
   );
 }
 
-/* ─── CTA + FOOTER ──────────────────────────────────────────────────────── */
+/* ——— CTA + FOOTER ———————————————————————————————————————————————————————— */
 
 function CTASection() {
   return (
@@ -553,8 +552,8 @@ function FooterSection() {
       <div className="mx-auto max-w-7xl flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
-            <circle cx="16" cy="16" r="15" stroke="#00D2FF" strokeWidth="1.5" opacity="0.4" />
-            <path d="M16 8C16 8 10 15 10 19a6 6 0 0 0 12 0c0-4-6-11-6-11z" fill="#00D2FF" opacity="0.6" />
+            <circle cx="16" cy="16" r="15" stroke="#00F3FF" strokeWidth="1.5" opacity="0.4" />
+            <path d="M16 8C16 8 10 15 10 19a6 6 0 0 0 12 0c0-4-6-11-6-11z" fill="#00F3FF" opacity="0.6" />
           </svg>
           <span className="font-display text-xs font-bold tracking-wider text-white">STORM//PRINT</span>
         </div>
@@ -569,7 +568,7 @@ function FooterSection() {
   );
 }
 
-/* ─── PÁGINA PRINCIPAL ──────────────────────────────────────────────────── */
+/* ——— PÁGINA PRINCIPAL ———————————————————————————————————————————————————— */
 
 export default function LandingPage() {
   const [prediccion, setPrediccion] = useState<PrediccionResponse | null>(null);
@@ -587,7 +586,14 @@ export default function LandingPage() {
       <CursorTracker />
       <NotificationBanner />
       <RainParticles active={stormMode} intensity={stormMode ? 0.8 : 0} />
-      <AlertDrawer />
+      <AlertDrawer
+        nivelAguaCm={prediccion?.nivel_actual_cm}
+        nivelMaximo={prediccion?.nivel_maximo_cm}
+        tendenciaCmH={prediccion?.puntos?.at(-1)?.velocidad_cambio}
+        onVerEnMapa={() => {
+          document.getElementById("panel-vivo")?.scrollIntoView({ behavior: "smooth" });
+        }}
+      />
 
       <HeroSection />
       <ProblemSection />
@@ -621,24 +627,6 @@ export default function LandingPage() {
             <h2 className="font-display text-3xl md:text-4xl font-bold text-white">Estación Meteorológica — Manga</h2>
           </motion.div>
           <WeatherStation />
-        </div>
-      </section>
-
-      {/* Centro de Alertas */}
-      <section id="notificaciones" className="relative py-24 px-6">
-        <div className="mx-auto max-w-6xl">
-          <motion.div {...FADE} className="text-center mb-12">
-            <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-cyan mb-4">Alertas automáticas</p>
-            <h2 className="font-display text-3xl md:text-4xl font-bold text-white">Centro de Alertas</h2>
-          </motion.div>
-          <CentroAlertas
-            nivelAguaCm={prediccion?.nivel_actual_cm}
-            nivelMaximo={prediccion?.nivel_maximo_cm}
-            tendenciaCmH={prediccion?.puntos?.at(-1)?.velocidad_cambio}
-            onVerEnMapa={() => {
-              document.getElementById("panel-vivo")?.scrollIntoView({ behavior: "smooth" });
-            }}
-          />
         </div>
       </section>
 

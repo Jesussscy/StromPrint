@@ -224,28 +224,28 @@ class NotificationService:
     def _conf_riesgo(riesgo: str) -> Dict[str, Any]:
         table = {
             "CRITICO": {
-                "icono": "🚨",
+                "icono": "",
                 "color": "#FF0055",
                 "titulo": "¡ALERTA CRÍTICA!",
                 "zona": "Manga Oeste",
                 "ubicacion": "Av. Pedro de Heredia",
             },
             "EMERGENCIA": {
-                "icono": "🌊",
+                "icono": "",
                 "color": "#FF7700",
                 "titulo": "Alerta de Emergencia",
                 "zona": "Manga Centro",
                 "ubicacion": "Calle 24",
             },
             "ALERTA": {
-                "icono": "⚠️",
+                "icono": "",
                 "color": "#F3F300",
                 "titulo": "Nivel en Aumento",
                 "zona": "Manga Este",
                 "ubicacion": "Calle 30",
             },
             "NORMAL": {
-                "icono": "✅",
+                "icono": "",
                 "color": "#00F3FF",
                 "titulo": "Sistema Estable",
                 "zona": "Manga Norte",

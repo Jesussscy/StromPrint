@@ -471,6 +471,7 @@ async def predecir(
                 peak_hour=max_record["hour"],
                 risk_level=max_record["risk_level"],
                 ecuacion=ECUACION_DISPLAY,
+                data_source="real" if payload.usar_datos_meteo else "simulado",
             )
             await clear_old_predictions(session)
         except Exception as persist_exc:

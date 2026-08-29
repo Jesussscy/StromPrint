@@ -207,7 +207,7 @@ export default function ForecastChart({ puntos }: ForecastChartProps) {
             >
               −
             </button>
-            <span className="font-mono text-[9px] text-slate-500 w-10 text-center">{zoom.toFixed(1)}×</span>
+            <span className="font-mono text-[9px] text-slate-500 w-10 text-center">{zoom.toFixed(1)}—</span>
             <button
               onClick={() => setZoom((z) => Math.min(8, z + 0.5))}
               className="h-6 w-6 rounded glass flex items-center justify-center text-slate-400 hover:text-cyan transition text-xs"
@@ -285,7 +285,7 @@ export default function ForecastChart({ puntos }: ForecastChartProps) {
             {showLluvia && visiblePoints.filter((_, i) => i % 2 === 0).map((p, i) => {
               const barH = (p.lluvia_mm_h / chartData.maxLluvia) * PH * 0.3;
               const bx = xScale(p.tiempo_hora);
-              return <rect key={i} x={bx - 2} y={PAD_T + PH - barH} width="4" height={barH} fill="#00D2FF" opacity="0.2" rx="1" />;
+              return <rect key={i} x={bx - 2} y={PAD_T + PH - barH} width="4" height={barH} fill="#00F3FF" opacity="0.2" rx="1" />;
             })}
 
             {/* Marea area + line */}

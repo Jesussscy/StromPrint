@@ -20,8 +20,8 @@ export default function Navbar() {
         {/* Logo */}
         <a href="#" className="flex items-center gap-2">
           <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-            <circle cx="16" cy="16" r="15" stroke="#00D2FF" strokeWidth="1.5" opacity="0.6" />
-            <path d="M16 8C16 8 10 15 10 19a6 6 0 0 0 12 0c0-4-6-11-6-11z" fill="#00D2FF" opacity="0.8" />
+            <circle cx="16" cy="16" r="15" stroke="#00F3FF" strokeWidth="1.5" opacity="0.6" />
+            <path d="M16 8C16 8 10 15 10 19a6 6 0 0 0 12 0c0-4-6-11-6-11z" fill="#00F3FF" opacity="0.8" />
           </svg>
           <span className="font-display text-sm font-bold tracking-wider text-white">
             STORM<span className="neon-text">{"//"}</span>PRINT

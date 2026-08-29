@@ -10,12 +10,12 @@ const nextConfig = {
   },
 
   async rewrites() {
-    return [
-      {
-        source: "/api/v1/:path*",
-        destination: "/api/index.py",
-      },
-    ];
+    const IS_VERCEL = process.env.VERCEL === "1";
+    if (IS_VERCEL) {
+      return [{ source: "/api/v1/:path*", destination: "/api/index.py" }];
+    }
+    // Desarrollo local: reenviar al backend FastAPI (ejecutar con uvicorn)
+    return [{ source: "/api/v1/:path*", destination: "http://127.0.0.1:8000/api/v1/:path*" }];
   },
 
   async headers() {

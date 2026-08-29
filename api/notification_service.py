@@ -215,6 +215,157 @@ class NotificationService:
                 return notif
         return None
 
+    # ------------------------------------------------------------------
+    # Estado en tiempo real (para el Centro de Alertas)
+    # ------------------------------------------------------------------
+    STATE_INTERVAL_SECONDS = 45  # persistir snapshot de estado como mucho cada 45s
+
+    @staticmethod
+    def _conf_riesgo(riesgo: str) -> Dict[str, Any]:
+        table = {
+            "CRITICO": {
+                "icono": "🚨",
+                "color": "#FF0055",
+                "titulo": "¡ALERTA CRÍTICA!",
+                "zona": "Manga Oeste",
+                "ubicacion": "Av. Pedro de Heredia",
+            },
+            "EMERGENCIA": {
+                "icono": "🌊",
+                "color": "#FF7700",
+                "titulo": "Alerta de Emergencia",
+                "zona": "Manga Centro",
+                "ubicacion": "Calle 24",
+            },
+            "ALERTA": {
+                "icono": "⚠️",
+                "color": "#F3F300",
+                "titulo": "Nivel en Aumento",
+                "zona": "Manga Este",
+                "ubicacion": "Calle 30",
+            },
+            "NORMAL": {
+                "icono": "✅",
+                "color": "#00F3FF",
+                "titulo": "Sistema Estable",
+                "zona": "Manga Norte",
+                "ubicacion": "Barrio Manga, Cartagena",
+            },
+        }
+        return table.get(riesgo, table["NORMAL"])
+
+    @staticmethod
+    def _describir_estado(riesgo: str, nivel_cm: float) -> str:
+        if riesgo == "CRITICO":
+            return (
+                f"El nivel supera los {nivel_cm:.0f} cm en Manga Oeste. "
+                "EVACÚE hacia puntos altos de inmediato."
+            )
+        if riesgo == "EMERGENCIA":
+            return (
+                f"Se esperan {nivel_cm:.0f} cm de agua. El agua entra a "
+                "viviendas: proteja sus pertenencias y suba a plantas altas."
+            )
+        if riesgo == "ALERTA":
+            return (
+                f"Nivel de agua en {nivel_cm:.0f} cm y en aumento. "
+                "Evite transitar por calles bajas."
+            )
+        return "Todos los sensores funcionando correctamente. Sin anomalías."
+
+    def current_state_notification(
+        self,
+        nivel_cm: float,
+        tendencia_cm_h: Optional[float] = None,
+        weather_data: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """Tarjeta de estado que refleja el nivel REAL actual (todos los
+        niveles, incluido NORMAL -> INFO). El timestamp es fresco para que
+        el cliente muestre 'hace X' en tiempo real."""
+        riesgo, _ = self._clasificar(nivel_cm)
+        conf = self._conf_riesgo(riesgo)
+        tendencia = None
+        if tendencia_cm_h is not None:
+            if tendencia_cm_h > 2:
+                tendencia = f"+{tendencia_cm_h:.0f} cm/h"
+            elif tendencia_cm_h < -2:
+                tendencia = f"{tendencia_cm_h:.0f} cm/h"
+            else:
+                tendencia = "estable"
+
+        ahora = datetime.now()
+        state = {
+            "id": f"state_{ahora.strftime('%Y%m%d%H%M%S%f')}",
+            "nivel": riesgo,
+            "riesgo": riesgo,
+            "icono": conf["icono"],
+            "color": conf["color"],
+            "titulo": conf["titulo"],
+            "descripcion": self._describir_estado(riesgo, nivel_cm),
+            "ubicacion": conf["ubicacion"],
+            "zona": conf["zona"],
+            "nivel_agua": round(float(nivel_cm), 1),
+            "nivel_cm": round(float(nivel_cm), 1),
+            "tendencia": tendencia,
+            "timestamp": ahora.isoformat(),
+            "de_sistema": True,
+        }
+
+        # Persistir throttled (evitar llenar el historial cada polling)
+        last_state = None
+        for n in reversed(self.notification_history):
+            if n.get("de_sistema"):
+                last_state = n
+                break
+        persist = True
+        if last_state is not None:
+            try:
+                last_ts = datetime.fromisoformat(str(last_state.get("timestamp", "")))
+                elapsed = (ahora - last_ts).total_seconds()
+                if last_state.get("riesgo") == riesgo and elapsed < self.STATE_INTERVAL_SECONDS:
+                    persist = False
+            except (ValueError, TypeError):
+                persist = True
+        if persist:
+            self._store_notification(state)
+        return state
+
+    def build_metrics(self, nivel_maximo_cm: Optional[float] = None) -> Dict[str, Any]:
+        """Metricas agregadas a partir del historial real."""
+        history = self.notification_history
+        ahora = datetime.now()
+        uld = ahora - timedelta(hours=24)
+
+        # ultima_alerta: timestamp mas reciente con riesgo relevante
+        ultima_alerta = None
+        for n in history:
+            ts = n.get("timestamp", "")
+            if n.get("riesgo") in ("CRITICO", "EMERGENCIA", "ALERTA") and ts:
+                if ultima_alerta is None or ts > ultima_alerta:
+                    ultima_alerta = ts
+
+        alertas_hoy = 0
+        zonas = set()
+        for n in history:
+            riesgo = n.get("riesgo")
+            if riesgo not in ("CRITICO", "EMERGENCIA", "ALERTA"):
+                continue
+            try:
+                ts = datetime.fromisoformat(str(n.get("timestamp", "")))
+            except (ValueError, TypeError):
+                continue
+            if ts >= uld:
+                alertas_hoy += 1
+            if n.get("zona"):
+                zonas.add(n.get("zona"))
+
+        return {
+            "ultima_alerta": ultima_alerta,
+            "alertas_hoy": alertas_hoy,
+            "nivel_maximo": nivel_maximo_cm,
+            "zonas_afectadas": len(zonas) if zonas else None,
+        }
+
 
 # Instancia singleton
 notification_service = NotificationService()

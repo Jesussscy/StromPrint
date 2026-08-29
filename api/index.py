@@ -236,13 +236,47 @@ async def get_weather(request: Request, force_refresh: bool = False):
 # ---------------------------------------------------------------------------
 @app.get("/api/v1/notifications")
 @limiter.limit("30/minute")
-async def get_notifications(request: Request, limit: int = 20):
+async def get_notifications(
+    request: Request,
+    limit: int = 20,
+    nivel_cm: Optional[float] = None,
+    tendencia_cm_h: Optional[float] = None,
+    nivel_maximo: Optional[float] = None,
+):
+    """Historial de notificaciones + tarjeta de estado en tiempo real.
+
+    Si el cliente envia `nivel_cm`, el backend genera una tarjeta que
+    refleja el nivel REAL actual (todos los niveles, incluido NORMAL ->
+    INFO 'Sistema Estable') con timestamp fresco, y devuelve metricas
+    agregadas reales del historial.
+    """
     safe_limit = max(1, min(limit, 50))
     history = notification_service.notification_history[-safe_limit:]
+
+    if nivel_cm is not None:
+        state_card = notification_service.current_state_notification(
+            nivel_cm=float(nivel_cm),
+            tendencia_cm_h=tendencia_cm_h,
+        )
+        seen = {state_card["id"]}
+        notifications = [state_card]
+        for n in history:
+            nid = n.get("id") or f"{n.get('timestamp')}-{n.get('riesgo')}"
+            if nid in seen:
+                continue
+            seen.add(nid)
+            notifications.append(n)
+    else:
+        state_card = None
+        notifications = history
+
+    metrics = notification_service.build_metrics(nivel_maximo_cm=nivel_maximo)
     return {
         "status": "success",
-        "notifications": history,
-        "total": len(history),
+        "state": state_card,
+        "notifications": notifications,
+        "total": len(notifications),
+        "metrics": metrics,
     }
 
 

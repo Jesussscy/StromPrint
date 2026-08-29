@@ -20,7 +20,7 @@ import NotificationBanner from "@/app/components/NotificationBanner";
 import CesiumMap from "@/app/components/CesiumMap";
 import WaterLevelBars from "@/app/components/WaterLevelBars";
 import WeatherStation from "@/app/components/WeatherStation";
-import NotificationsCenter from "@/app/components/NotificationsCenter";
+import CentroAlertas from "@/app/components/CentroAlertas";
 import HistoryPanel from "@/app/components/HistoryPanel";
 import MobileBottomNav from "@/app/components/MobileBottomNav";
 import {
@@ -623,14 +623,21 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Centro de Notificaciones */}
+      {/* Centro de Alertas */}
       <section id="notificaciones" className="relative py-24 px-6">
         <div className="mx-auto max-w-6xl">
           <motion.div {...FADE} className="text-center mb-12">
             <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-cyan mb-4">Alertas automáticas</p>
-            <h2 className="font-display text-3xl md:text-4xl font-bold text-white">Centro de Notificaciones</h2>
+            <h2 className="font-display text-3xl md:text-4xl font-bold text-white">Centro de Alertas</h2>
           </motion.div>
-          <NotificationsCenter />
+          <CentroAlertas
+            nivelAguaCm={prediccion?.nivel_actual_cm}
+            nivelMaximo={prediccion?.nivel_maximo_cm}
+            tendenciaCmH={prediccion?.puntos?.at(-1)?.velocidad_cambio}
+            onVerEnMapa={() => {
+              document.getElementById("panel-vivo")?.scrollIntoView({ behavior: "smooth" });
+            }}
+          />
         </div>
       </section>
 

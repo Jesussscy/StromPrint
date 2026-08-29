@@ -6,6 +6,9 @@ import dynamic from "next/dynamic";
 import InteractiveEquation from "./InteractiveEquation";
 import ValidationChart from "./ValidationChart";
 import ComparisonChart from "./ComparisonChart";
+import ParametrosVariables from "./ParametrosVariables";
+import ConvolucionVisual from "./ConvolucionVisual";
+import AnalyticalWave3D from "./AnalyticalWave3D";
 import DataFlowDiagram from "@/app/components/DataFlowDiagram";
 
 const SyntaxHighlighter = dynamic(() => import("react-syntax-highlighter").then((mod) => mod.default), { ssr: false });
@@ -178,6 +181,15 @@ export default function CienciaPage() {
             es prácticamente idéntico al método numérico — la diferencia es de fracciones de milímetro:
           </p>
           <ComparisonChart />
+
+          {/* Parámetros c(t)/k(t) + explicación de la convolución + vista 3D */}
+          <div className="mt-6 grid gap-6 lg:grid-cols-2">
+            <ParametrosVariables />
+            <ConvolucionVisual />
+          </div>
+          <div className="mt-6">
+            <AnalyticalWave3D />
+          </div>
         </motion.section>
 
         {/* 4. Flujo de Datos */}

@@ -12,6 +12,7 @@ interface Notification {
   nivel_agua?: number;
   email_enviado?: boolean;
   webhook_enviado?: boolean;
+  riesgo?: string;
 }
 
 export const NotificationBanner = () => {
@@ -43,9 +44,21 @@ export const NotificationBanner = () => {
             nivel_agua: n.nivel_cm,
             email_enviado: n.email_enviado,
             webhook_enviado: n.webhook_enviado,
+            riesgo,
           };
         });
-        setNotifications(mapped);
+
+        // Dedupe: solo la notificacion mas reciente de cada nivel de riesgo,
+        // para no repetir las mismas alertas en el panel.
+        const porRiesgo = new Map<string, Notification>();
+        for (const n of mapped) {
+          const prev = porRiesgo.get(n.riesgo!);
+          if (!prev || n.timestamp > prev.timestamp) porRiesgo.set(n.riesgo!, n);
+        }
+        const deduped = Array.from(porRiesgo.values())
+          .sort((a, b) => (a.timestamp < b.timestamp ? 1 : -1))
+          .slice(0, 3);
+        setNotifications(deduped);
       } catch (err) {
         // La API puede no estar disponible en desarrollo; no crashear la UI.
         console.error('Error fetching notifications:', err);
@@ -115,6 +128,20 @@ export const NotificationBanner = () => {
                 <p className="text-xs opacity-50 mt-1">
                   {new Date(notif.timestamp).toLocaleString('es-CO')}
                 </p>
+                {(notif.email_enviado || notif.webhook_enviado) && (
+                  <div className="flex gap-1 mt-1.5">
+                    {notif.email_enviado && (
+                      <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] uppercase tracking-wide">
+                        📧 email
+                      </span>
+                    )}
+                    {notif.webhook_enviado && (
+                      <span className="rounded bg-white/10 px-1.5 py-0.5 text-[10px] uppercase tracking-wide">
+                        🔗 webhook
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
               <button
                 onClick={() => dismiss(notif.id)}

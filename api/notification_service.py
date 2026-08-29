@@ -17,7 +17,7 @@ import smtplib
 from datetime import datetime, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import httpx
 
@@ -41,8 +41,7 @@ class NotificationService:
         else "notifications.json"
     )
     MAX_HISTORY = 100
-    ALERTA_COOLDOWN_HOURS = 1
-    ALERTA_MIN_SPACING = 2  # numero minimo de horas entre alertas del mismo tipo
+    RISK_COOLDOWN_SECONDS = 1800  # 30 min: no repetir el mismo nivel de riesgo
 
     def __init__(self):
         self.smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
@@ -102,18 +101,21 @@ class NotificationService:
         return riesgo, mensaje
 
     def _should_send_notification(self, riesgo: str, nivel_cm: float) -> bool:
-        """Evita spam: siempre notifica CRITICO/EMERGENCIA, limita ALERTA."""
-        if riesgo in ("CRITICO", "EMERGENCIA"):
-            return True
+        """Evita spam: nunca envia NORMAL y deduplica por nivel de riesgo."""
+        if riesgo == "NORMAL":
+            return False
 
-        if riesgo == "ALERTA":
-            # Limitar a una alerta cada cooldown (por tipo)
-            recent = self._get_recent_notifications("ALERTA", hours=self.ALERTA_COOLDOWN_HOURS)
-            if len(recent) >= self.ALERTA_MIN_SPACING:
+        # Si ya se notifico este mismo nivel de riesgo recientemente, no repetir.
+        last = self._get_last_notification_for(riesgo)
+        if last is not None:
+            try:
+                ts = datetime.fromisoformat(str(last.get("timestamp", "")))
+            except (ValueError, TypeError):
+                ts = None
+            if ts is not None and (datetime.now() - ts).total_seconds() < self.RISK_COOLDOWN_SECONDS:
                 return False
 
-        # NORMAL nunca genera notificacion (evita ruido)
-        return riesgo != "NORMAL"
+        return True
 
     async def _send_email(
         self, mensaje: str, nivel_cm: float, weather_data: Dict[str, Any]
@@ -206,21 +208,12 @@ class NotificationService:
         except Exception as exc:
             logger.warning("No se pudo guardar historial: %s", exc)
 
-    def _get_recent_notifications(
-        self, riesgo: str, hours: int = 1
-    ) -> List[Dict[str, Any]]:
-        cutoff = datetime.now() - timedelta(hours=hours)
-        recent = []
+    def _get_last_notification_for(self, riesgo: str) -> Optional[Dict[str, Any]]:
+        """Devuelve la ultima notificacion almacenada de un nivel de riesgo."""
         for notif in reversed(self.notification_history):
-            try:
-                ts = datetime.fromisoformat(str(notif.get("timestamp", "")))
-            except (ValueError, TypeError):
-                continue
-            if ts < cutoff:
-                break
             if notif.get("riesgo") == riesgo:
-                recent.append(notif)
-        return recent
+                return notif
+        return None
 
 
 # Instancia singleton

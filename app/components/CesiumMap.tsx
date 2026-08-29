@@ -68,6 +68,27 @@ interface CesiumMapProps {
   onSelectZona?: (zona: ZonaInundacion | null) => void;
 }
 
+// Rectangulo geografico del barrio Manga, Cartagena (lat/lng bounds)
+// Se usa para mantener la camara centrada EXCLUSIVAMENTE en Manga.
+const MANGA_BOUNDS = {
+  west: -75.525,
+  south: 10.393,
+  east: -75.508,
+  north: 10.408,
+};
+
+// Centroide de Manga
+const MANGA_CENTER = { lat: (10.393 + 10.408) / 2, lng: (-75.525 + -75.508) / 2 }; // 10.4005, -75.5165
+
+function dentroDeManga(longitudeDeg: number, latitudeDeg: number): boolean {
+  return (
+    longitudeDeg >= MANGA_BOUNDS.west &&
+    longitudeDeg <= MANGA_BOUNDS.east &&
+    latitudeDeg >= MANGA_BOUNDS.south &&
+    latitudeDeg <= MANGA_BOUNDS.north
+  );
+}
+
 export default function CesiumMap({ nivelAguaCm = 0, onSelectZona }: CesiumMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<{ viewer: any; destroy: () => void } | null>(null);
@@ -117,14 +138,35 @@ export default function CesiumMap({ nivelAguaCm = 0, onSelectZona }: CesiumMapPr
         viewer.scene.globe.enableLighting = false;
 
         viewer.camera.flyTo({
-          destination: Cesium.Cartesian3.fromDegrees(-75.5167, 10.4, 1600),
-          duration: 2,
+          destination: Cesium.Cartesian3.fromDegrees(MANGA_CENTER.lng, MANGA_CENTER.lat, 900),
           orientation: {
             heading: Cesium.Math.toRadians(0),
             pitch: Cesium.Math.toRadians(-45),
             roll: 0,
           },
         });
+
+        // Mantener la camara dentro de Manga (no permitir alejarse a otra parte de Cartagena)
+        let clampManga = false;
+        const cameraChanged = () => {
+          if (!clampManga) return;
+          const carto = viewer.camera.positionCartographic;
+          if (!Cesium.defined(carto)) return;
+          if (!dentroDeManga(Cesium.Math.toDegrees(carto.longitude), Cesium.Math.toDegrees(carto.latitude))) {
+            viewer.camera.flyTo({
+              destination: Cesium.Cartesian3.fromDegrees(MANGA_CENTER.lng, MANGA_CENTER.lat, 900),
+              orientation: {
+                heading: Cesium.Math.toRadians(0),
+                pitch: Cesium.Math.toRadians(-45),
+                roll: 0,
+              },
+            });
+          }
+        };
+        viewer.camera.changed.addEventListener(cameraChanged);
+        setTimeout(() => {
+          clampManga = true;
+        }, 3000);
 
         // Polígonos extrúidos por zona
         const entidadesZona: Record<string, any> = {};
@@ -244,6 +286,25 @@ export default function CesiumMap({ nivelAguaCm = 0, onSelectZona }: CesiumMapPr
     <div className="relative w-full h-full min-h-[520px]">
       <div ref={containerRef} className="absolute inset-0 rounded-2xl overflow-hidden" />
 
+      {/* HUD — Nivel actual de lluvia/inundación en Manga */}
+      <div className="absolute top-3 left-3 z-10 glass rounded-xl px-4 py-3 text-white">
+        <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-cyan">
+          Barrio Manga · Cartagena
+        </p>
+        <div className="mt-1 flex items-baseline gap-2">
+          <span className="font-display text-2xl font-bold leading-none">
+            {nivelAguaCm.toFixed(1)}
+          </span>
+          <span className="text-xs text-slate-300">cm nivel actual</span>
+        </div>
+        <p
+          className="mt-1 text-[11px] font-bold uppercase tracking-wider"
+          style={{ color: riesgoColorHex(clasificarNivel(nivelAguaCm)) }}
+        >
+          {clasificarNivel(nivelAguaCm)}
+        </p>
+      </div>
+
       {/* Leyenda */}
       <div className="absolute bottom-4 right-4 z-10 glass rounded-xl p-4 text-xs text-white">
         <p className="font-display font-bold text-cyan mb-2">Nivel de Riesgo</p>
@@ -315,4 +376,11 @@ function riesgoColorHex(nivel: string) {
     default:
       return "#00FF55";
   }
+}
+
+function clasificarNivel(nivelCm: number): string {
+  if (nivelCm >= 100) return "Critico";
+  if (nivelCm >= 60) return "Emergencia";
+  if (nivelCm >= 30) return "Alerta";
+  return "Normal";
 }

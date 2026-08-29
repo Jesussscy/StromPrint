@@ -104,7 +104,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
             "style-src 'self' 'unsafe-inline'; "
-            "img-src 'self' data: blob:; "
+            "img-src 'self' data: blob: https://*.tile.openstreetmap.org; "
             "connect-src 'self' https://api.open-meteo.com; "
             "font-src 'self' data:; "
             "worker-src 'self' blob:; "

@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 const STEPS = [
   { label: "Sensores DAVIS", sub: "f_lluvia(t)", icon: "📡", color: "#00D2FF" },
   { label: "NOAA / Open-Meteo", sub: "f_marea(t)", icon: "🛰", color: "#00D2FF" },
-  { label: "Servidor Cloud", sub: "RK4 Solver", icon: "⚙", color: "#FFD600" },
+  { label: "Servidor Cloud", sub: "Analítica · Duhamel", icon: "⚙", color: "#FFD600" },
   { label: "Tu Pantalla", sub: "H(t)", icon: "📊", color: "#00E5FF" },
 ];
 

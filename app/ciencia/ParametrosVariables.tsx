@@ -78,27 +78,27 @@ export default function ParametrosVariables() {
       </p>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <div className="rounded-xl bg-[#0A1119] p-3">
+        <div className="rounded-xl bg-[#050A0F] p-3">
           <p className="font-mono text-[10px] text-slate-500">Masa · m</p>
           <p className="font-display text-lg font-bold text-white">{p.mass} kg</p>
         </div>
-        <div className="rounded-xl bg-[#0A1119] p-3">
+        <div className="rounded-xl bg-[#050A0F] p-3">
           <p className="font-mono text-[10px] text-slate-500">c(t) · drenaje</p>
           <p className="font-display text-lg font-bold text-cyan">{p.damping} N·s/m</p>
         </div>
-        <div className="rounded-xl bg-[#0A1119] p-3">
+        <div className="rounded-xl bg-[#050A0F] p-3">
           <p className="font-mono text-[10px] text-slate-500">k(t) · rigidez</p>
           <p className="font-display text-lg font-bold text-[#FF7700]">{p.stiffness} N/m</p>
         </div>
-        <div className="rounded-xl bg-[#0A1119] p-3">
+        <div className="rounded-xl bg-[#050A0F] p-3">
           <p className="font-mono text-[10px] text-slate-500">ωₙ · frecuencia natural</p>
           <p className="font-display text-lg font-bold text-[#B000FF]">{omegaN.toFixed(3)} rad/h</p>
         </div>
-        <div className="rounded-xl bg-[#0A1119] p-3">
+        <div className="rounded-xl bg-[#050A0F] p-3">
           <p className="font-mono text-[10px] text-slate-500">ζ · amortiguamiento</p>
           <p className="font-display text-lg font-bold text-[#00FF87]">{zeta.toFixed(3)}</p>
         </div>
-        <div className="rounded-xl bg-[#0A1119] p-3">
+        <div className="rounded-xl bg-[#050A0F] p-3">
           <p className="font-mono text-[10px] text-slate-500">Humedad del suelo</p>
           <p className="font-display text-lg font-bold text-sky-300">
             {Math.round(p.soil_humidity * 100)}% · {p.consecutive_rainy_days}d
@@ -106,7 +106,7 @@ export default function ParametrosVariables() {
         </div>
       </div>
 
-      <div className="mt-4 rounded-xl bg-[#0D1520] p-3 border border-cyan/10">
+      <div className="mt-4 rounded-xl bg-[#0A1628] p-3 border border-cyan/10">
         <p className="font-mono text-[11px] text-cyan">
           m·r² + c·r + k = 0 &nbsp;→&nbsp; ζ = {zeta.toFixed(3)}{" "}
           {zeta < 1 ? "(subamortiguado ⇒ oscila y drena)" : zeta === 1 ? "(crítico)" : "(sobreamortiguado)"}

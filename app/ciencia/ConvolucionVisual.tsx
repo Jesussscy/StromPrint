@@ -50,7 +50,7 @@ export default function ConvolucionVisual() {
             className={`rounded-lg px-4 py-2 font-mono text-[11px] uppercase tracking-wider transition ${
               paso === i
                 ? "bg-cyan/20 text-cyan shadow-glow border border-cyan/30"
-                : "bg-[#0A1119] text-slate-400 border border-white/5 hover:text-white"
+                : "bg-[#050A0F] text-slate-400 border border-white/5 hover:text-white"
             }`}
           >
             Paso {i + 1}
@@ -63,23 +63,23 @@ export default function ConvolucionVisual() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="rounded-xl bg-[#0A1119] p-5 border border-white/5"
+        className="rounded-xl bg-[#050A0F] p-5 border border-white/5"
       >
         <h4 className="font-semibold text-white">{activo.titulo}</h4>
         <p className="text-slate-400 text-sm mt-2 leading-relaxed">{activo.descripcion}</p>
-        <div className="mt-4 rounded-lg bg-[#0D1520] p-3 border-l-2 border-cyan font-mono text-cyan text-center text-sm">
+        <div className="mt-4 rounded-lg bg-[#0A1628] p-3 border-l-2 border-cyan font-mono text-cyan text-center text-sm">
           {activo.formula}
         </div>
       </motion.div>
 
       <div className="mt-4 grid gap-2 sm:grid-cols-3 text-center text-[11px]">
-        <div className="rounded-lg bg-[#0A1119] p-2 text-slate-500">
+        <div className="rounded-lg bg-[#050A0F] p-2 text-slate-500">
           <span className="text-white font-semibold">Tramos:</span> coeficientes c(t), k(t) constantes
         </div>
-        <div className="rounded-lg bg-[#0A1119] p-2 text-slate-500">
+        <div className="rounded-lg bg-[#050A0F] p-2 text-slate-500">
           <span className="text-white font-semibold">Analítica:</span> 96 evaluaciones de la integral
         </div>
-        <div className="rounded-lg bg-[#0A1119] p-2 text-emerald-400/80">
+        <div className="rounded-lg bg-[#050A0F] p-2 text-emerald-400/80">
           Resultado: <span className="text-white font-semibold">curva cerrada exacta</span>
         </div>
       </div>

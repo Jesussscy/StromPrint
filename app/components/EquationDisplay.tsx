@@ -51,7 +51,7 @@ export default function EquationDisplay({
 
       <div className="mt-2 flex items-center gap-4">
         <span className="font-mono text-[8px] uppercase tracking-widest text-mist/40">
-          Resuelta con Runge-Kutta 45 (scipy.integrate.solve_ivp)
+          Resuelta por tramos (integral de Duhamel)
         </span>
         <div className="flex-1" />
         <span className="font-mono text-[8px] uppercase tracking-widest text-mist/40">

@@ -110,8 +110,9 @@ function ProblemSection() {
             Cartagena se inunda.<br />La comunidad necesita respuestas.
           </h2>
           <p className="text-slate-400 max-w-2xl mx-auto">
-            El Barrio Manga, península costera a 1.2 msnm, sufre inundaciones recurrentes
-            durante la temporada de lluvias (Ago-Nov). El drenaje actual es insuficiente.
+            El Barrio Manga, una península costera que apenas alcanza 1.2 metros sobre el nivel del mar (m s. n. m.),
+            sufre inundaciones recurrentes a lo largo de todo el año por la combinación de lluvias intensas,
+            mareas altas y un drenaje insuficiente.
           </p>
         </motion.div>
 
@@ -162,7 +163,7 @@ function HowItWorksSection() {
         <div className="grid gap-8 md:grid-cols-3">
           {[
             { step: "01", title: "Captura", desc: "Estaciones DAVIS y pluviómetros miden lluvia, viento y temperatura cada minuto. Mareas del NOAA.", icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00D2FF" strokeWidth="1.5"><circle cx="12" cy="12" r="10" /><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg> },
-            { step: "02", title: "Modelo", desc: "EDO de segundo orden resuelta con Runge-Kutta de 4to orden. Precisión: 98.7%.", icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00D2FF" strokeWidth="1.5"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" /><circle cx="12" cy="12" r="4" /></svg> },
+            { step: "02", title: "Modelo", desc: "Solución analítica por tramos con la integral de convolución de Duhamel. Sin integración paso a paso. Precisión: 98.7%.", icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00D2FF" strokeWidth="1.5"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" /><circle cx="12" cy="12" r="4" /></svg> },
             { step: "03", title: "Acción", desc: "Dashboard en tiempo real con niveles de riesgo, recomendaciones y rutas de evacuación.", icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FF0055" strokeWidth="1.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg> },
           ].map((item) => (
             <motion.div key={item.step} {...FADE} className="glass rounded-2xl p-6 text-center hud-connector float-card group hover:border-cyan/25 transition-all duration-300">
@@ -473,8 +474,8 @@ function TechnologySection() {
           <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-6">
             {[
               { label: "Estaciones + API", sub: "Sensores y Open-Meteo" },
-              { label: "ODE + RK4", sub: "Runge-Kutta de 4to orden" },
-              { label: "Dashboard", sub: "React + Leaflet" },
+              { label: "Modelo Analítico", sub: "Duhamel · convolución" },
+              { label: "Dashboard", sub: "React + Cesium / Leaflet" },
             ].map((step, i) => (
               <div key={step.label} className="flex items-center gap-4">
                 <div className="text-center">
@@ -496,9 +497,9 @@ function TechnologySection() {
 
         <div className="grid gap-4 md:grid-cols-3">
           {[
-            { title: "EDO de Segundo Orden", desc: "Modela la acumulación de agua como un sistema masa-resorte-amortiguador con forzamiento externo." },
-            { title: "Datos en Tiempo Real", desc: "API de Open-Meteo para pronósticos horarios de lluvia, viento y temperatura." },
-            { title: "Modelo Territorial", desc: "Topografía de Manga (1.2 msnm) determina la capacidad de absorción natural del agua." },
+            { title: "Modelo Analítico (Duhamel)", desc: "Resolución por integral de convolución por tramos. Responde a cada impulso de lluvia y marea sin integración numérica escalón a escalón." },
+            { title: "Datos en Tiempo Real", desc: "API de Open-Meteo para pronósticos horarios de lluvia, viento y temperatura, más mareas del NOAA." },
+            { title: "Modelo Territorial", desc: "La topografía de Manga, casi a nivel del mar (1.2 m s. n. m.), modula la capacidad de absorción y acumulación del agua." },
           ].map((item) => (
             <motion.div key={item.title} {...FADE} className="glass rounded-xl p-5">
               <h4 className="font-display text-sm font-semibold text-white mb-1">{item.title}</h4>

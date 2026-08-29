@@ -100,6 +100,15 @@ async def init_db() -> None:
 
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
+    # Asegura que las tablas existan en cada peticion (idempotente, create_all
+    # no borra nada) sin depender del lifespan de FastAPI, que en el runtime
+    # serverless de Vercel no siempre se ejecuta antes de cada request.
+    try:
+        await init_db()
+    except Exception:
+        # Si falla la creacion (BD en read-only, etc.), continuamos y
+        # dejamos que el endpoint maneje el error con un 500 limpio.
+        pass
     async with AsyncSessionLocal() as session:
         yield session
 

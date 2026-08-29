@@ -50,7 +50,7 @@ const QUESTIONS: Question[] = [
     id: "modelo",
     label: "¿Cómo funciona el modelo?",
     icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" /><circle cx="12" cy="12" r="4" /></svg>,
-    answer: "EDO de segundo orden (masa-resorte-amortiguador) resuelta con Runge-Kutta de 4to orden. Precisión validada: 98.7%.",
+    answer: "StormPrint resuelve el balance de agua con una solución analítica por tramos usando la integral de convolución de Duhamel (suma de las respuestas a cada impulso de lluvia y marea). Precisión validada: 98.7%.",
   },
   {
     id: "sensores",

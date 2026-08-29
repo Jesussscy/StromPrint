@@ -168,7 +168,7 @@ export default function CentroAlertas({ nivelAguaCm, nivelMaximo, tendenciaCmH, 
         </div>
         <div
           className="flex items-center gap-2 rounded-lg border px-4 py-2 backdrop-blur"
-          style={{ borderColor: `${NIVEL_STYLE[nivelActual].color}66`, background: "#0A101C" }}
+          style={{ borderColor: `${NIVEL_STYLE[nivelActual].color}66`, background: "var(--ocean)" }}
         >
           <span className="h-2 w-2 animate-pulse rounded-full" style={{ background: NIVEL_STYLE[nivelActual].color, boxShadow: `0 0 10px ${NIVEL_STYLE[nivelActual].color}` }} />
           <span className="font-mono text-xs font-bold" style={{ color: NIVEL_STYLE[nivelActual].color }}>
@@ -198,7 +198,7 @@ export default function CentroAlertas({ nivelAguaCm, nivelMaximo, tendenciaCmH, 
               className={`rounded-lg px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider transition ${
                 active ? "text-[#050A0F]" : "text-slate-300 opacity-60 hover:opacity-100"
               }`}
-              style={active ? { background: color, boxShadow: `0 0 12px ${color}66` } : { background: "#0A101C", border: "1px solid rgba(255,255,255,0.08)" }}
+              style={active ? { background: color, boxShadow: `0 0 12px ${color}66` } : { background: "var(--ocean)", border: "1px solid rgba(255,255,255,0.08)" }}
             >
               {n}
               <span className={`ml-1.5 ${active ? "text-[#050A0F]/70" : "text-slate-500"}`}>{count}</span>
@@ -211,7 +211,7 @@ export default function CentroAlertas({ nivelAguaCm, nivelMaximo, tendenciaCmH, 
       <div className="space-y-3">
         <AnimatePresence>
           {visible.length === 0 ? (
-            <p className="rounded-xl border border-white/5 bg-[#0A101C] py-10 text-center font-mono text-xs text-slate-500">
+            <p className="rounded-xl border border-white/5 bg-[#050A0F] py-10 text-center font-mono text-xs text-slate-500">
               Sin alertas para este filtro
             </p>
           ) : (
@@ -227,7 +227,7 @@ export default function CentroAlertas({ nivelAguaCm, nivelMaximo, tendenciaCmH, 
                   exit={{ opacity: 0, scale: 0.97 }}
                   transition={{ duration: 0.3 }}
                   className="overflow-hidden rounded-2xl border backdrop-blur"
-                  style={{ background: "#0A101C", borderColor: `${s.color}4D`, boxShadow: `0 0 24px ${s.glow}` }}
+                  style={{ background: "var(--ocean)", borderColor: `${s.color}4D`, boxShadow: `0 0 24px ${s.glow}` }}
                 >
                   <div className="flex items-stretch gap-4 p-4 sm:p-5">
                     <div className="flex flex-col items-center justify-center">
@@ -310,7 +310,7 @@ export default function CentroAlertas({ nivelAguaCm, nivelMaximo, tendenciaCmH, 
 
 function Metrica({ label, valor, color }: { label: string; valor: string; color: string }) {
   return (
-    <div className="rounded-xl border border-white/5 bg-[#0A101C] p-4 backdrop-blur">
+    <div className="rounded-xl border border-white/5 bg-[#050A0F] p-4 backdrop-blur">
       <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-slate-500">{label}</p>
       <p className="mt-1 font-display text-xl font-bold font-tabular" style={{ color }}>
         {valor}

@@ -184,21 +184,23 @@ export default function ForecastChart({ puntos }: ForecastChartProps) {
           </p>
           <p className="font-display text-sm text-white">Nivel del agua en el punto crítico</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
           {/* View mode buttons */}
-          {(["nivel", "lluvia", "marea", "todos"] as ViewMode[]).map((mode) => (
-            <button
-              key={mode}
-              onClick={() => setViewMode(mode)}
-              className={`rounded-lg px-2.5 py-1 font-mono text-[9px] uppercase tracking-wider transition-all ${
-                viewMode === mode
-                  ? "bg-cyan/15 text-cyan border border-cyan/30"
-                  : "text-slate-500 hover:text-slate-300 border border-transparent"
-              }`}
-            >
-              {mode}
-            </button>
-          ))}
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+            {(["nivel", "lluvia", "marea", "todos"] as ViewMode[]).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => setViewMode(mode)}
+                className={`shrink-0 rounded-lg px-2.5 py-1.5 font-mono text-[9px] uppercase tracking-wider transition-all ${
+                  viewMode === mode
+                    ? "bg-cyan/15 text-cyan border border-cyan/30"
+                    : "text-slate-500 hover:text-slate-300 border border-transparent"
+                }`}
+              >
+                {mode}
+              </button>
+            ))}
+          </div>
           {/* Zoom controls */}
           <div className="flex items-center gap-1 ml-2">
             <button

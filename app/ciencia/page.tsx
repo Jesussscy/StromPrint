@@ -1,6 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import { motion, useScroll, useSpring } from "framer-motion";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import InteractiveEquation from "./InteractiveEquation";
@@ -20,9 +21,78 @@ const FADE = {
   transition: { duration: 0.5 },
 };
 
+const SECCIONES = [
+  { id: "modelo", num: "01", label: "Modelo Físico" },
+  { id: "analitica", num: "02", label: "Solución Analítica" },
+  { id: "flujo", num: "03", label: "Flujo de Datos" },
+  { id: "validacion", num: "04", label: "Validación" },
+  { id: "hardware", num: "05", label: "Hardware y Software" },
+];
+
 export default function CienciaPage() {
+  const { scrollYProgress } = useScroll();
+  const progress = useSpring(scrollYProgress, { stiffness: 120, damping: 26, restDelta: 0.001 });
+  const [seccionActiva, setSeccionActiva] = useState<number>(0);
+
+  useEffect(() => {
+    const ids = SECCIONES.map((s) => s.id);
+    const observar = new IntersectionObserver(
+      (entradas) => {
+        for (const e of entradas) {
+          if (e.isIntersecting) {
+            const i = ids.indexOf(e.target.id);
+            if (i >= 0) setSeccionActiva(i);
+          }
+        }
+      },
+      { rootMargin: "-45% 0px -50% 0px" }
+    );
+    ids.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) observar.observe(el);
+    });
+    return () => observar.disconnect();
+  }, []);
+
   return (
     <main className="min-h-screen bg-ocean">
+      {/* Barra de progreso de scroll */}
+      <motion.div
+        style={{ scaleX: progress }}
+        className="fixed top-0 left-0 right-0 z-[60] h-[3px] origin-left bg-gradient-to-r from-cyan via-[#00FF87] to-[#B000FF]"
+      />
+
+      {/* Navegación de secciones (fija, escritorio) */}
+      <nav className="fixed right-5 top-1/2 z-50 hidden -translate-y-1/2 flex-col gap-1 lg:flex">
+        {SECCIONES.map((s, i) => (
+          <a
+            key={s.id}
+            href={`#${s.id}`}
+            onClick={(e) => { e.preventDefault(); document.getElementById(s.id)?.scrollIntoView({ behavior: "smooth" }); }}
+            className="group flex items-center justify-end gap-2"
+            aria-label={s.label}
+          >
+            <motion.span
+              animate={{
+                opacity: seccionActiva === i ? 1 : 0,
+                x: seccionActiva === i ? 0 : 8,
+              }}
+              transition={{ duration: 0.3 }}
+              className="rounded-md bg-ocean/90 border border-cyan/20 px-2 py-1 font-mono text-[10px] text-cyan whitespace-nowrap"
+            >
+              {s.num} · {s.label}
+            </motion.span>
+            <span
+              className={`block h-2.5 w-2.5 rounded-full transition-all duration-300 ${
+                seccionActiva === i
+                  ? "bg-cyan shadow-[0_0_10px_#00E5FF] scale-110"
+                  : "bg-slate-700 group-hover:bg-slate-500"
+              }`}
+            />
+          </a>
+        ))}
+      </nav>
+
       {/* Hero */}
       <div className="relative py-24 overflow-hidden">
         <div className="absolute inset-0 hero-gradient" />
@@ -30,6 +100,23 @@ export default function CienciaPage() {
           backgroundImage: "radial-gradient(circle at 1px 1px, rgba(0,210,255,0.4) 1px, transparent 0)",
           backgroundSize: "40px 40px",
         }} />
+        {/* Partículas flotantes animadas */}
+        <div className="pointer-events-none absolute inset-0 opacity-40">
+          {[...Array(8)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute h-1 w-1 rounded-full"
+              style={{
+                left: `${(i * 13 + 7) % 100}%`,
+                top: `${(i * 29 + 10) % 100}%`,
+                backgroundColor: i % 2 ? "#00E5FF" : "#00FF87",
+                boxShadow: i % 2 ? "0 0 10px #00E5FF" : "0 0 10px #00FF87",
+              }}
+              animate={{ y: [0, -30, 0], x: [0, 12, 0], opacity: [0.2, 0.9, 0.2] }}
+              transition={{ duration: 5 + (i % 3), repeat: Infinity, ease: "easeInOut", delay: i * 0.4 }}
+            />
+          ))}
+        </div>
         <div className="relative mx-auto max-w-4xl px-6 md:px-12">
           <Link href="/" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-cyan transition mb-8">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
@@ -53,8 +140,24 @@ export default function CienciaPage() {
       {/* Content */}
       <div className="mx-auto max-w-4xl px-6 md:px-12 py-16 space-y-20">
 
+        {/* Navegación horizontal móvil */}
+        <div className="lg:hidden -mx-6 px-6 sticky top-0 z-40 bg-ocean/80 backdrop-blur-md border-b border-white/5 -mt-6 -mb-4 py-3 overflow-x-auto whitespace-nowrap flex gap-2">
+          {SECCIONES.map((s, i) => (
+            <a
+              key={s.id}
+              href={`#${s.id}`}
+              onClick={(e) => { e.preventDefault(); document.getElementById(s.id)?.scrollIntoView({ behavior: "smooth" }); }}
+              className={`rounded-lg px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider transition ${
+                seccionActiva === i ? "bg-cyan/20 text-cyan shadow-glow border border-cyan/30" : "bg-ocean text-slate-400 border border-white/5"
+              }`}
+            >
+              {s.num} {s.label}
+            </a>
+          ))}
+        </div>
+
         {/* 1. Modelo Físico */}
-        <motion.section {...FADE}>
+        <motion.section {...FADE} id="modelo" className="scroll-mt-24">
           <div className="flex items-center gap-3 mb-6">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg glass-glow">
               <span className="font-display text-sm font-bold text-cyan">01</span>
@@ -69,7 +172,7 @@ export default function CienciaPage() {
         </motion.section>
 
         {/* 2. Solución Analítica */}
-        <motion.section {...FADE}>
+        <motion.section {...FADE} id="analitica" className="scroll-mt-24">
           <div className="flex items-center gap-3 mb-6">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg glass-glow">
               <span className="font-display text-sm font-bold text-cyan">02</span>
@@ -114,7 +217,7 @@ export default function CienciaPage() {
         </motion.section>
 
         {/* 3. Flujo de Datos */}
-        <motion.section {...FADE}>
+        <motion.section {...FADE} id="flujo" className="scroll-mt-24">
           <div className="flex items-center gap-3 mb-6">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg glass-glow">
               <span className="font-display text-sm font-bold text-cyan">03</span>
@@ -130,7 +233,7 @@ export default function CienciaPage() {
         </motion.section>
 
         {/* 4. Validación */}
-        <motion.section {...FADE}>
+        <motion.section {...FADE} id="validacion" className="scroll-mt-24">
           <div className="flex items-center gap-3 mb-6">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg glass-glow">
               <span className="font-display text-sm font-bold text-cyan">04</span>
@@ -145,7 +248,7 @@ export default function CienciaPage() {
         </motion.section>
 
         {/* 5. Hardware y Software */}
-        <motion.section {...FADE}>
+        <motion.section {...FADE} id="hardware" className="scroll-mt-24">
           <div className="flex items-center gap-3 mb-6">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg glass-glow">
               <span className="font-display text-sm font-bold text-cyan">05</span>

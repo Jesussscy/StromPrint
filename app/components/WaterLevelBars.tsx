@@ -85,7 +85,7 @@ export default function WaterLevelBars({ nivelAguaCm, punto, zonasCriticas = 0 }
           const barColor = colorBar(nivel);
           return (
             <div key={nivel} className="flex items-center gap-2">
-              <span className="w-9 text-right font-mono text-[10px] text-slate-500 font-tabular">{nivel}</span>
+              <span className="w-9 text-right font-mono text-[10px] sm:text-[11px] text-slate-500 font-tabular">{nivel}</span>
               <span
                 className="text-right font-mono text-[10px] text-slate-600"
                 style={{ width: 22 }}
@@ -121,7 +121,7 @@ export default function WaterLevelBars({ nivelAguaCm, punto, zonasCriticas = 0 }
         />
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-2">
+      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
         <div className="rounded-lg bg-white/[0.03] p-3">
           <div className="flex items-center justify-between">
             <span className="font-mono text-[9px] uppercase tracking-widest text-slate-500">Pico máximo</span>

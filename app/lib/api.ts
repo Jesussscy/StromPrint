@@ -36,6 +36,35 @@ export interface SimulationRequestParams {
 
 // --- Tipos nuevos ---
 
+export type EstadoMeteo =
+  | "soleado"
+  | "parcialmente_nublado"
+  | "nublado"
+  | "lluvioso"
+  | "tormenta"
+  | "sin_datos";
+
+export const ESTADO_METEO_LABEL: Record<EstadoMeteo, string> = {
+  soleado: "Soleado",
+  parcialmente_nublado: "Parcialmente nublado",
+  nublado: "Nublado",
+  lluvioso: "Lluvioso",
+  tormenta: "Tormenta",
+  sin_datos: "Sin datos",
+};
+
+export const ESTADO_METEO_COLOR: Record<EstadoMeteo, string> = {
+  soleado: "#FFD60A",
+  parcialmente_nublado: "#FFB86C",
+  nublado: "#9AA5B1",
+  lluvioso: "#00B4D8",
+  tormenta: "#B000FF",
+  sin_datos: "#6B7280",
+};
+
+export const ES_DIA_LLUVIOSO = (estado: EstadoMeteo): boolean =>
+  estado === "lluvioso" || estado === "tormenta";
+
 export interface PuntoPrediccion {
   tiempo_hora: number;
   nivel_agua_cm: number;
@@ -73,6 +102,53 @@ export interface PrediccionResponse {
   tendencia: "creciente" | "decreciente" | "estable";
   narrativa: string;
   recomendacion: string;
+  estado_meteorologico?: EstadoMeteo;
+  estado_label?: string;
+  confianza_meteo?: number;
+  fuente_meteo?: string;
+  es_dia_lluvioso?: boolean;
+  proxima_pleamar?: string;
+}
+
+export interface DiaPronostico {
+  dia: string;
+  lluvia_mm: number;
+  temp_max_c: number;
+  estado?: EstadoMeteo;
+}
+
+export interface WeatherResponse {
+  source: string;
+  fuente: string;
+  confianza: number;
+  timestamp: string;
+  lat: number;
+  lon: number;
+  temperatura: number;
+  humedad: number;
+  nubosidad_pct: number;
+  estado: EstadoMeteo;
+  estado_label: string;
+  precipitacion_actual_mm_h: number;
+  velocidad_viento_kmh: number;
+  direccion_viento_deg: number;
+  dias_lluviosos_consecutivos: number;
+  humedad_suelo_pct: number;
+  lluvia_total_mm: number;
+  temp_max_c: number;
+  temp_min_c: number;
+  viento_max_kmh: number;
+  lluvia_manana_mm: number;
+  marea_actual_cm: number;
+  proxima_pleamar: string;
+  pronostico: DiaPronostico[];
+  parametros_simulacion?: Record<string, unknown>;
+}
+
+export function fetchWeather(): Promise<{ weather: WeatherResponse }> {
+  return stormprintFetch<{ weather: WeatherResponse }>("/api/v1/weather", {
+    method: "GET",
+  });
 }
 
 export interface PrediccionGuardada {
@@ -221,6 +297,24 @@ export function riskIcon(estado: string): string {
     default:
       return "\u2705";
   }
+}
+
+export function fuenteLabel(fuente?: string): string {
+  switch (fuente) {
+    case "open-meteo":
+      return "Open-Meteo en vivo";
+    case "historico":
+      return "Historico mensual";
+    case "simulado":
+      return "Promedio estimado";
+    default:
+      return fuente ?? "Open-Meteo en vivo";
+  }
+}
+
+export function formatConfianza(confianza?: number): string {
+  if (confianza === undefined || confianza === null) return "--";
+  return `${Math.round(confianza * 100)}%`;
 }
 
 export function formatHour(hora: number): string {

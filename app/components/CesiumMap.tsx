@@ -237,8 +237,8 @@ export default function CesiumMap({
             extrudedHeight: 0.12,
             material: Cesium.Color.fromCssColorString("#00E5FF").withAlpha(0.05),
             outline: true,
-            outlineColor: Cesium.Color.fromCssColorString("#00E5FF").withAlpha(0.9),
-            outlineWidth: 3,
+            outlineColor: Cesium.Color.fromCssColorString("#00E5FF").withAlpha(0.55),
+            outlineWidth: 2,
           },
         });
 
@@ -256,10 +256,10 @@ export default function CesiumMap({
               hierarchy: new Cesium.PolygonHierarchy(positions),
               height: 0,
               extrudedHeight: BASE_ALTURA,
-              material: color.withAlpha(0.55),
+              material: color.withAlpha(0.35),
               outline: true,
-              outlineColor: color.withAlpha(0.95),
-              outlineWidth: 3,
+              outlineColor: color.withAlpha(0.7),
+              outlineWidth: 2,
             },
             properties: {
               zonaId: zona.id,
@@ -279,7 +279,7 @@ export default function CesiumMap({
             height: 0,
             extrudedHeight: 0.05,
             material: new Cesium.ColorMaterialProperty(
-              Cesium.Color.fromCssColorString("#00A8E8").withAlpha(0.35)
+              Cesium.Color.fromCssColorString("#00A8E8").withAlpha(0.2)
             ),
             classificationType: Cesium.ClassificationType.BOTH,
           },
@@ -291,7 +291,7 @@ export default function CesiumMap({
         ORDEN_RIESGO.forEach((n) => { pinTex[n] = pinTexture(RIESGO_META[n].color, 64); });
         // Glow por nivel (para la capa de calor y marcadores destacados)
         const heatTex: Record<NivelRiesgo, any> = {} as any;
-        ORDEN_RIESGO.forEach((n) => { heatTex[n] = radialGlowTexture(RIESGO_META[n].color, 256, 0.85, 0.3); });
+        ORDEN_RIESGO.forEach((n) => { heatTex[n] = radialGlowTexture(RIESGO_META[n].color, 256, 0.5, 0.3); });
 
         // ── 20 Zonas críticas: marcadores + círculo de influencia + heat ──
         const zonasLayer: Record<string, any> = {};
@@ -313,10 +313,10 @@ export default function CesiumMap({
               // height explícito para desactivar el "clamping" al terreno y
               // permitir contornos (evita el warning de outlines en terreno 3D)
               height: 0,
-              material: Cesium.Color.fromCssColorString(RIESGO_META[nivelBase].color).withAlpha(0.32),
+              material: Cesium.Color.fromCssColorString(RIESGO_META[nivelBase].color).withAlpha(0.22),
               outline: true,
-              outlineColor: Cesium.Color.fromCssColorString(RIESGO_META[nivelBase].color).withAlpha(0.9),
-              outlineWidth: 3,
+              outlineColor: Cesium.Color.fromCssColorString(RIESGO_META[nivelBase].color).withAlpha(0.6),
+              outlineWidth: 2,
             },
             properties: { zonaCriticaId: zona.id, tipo: "influencia" },
           });
@@ -355,7 +355,7 @@ export default function CesiumMap({
               image: heatTex[nivelBase],
               width: zona.radio_influencia * (8 + RIESGO_META[nivelBase].peso * 2.5),
               height: zona.radio_influencia * (8 + RIESGO_META[nivelBase].peso * 2.5),
-              color: Cesium.Color.WHITE.withAlpha(0.7),
+              color: Cesium.Color.WHITE.withAlpha(0.55),
               disableDepthTestDistance: Number.POSITIVE_INFINITY,
             },
             properties: { zonaCriticaId: zona.id, tipo: "heat" },
@@ -483,8 +483,8 @@ export default function CesiumMap({
         entity.polygon.extrudedHeight = new Cesium.ConstantProperty(alturaMetros);
         entity.polygon.material = new Cesium.ColorMaterialProperty(
           inundado
-            ? Cesium.Color.clone(colorNivel).withAlpha(0.7)
-            : Cesium.Color.fromCssColorString("#00E5FF").withAlpha(0.42)
+            ? Cesium.Color.clone(colorNivel).withAlpha(0.55)
+            : Cesium.Color.fromCssColorString("#00E5FF").withAlpha(0.26)
         );
       });
 
@@ -492,7 +492,7 @@ export default function CesiumMap({
       const aguaMetros = Math.max(0.05, nivel * gananciaRef.current);
       superficieAgua.polygon.extrudedHeight = new Cesium.ConstantProperty(aguaMetros);
       superficieAgua.polygon.material = new Cesium.ColorMaterialProperty(
-        Cesium.Color.fromCssColorString("#00A8E8").withAlpha(nivel > 0.5 ? 0.42 : 0.12)
+        Cesium.Color.fromCssColorString("#00A8E8").withAlpha(nivel > 0.5 ? 0.26 : 0.08)
       );
 
       // Zonas críticas en vivo: color/tamaño/altura según la predicción
@@ -517,10 +517,10 @@ export default function CesiumMap({
 
         if (influencia) {
           influencia.ellipse.material = new Cesium.ColorMaterialProperty(
-            Cesium.Color.fromCssColorString(meta.color).withAlpha(0.34)
+            Cesium.Color.fromCssColorString(meta.color).withAlpha(0.22)
           );
           influencia.ellipse.outlineColor = new Cesium.ColorMaterialProperty(
-            Cesium.Color.fromCssColorString(meta.color).withAlpha(0.9)
+            Cesium.Color.fromCssColorString(meta.color).withAlpha(0.6)
           );
           influencia.ellipse.semiMajorAxis = new Cesium.ConstantProperty(zona.radio_influencia);
           influencia.ellipse.semiMinorAxis = new Cesium.ConstantProperty(zona.radio_influencia);
@@ -531,7 +531,7 @@ export default function CesiumMap({
           const heatSize = zona.radio_influencia * (8 + meta.peso * 2.5);
           heat.billboard.width = heatSize;
           heat.billboard.height = heatSize;
-          heat.billboard.color = Cesium.Color.WHITE.withAlpha(heatmapRef.current ? 0.7 + meta.peso * 0.12 : 0);
+          heat.billboard.color = Cesium.Color.WHITE.withAlpha(heatmapRef.current ? 0.45 + meta.peso * 0.08 : 0);
         }
       });
 

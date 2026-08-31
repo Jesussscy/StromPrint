@@ -119,9 +119,12 @@ export default function AlertDrawer({ nivelAguaCm, nivelMaximo, tendenciaCmH, on
     load();
     const poll = setInterval(load, 30000);
     const tick = setInterval(() => setNow(Date.now()), 10000);
+    const onOpen = () => setIsOpen(true);
+    window.addEventListener("stormprint:open-alerts", onOpen);
     return () => {
       clearInterval(poll);
       clearInterval(tick);
+      window.removeEventListener("stormprint:open-alerts", onOpen);
     };
   }, [load]);
 
@@ -158,7 +161,7 @@ export default function AlertDrawer({ nivelAguaCm, nivelMaximo, tendenciaCmH, on
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Centro de alertas"
-        className="fixed bottom-6 left-6 z-[90] glass-glow rounded-lg p-2.5 cursor-pointer"
+        className="fixed bottom-20 left-4 z-[55] md:bottom-6 md:left-6 md:z-[90] glass-glow rounded-xl p-3 cursor-pointer active:scale-95 transition-transform duration-150 min-w-[44px] min-h-[44px] flex items-center justify-center"
         style={{ borderColor: `${NIVEL_STYLE[nivelActual].color}55`, boxShadow: `0 0 14px ${NIVEL_STYLE[nivelActual].glow}` }}
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={NIVEL_STYLE[nivelActual].color} strokeWidth="1.5">

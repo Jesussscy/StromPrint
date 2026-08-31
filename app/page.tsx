@@ -52,24 +52,24 @@ function HeroSection() {
           </div>
 
           <h1
-            className="title-storm glitch-title text-5xl md:text-7xl lg:text-8xl text-white mb-6"
+            className="title-storm glitch-title text-4xl sm:text-5xl md:text-7xl lg:text-8xl text-white mb-6"
             data-text="STORM//PRINT"
           >
             STORM<span className="neon-text">{"//"}</span>PRINT
           </h1>
 
-          <p className="font-body text-lg md:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed mb-10">
+          <p className="font-body text-base sm:text-lg md:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed mb-10 px-2">
             Ingeniería de datos para la resiliencia climática en el Caribe colombiano.
           </p>
 
-          <div className="flex flex-wrap justify-center gap-6 mb-12">
+          <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mb-12">
             {[
               { value: "98.7%", label: "Precisión" },
               { value: "24/7", label: "Monitoreo" },
               { value: "7 días", label: "Pronóstico" },
             ].map((stat) => (
-              <div key={stat.label} className="glass rounded-xl px-5 py-3">
-                <p className="font-display text-xl font-bold neon-text">{stat.value}</p>
+              <div key={stat.label} className="glass rounded-xl px-4 sm:px-5 py-3 flex-1 min-w-[100px] max-w-[160px]">
+                <p className="font-display text-lg sm:text-xl font-bold neon-text">{stat.value}</p>
                 <p className="font-mono text-[9px] uppercase tracking-widest text-slate-500">{stat.label}</p>
               </div>
             ))}
@@ -80,7 +80,7 @@ function HeroSection() {
             href="#panel-vivo"
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
-            className="group inline-flex items-center gap-3 rounded-2xl px-8 py-4 font-mono text-sm uppercase tracking-widest text-ocean-deep font-bold transition-all"
+            className="group inline-flex items-center gap-3 rounded-2xl px-8 py-4 font-mono text-sm uppercase tracking-widest text-ocean-deep font-bold transition-all min-h-[52px]"
             style={{
               background: "linear-gradient(135deg, #00E5FF 0%, #00B4D8 50%, #0077B6 100%)",
               boxShadow: "0 0 30px rgba(0, 229, 255, 0.3), 0 0 60px rgba(0, 229, 255, 0.1)",
@@ -106,7 +106,7 @@ function ProblemSection() {
       <div className="mx-auto max-w-6xl">
         <motion.div {...FADE} className="text-center mb-16">
           <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-cyan mb-4">El problema</p>
-          <h2 className="font-display text-3xl md:text-4xl font-bold text-white mb-4">
+          <h2 className="font-display text-2xl md:text-4xl font-bold text-white mb-4">
             Cartagena se inunda.<br />La comunidad necesita respuestas.
           </h2>
           <p className="text-slate-400 max-w-2xl mx-auto">
@@ -157,7 +157,7 @@ function HowItWorksSection() {
       <div className="mx-auto max-w-6xl">
         <motion.div {...FADE} className="text-center mb-16">
           <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-cyan mb-4">La solución</p>
-          <h2 className="font-display text-3xl md:text-4xl font-bold text-white">Cómo funciona StormPrint</h2>
+          <h2 className="font-display text-2xl md:text-4xl font-bold text-white">Cómo funciona StormPrint</h2>
         </motion.div>
 
         <div className="grid gap-8 md:grid-cols-3">
@@ -189,7 +189,7 @@ function DataSourceSection() {
       <div className="mx-auto max-w-6xl">
         <motion.div {...FADE} className="text-center mb-16">
           <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-cyan mb-4">Arquitectura de datos</p>
-          <h2 className="font-display text-3xl md:text-4xl font-bold text-white mb-4">¿De dónde salen los datos?</h2>
+          <h2 className="font-display text-2xl md:text-4xl font-bold text-white mb-4">¿De dónde salen los datos?</h2>
           <p className="text-slate-400 max-w-2xl mx-auto">Fuentes locales, satelitales y de modelos globales alimentan el sistema predictivo.</p>
         </motion.div>
 
@@ -287,7 +287,7 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
     <div className="mx-auto max-w-7xl">
       {/* Controls */}
       <div className="glass-strong rounded-2xl mb-4 p-4">
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
           <div className="flex items-center gap-3">
             <span className="h-2 w-2 rounded-full bg-risk-normal animate-pulse-slow" />
             <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-slate-400">
@@ -305,9 +305,9 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
           <Slider label="Marea" value={marea} onChange={setMarea} min={0} max={100} step={0.5} unit="cm" color="#B000FF" disabled={usarMeteo} />
           <Slider label="Drenaje" value={drenaje} onChange={setDrenaje} min={0} max={100} step={1} unit="%" color="#00E5FF" disabled={usarMeteo} />
         </div>
-        <div className="flex items-center justify-between">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={usarMeteo} onChange={(e) => setUsarMeteo(e.target.checked)} className="accent-cyan" />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <label className="flex items-center gap-2 cursor-pointer min-h-[32px]">
+            <input type="checkbox" checked={usarMeteo} onChange={(e) => setUsarMeteo(e.target.checked)} className="accent-cyan h-4 w-4" />
             <span className="text-xs text-slate-500">Usar datos meteorológicos reales</span>
           </label>
           {usarMeteo ? (
@@ -316,7 +316,7 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
               Simulación bloqueada · meteo en vivo
             </span>
           ) : (
-            <button onClick={loadPrediction} disabled={isLoading} className="glass-glow rounded-lg px-4 py-2 font-mono text-[11px] uppercase tracking-wider text-cyan hover:bg-cyan/10 transition">
+            <button onClick={loadPrediction} disabled={isLoading} className="glass-glow rounded-lg px-4 py-2.5 font-mono text-[11px] uppercase tracking-wider text-cyan hover:bg-cyan/10 active:bg-cyan/10 transition min-h-[40px]">
               {isLoading ? "Calculando..." : "Simular"}
             </button>
           )}
@@ -325,7 +325,7 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
 
       {/* Main Grid: Map + Zonas + Metrics */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.7fr_1fr]">
-        <div className="glass-strong rounded-2xl h-[460px] p-1 md:h-[640px] overflow-hidden relative">
+        <div className="glass-strong rounded-2xl h-[340px] p-1 md:h-[640px] lg:h-[640px] overflow-hidden relative">
           {/* Visor 3D de Cesium exclusivo para el panel en vivo */}
           <CesiumMap
             nivelAguaCm={activePunto?.nivel_agua_cm ?? 0}
@@ -427,11 +427,11 @@ function Slider({ label, value, onChange, min, max, step, unit, color, disabled 
 }) {
   return (
     <div className={disabled ? "opacity-40 pointer-events-none" : ""}>
-      <div className="flex justify-between mb-1">
+      <div className="flex justify-between items-center mb-1.5">
         <span className="font-mono text-[10px] uppercase tracking-wider text-slate-500">{label}</span>
         <span className="font-mono text-xs font-tabular" style={{ color }}>{value.toFixed(step < 1 ? 1 : 0)} {unit}</span>
       </div>
-      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(parseFloat(e.target.value))} className="w-full" />
+      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(parseFloat(e.target.value))} className="w-full h-2" />
     </div>
   );
 }
@@ -444,7 +444,7 @@ function ForecastSection({ puntos }: { puntos: import("@/app/lib/api").PuntoPred
       <div className="mx-auto max-w-6xl">
         <motion.div {...FADE} className="text-center mb-8">
           <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-cyan mb-4">Pronóstico</p>
-          <h2 className="font-display text-3xl md:text-4xl font-bold text-white mb-4">Evolución del nivel en 7 días</h2>
+          <h2 className="font-display text-2xl md:text-4xl font-bold text-white mb-4">Evolución del nivel en 7 días</h2>
           <p className="text-slate-400 max-w-2xl mx-auto">
             Curva de pronóstico horario con líneas de umbral de riesgo.
           </p>
@@ -475,7 +475,7 @@ function NarrativeSection() {
       <div className="mx-auto max-w-3xl">
         <motion.div {...FADE} className="text-center mb-16">
           <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-cyan mb-4">La narrativa</p>
-          <h2 className="font-display text-3xl md:text-4xl font-bold text-white">Por qué importa</h2>
+          <h2 className="font-display text-2xl md:text-4xl font-bold text-white">Por qué importa</h2>
         </motion.div>
 
         <div className="relative">
@@ -508,7 +508,7 @@ function TechnologySection() {
       <div className="mx-auto max-w-6xl">
         <motion.div {...FADE} className="text-center mb-12">
           <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-cyan mb-4">Tecnología</p>
-          <h2 className="font-display text-3xl md:text-4xl font-bold text-white mb-4">Ingeniería que salva vidas</h2>
+          <h2 className="font-display text-2xl md:text-4xl font-bold text-white mb-4">Ingeniería que salva vidas</h2>
         </motion.div>
 
         {/* Pipeline */}
@@ -567,7 +567,7 @@ function CTASection() {
     <section id="contacto" className="relative py-24 px-6">
       <div className="mx-auto max-w-3xl text-center">
         <motion.div {...FADE}>
-          <h2 className="font-display text-3xl md:text-4xl font-bold text-white mb-4">
+          <h2 className="font-display text-2xl md:text-4xl font-bold text-white mb-4">
             ¿Interesado en proteger tu ciudad?
           </h2>
           <p className="text-slate-400 max-w-xl mx-auto mb-8">
@@ -591,7 +591,7 @@ function CTASection() {
 
 function FooterSection() {
   return (
-    <footer className="border-t border-cyan/10 py-10 px-6">
+    <footer className="border-t border-cyan/10 py-10 px-6 pb-24 md:pb-10">
       <div className="mx-auto max-w-7xl flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
@@ -648,7 +648,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl mb-8">
           <motion.div {...FADE} className="text-center">
             <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-cyan mb-4">Datos en vivo</p>
-            <h2 className="font-display text-3xl md:text-4xl font-bold text-white">
+            <h2 className="font-display text-2xl md:text-4xl font-bold text-white">
               Panel de Monitoreo
             </h2>
             <p className="mt-3 text-slate-400 max-w-2xl mx-auto">
@@ -666,8 +666,8 @@ export default function LandingPage() {
       <section id="meteo" className="relative py-24 px-6">
         <div className="mx-auto max-w-6xl">
           <motion.div {...FADE} className="text-center mb-12">
-            <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-cyan mb-4">Datos meteorológicos</p>
-            <h2 className="font-display text-3xl md:text-4xl font-bold text-white">Estación Meteorológica — Manga</h2>
+          <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-cyan mb-4">Datos meteorológicos</p>
+          <h2 className="font-display text-2xl md:text-4xl font-bold text-white">Estación Meteorológica — Manga</h2>
           </motion.div>
           <WeatherStation />
         </div>
@@ -678,7 +678,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl">
           <motion.div {...FADE} className="text-center mb-12">
             <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-cyan mb-4">Datos históricos</p>
-            <h2 className="font-display text-3xl md:text-4xl font-bold text-white">Historial y Predicciones</h2>
+            <h2 className="font-display text-2xl md:text-4xl font-bold text-white">Historial y Predicciones</h2>
           </motion.div>
           <HistoryPanel />
         </div>

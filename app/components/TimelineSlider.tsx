@@ -44,7 +44,7 @@ export default function TimelineSlider({ puntos, currentHour, onScrub, isPlaying
           <button
             onClick={onTogglePlay}
             aria-label={isPlaying ? "Pausar" : "Reproducir"}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-cyan/30 glass-subtle text-cyan transition hover:border-cyan hover:shadow-glow"
+            className="flex h-11 w-11 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-cyan/30 glass-subtle text-cyan transition hover:border-cyan hover:shadow-glow active:scale-95 min-h-[44px] min-w-[44px]"
           >
             {isPlaying ? (
               <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="2" y="1" width="4" height="12" /><rect x="8" y="1" width="4" height="12" /></svg>
@@ -93,7 +93,7 @@ export default function TimelineSlider({ puntos, currentHour, onScrub, isPlaying
         </div>
 
         <input type="range" min={0} max={maxHour || 48} step={1} value={currentHour} onChange={handleChange}
-          className="absolute inset-x-0 top-0 h-6 w-full cursor-pointer appearance-none bg-transparent"
+          className="absolute inset-x-0 top-0 h-7 w-full cursor-pointer appearance-none bg-transparent"
           aria-label="Deslizador de línea temporal" />
 
         <div className="mt-2 flex justify-between font-mono text-[9px] text-slate-500">

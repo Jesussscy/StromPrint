@@ -6,36 +6,6 @@
   - Local:        http://localhost:3000
 
  ✓ Starting...
- ✓ Ready in 1666ms
+ ✓ Ready in 1624ms
  ○ Compiling / ...
-(node:15388) [DEP0060] DeprecationWarning: The `util._extend` API is deprecated. Please use Object.assign() instead.
-(Use `node --trace-deprecation ...` to show where the warning was created)
- ✓ Compiled / in 16.1s (5135 modules)
- GET / 200 in 16675ms
- GET / 200 in 275ms
- ○ Compiling /_not-found ...
- ✓ Compiled /_not-found in 4.6s (5125 modules)
- GET /.well-known/appspecific/com.chrome.devtools.json 404 in 4913ms
- GET / 200 in 1668ms
- GET /.well-known/appspecific/com.chrome.devtools.json 404 in 70ms
- ○ Compiling /ciencia ...
- ✓ Compiled /ciencia in 13.9s (6417 modules)
- GET /ciencia 200 in 11780ms
- GET / 200 in 135ms
- GET / 200 in 90ms
- GET / 200 in 50ms
- GET / 200 in 55ms
- GET / 200 in 56ms
- GET / 200 in 52ms
- GET / 200 in 307ms
- ✓ Compiled in 3.8s (6355 modules)
- ✓ Compiled in 1147ms (6355 modules)
- ✓ Compiled in 1042ms (6355 modules)
- ✓ Compiled in 772ms (6355 modules)
- ✓ Compiled in 1391ms (6355 modules)
- ✓ Compiled in 892ms (6355 modules)
- ✓ Compiled in 1694ms (6355 modules)
- ✓ Compiled in 658ms (6355 modules)
- ✓ Compiled in 872ms (6355 modules)
- ✓ Compiled in 661ms (6355 modules)
- GET / 200 in 285ms
+ ✓ Compiled / in 14.6s (5135 modules)

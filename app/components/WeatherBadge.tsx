@@ -1,11 +1,18 @@
 "use client";
 
 import { motion } from "framer-motion";
-import type { MeteorologiaResumen } from "@/app/lib/api";
+import {
+  ESTADO_METEO_COLOR,
+  ESTADO_METEO_LABEL,
+  type EstadoMeteo,
+  type MeteorologiaResumen,
+} from "@/app/lib/api";
 
 interface WeatherBadgeProps {
   meteorologia: MeteorologiaResumen | null;
   isLoading: boolean;
+  estado?: EstadoMeteo;
+  confianza?: number;
 }
 
 function WeatherIcon({ lluvia }: { lluvia: number }) {
@@ -34,7 +41,7 @@ function WeatherIcon({ lluvia }: { lluvia: number }) {
   );
 }
 
-export default function WeatherBadge({ meteorologia, isLoading }: WeatherBadgeProps) {
+export default function WeatherBadge({ meteorologia, isLoading, estado, confianza }: WeatherBadgeProps) {
   if (isLoading) {
     return (
       <div className="flex items-center gap-2 glass-subtle rounded-lg px-3 py-1.5">
@@ -46,10 +53,24 @@ export default function WeatherBadge({ meteorologia, isLoading }: WeatherBadgePr
 
   if (!meteorologia) return null;
 
+  const estadoColor = estado ? ESTADO_METEO_COLOR[estado] : "#00F3FF";
+  const estadoTexto = estado ? ESTADO_METEO_LABEL[estado] : null;
+  const confianzaPct = confianza !== undefined && confianza !== null ? Math.round(confianza * 100) : null;
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
       className="flex flex-wrap items-center gap-3 glass-subtle rounded-lg px-3 py-1.5"
     >
+      {estadoTexto && (
+        <div className="flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: estadoColor }} />
+          <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-slate-200"
+            style={{ color: estadoColor }}>{estadoTexto}</span>
+          {confianzaPct !== null && (
+            <span className="text-[9px] text-slate-400">({confianzaPct}% conf)</span>
+          )}
+        </div>
+      )}
       <div className="flex items-center gap-1.5">
         <WeatherIcon lluvia={meteorologia.horas_con_lluvia} />
         <span className="font-mono text-[10px] text-slate-300 font-tabular">{meteorologia.temp_max_c.toFixed(0)}°C</span>

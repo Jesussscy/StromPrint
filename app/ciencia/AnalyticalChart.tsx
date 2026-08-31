@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import { motion } from "framer-motion";
 import {
   Line,
   Area,
@@ -23,6 +24,12 @@ export default function AnalyticalChart() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [subtramos, setSubtramos] = useState(1);
+
+  // Sel interpretando la solución en vivo (scrubber)
+  const [reproduciendo, setReproduciendo] = useState(false);
+  const [idxCursor, setIdxCursor] = useState(0);
+  const rafRepro = useRef<number | null>(null);
+  const idxRef = useRef(0);
 
   useEffect(() => {
     let activo = true;
@@ -66,6 +73,32 @@ export default function AnalyticalChart() {
   }, [chartData]);
 
   const parametros = resultado?.parametros ?? {};
+
+  // Bucle de reproducción: arrastra el cursor a lo largo de la curva
+  useEffect(() => {
+    if (!reproduciendo || chartData.length === 0) return;
+    idxRef.current = idxCursor;
+    const step = () => {
+      if (!reproduciendo) return;
+      idxRef.current = (idxRef.current + 1) % chartData.length;
+      setIdxCursor(idxRef.current);
+      // Ojete: al llegar al final, seguimos desde el inicio (bucle fluido)
+      rafRepro.current = requestAnimationFrame(step);
+    };
+    rafRepro.current = requestAnimationFrame(step);
+    return () => {
+      if (rafRepro.current) cancelAnimationFrame(rafRepro.current);
+      rafRepro.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reproduciendo, chartData.length]);
+
+  // Limpiar loop al desmontar
+  useEffect(() => () => {
+    if (rafRepro.current) cancelAnimationFrame(rafRepro.current);
+  }, []);
+
+  const puntoCursor = chartData[idxCursor] ?? null;
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_220px]">
@@ -126,14 +159,83 @@ export default function AnalyticalChart() {
                   strokeWidth={1.5}
                   label={{ value: "Emergencia", position: "right", style: { fontSize: 8, fill: "#FF0055" } }}
                 />
-                <Area type="monotone" dataKey="nivel" stroke="#00E5FF" strokeWidth={2.5} fill="url(#gradAnalit)" dot={false} name="Nivel H(t)" isAnimationActive={false} />
+                {/* Cursor en vivo (sweeping) */}
+                {puntoCursor && !cargando && (
+                  <>
+                    <ReferenceLine
+                      x={puntoCursor.hora}
+                      stroke="#00E5FF"
+                      strokeOpacity={0.5}
+                      strokeWidth={1}
+                    />
+                    <ReferenceLine
+                      x={puntoCursor.hora}
+                      stroke="#00E5FF"
+                      strokeOpacity={0.05}
+                      strokeWidth={34}
+                    />
+                  </>
+                )}
+                <Area type="monotone" dataKey="nivel" stroke="#00E5FF" strokeWidth={2.5} fill="url(#gradAnalit)" dot={false} name="Nivel H(t)" animationDuration={700} animationEasing="ease-out" />
               </ComposedChart>
             </ResponsiveContainer>
           )}
         </div>
 
-        {/* Control de subtramos */}
+        {/* Controles de reproducción en vivo */}
         <div className="mt-4 flex flex-wrap items-center gap-3">
+          <button
+            onClick={() => {
+              if (reproduciendo) {
+                setReproduciendo(false);
+              } else {
+                if (idxCursor >= chartData.length - 1) setIdxCursor(0);
+                setReproduciendo(true);
+              }
+            }}
+            disabled={chartData.length === 0}
+            className="glass-glow rounded-lg px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider text-cyan hover:bg-cyan/10 transition disabled:opacity-40 flex items-center gap-1.5"
+          >
+            {reproduciendo ? (
+              <>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1" /><rect x="14" y="4" width="4" height="16" rx="1" /></svg>
+                Pausar
+              </>
+            ) : (
+              <>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="6,3 20,12 6,21" /></svg>
+                Reproducir
+              </>
+            )}
+          </button>
+
+          <input
+            type="range"
+            min={0}
+            max={Math.max(0, chartData.length - 1)}
+            value={idxCursor}
+            onChange={(e) => { setIdxCursor(Number(e.target.value)); }}
+            className="flex-1 min-w-[120px] h-1.5 accent-cyan"
+            disabled={chartData.length === 0}
+            aria-label="Recorrer la solución"
+          />
+
+          <span className="font-mono text-[11px] text-cyan w-16 text-right font-tabular">
+            {puntoCursor ? `${puntoCursor.hora}h` : "—"}
+          </span>
+          <motion.span
+            key={puntoCursor ? puntoCursor.hora : -1}
+            initial={{ opacity: 0.4 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+            className="font-mono text-[11px] text-slate-400 font-tabular w-20 text-right"
+          >
+            {puntoCursor ? `${puntoCursor.nivel.toFixed(1)} cm` : "—"}
+          </motion.span>
+        </div>
+
+        {/* Control de subtramos */}
+        <div className="mt-3 flex flex-wrap items-center gap-3">
           <span className="font-mono text-[10px] uppercase tracking-[0.15em] text-slate-500">
             Tramos de coeficientes constantes:
           </span>
@@ -157,7 +259,11 @@ export default function AnalyticalChart() {
 
       {/* Stats analíticas */}
       <div className="flex flex-col gap-3">
-        <div className="glass rounded-xl p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass rounded-xl p-4"
+        >
           <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-slate-500 mb-1">Pico máximo</p>
           <p className="font-display text-2xl font-bold font-tabular" style={{ color: "#00E5FF" }}>
             {pico ? `${pico.nivel.toFixed(1)} cm` : "—"}
@@ -165,7 +271,7 @@ export default function AnalyticalChart() {
           <p className="font-mono text-[10px] text-slate-500">
             {pico ? `hora ${pico.hora}h` : ""}
           </p>
-        </div>
+        </motion.div>
 
         <div className="glass rounded-xl p-4">
           <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-slate-500 mb-1">Masa (m)</p>
@@ -184,6 +290,30 @@ export default function AnalyticalChart() {
           <p className="font-display text-lg font-bold font-tabular text-white">
             {parametros.stiffness != null ? `${parametros.stiffness} N/m` : "—"}
           </p>
+        </div>
+
+        {/* Valor en vivo del cursor */}
+        <div className="glass rounded-xl p-4 text-center">
+          <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-slate-500 mb-1">
+            Nivel en el cursor
+          </p>
+          <motion.div
+            key={idxCursor}
+            initial={{ scale: 0.92, opacity: 0.4 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.2 }}
+          >
+            <p className="font-display text-3xl font-bold font-tabular text-cyan">
+              {puntoCursor ? puntoCursor.nivel.toFixed(1) : "—"}<span className="text-sm text-slate-500"> cm</span>
+            </p>
+          </motion.div>
+          <div className="mt-1 h-1 w-full rounded-full bg-ocean overflow-hidden">
+            <motion.div
+              className="h-full rounded-full bg-gradient-to-r from-cyan/40 to-cyan"
+              animate={{ width: `${chartData.length ? ((idxCursor + 1) / chartData.length) * 100 : 0}%` }}
+              transition={{ duration: 0.1 }}
+            />
+          </div>
         </div>
 
         <div className="glass rounded-xl p-4 text-center">

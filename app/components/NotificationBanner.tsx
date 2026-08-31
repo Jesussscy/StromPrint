@@ -109,7 +109,7 @@ export const NotificationBanner = () => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
 
   return (
-    <div className="fixed top-4 right-4 z-[2000] max-w-sm space-y-2">
+    <div className="fixed top-16 right-3 left-3 sm:left-auto sm:right-4 z-[2000] sm:max-w-sm space-y-2">
       <AnimatePresence>
         {notifications.slice(0, 3).map((notif, index) => (
           <motion.div

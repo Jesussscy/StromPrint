@@ -107,10 +107,10 @@ export default function ZonasMangaPanel({
         </div>
 
         {/* Filtros por nivel */}
-        <div className="flex gap-1.5 mt-3">
+        <div className="flex gap-1.5 mt-3 overflow-x-auto pb-1 -mx-1 px-1 no-scrollbar">
           <button
             onClick={() => setFiltro("TODOS")}
-            className={`rounded-md px-2 py-1 text-[10px] font-mono uppercase tracking-wider transition ${filtro === "TODOS" ? "bg-cyan/20 text-cyan" : "text-slate-400 hover:text-cyan"}`}
+            className={`shrink-0 rounded-md px-2.5 py-1.5 text-[10px] font-mono uppercase tracking-wider transition min-h-[32px] ${filtro === "TODOS" ? "bg-cyan/20 text-cyan" : "text-slate-400 hover:text-cyan active:text-cyan"}`}
           >
             Todos
           </button>
@@ -118,7 +118,7 @@ export default function ZonasMangaPanel({
             <button
               key={n}
               onClick={() => setFiltro(filtro === n ? "TODOS" : n)}
-              className={`relative rounded-md px-2 py-1 text-[10px] font-mono uppercase tracking-wider transition ${filtro === n ? "bg-white/5" : "text-slate-400 hover:text-white"}`}
+              className={`shrink-0 relative rounded-md px-2.5 py-1.5 text-[10px] font-mono uppercase tracking-wider transition min-h-[32px] ${filtro === n ? "bg-white/5" : "text-slate-400 hover:text-white active:text-white"}`}
               style={filtro === n ? { color: RIESGO_META[n].color } : undefined}
             >
               <span className="inline-block w-2 h-2 rounded-full mr-1 align-middle" style={{ background: RIESGO_META[n].color }} />
@@ -155,8 +155,8 @@ export default function ZonasMangaPanel({
             <button
               key={zona.id}
               onClick={() => onSelect(seleccionada ? null : zona)}
-              className={`w-full text-left rounded-xl px-3 py-2.5 transition ${
-                seleccionada ? "bg-cyan/10 ring-1 ring-cyan/40" : "hover:bg-white/5"
+              className={`w-full text-left rounded-xl px-3 py-3 transition min-h-[52px] ${
+                seleccionada ? "bg-cyan/10 ring-1 ring-cyan/40" : "hover:bg-white/5 active:bg-white/5"
               }`}
             >
               <div className="flex items-center gap-2.5">

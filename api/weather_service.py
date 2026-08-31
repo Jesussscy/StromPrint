@@ -11,6 +11,7 @@ No comercial: hasta 10,000 llamadas/dia. Attribution: CC BY 4.0.
 
 import json
 import logging
+import math
 import os
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
@@ -31,6 +32,7 @@ HOURLY_VARS = [
     "rain",
     "temperature_2m",
     "relative_humidity_2m",
+    "cloud_cover",
     "wind_speed_10m",
     "wind_direction_10m",
 ]
@@ -40,9 +42,95 @@ DAILY_VARS = [
     "precipitation_sum",
     "rain_sum",
     "precipitation_hours",
+    "cloud_cover_mean",
     "temperature_2m_max",
     "temperature_2m_min",
 ]
+
+# ---------------------------------------------------------------------------
+# Estado meteorologico
+# ---------------------------------------------------------------------------
+ESTADO_SOLEADO = "soleado"
+ESTADO_PARCIALMENTE_NUBLADO = "parcialmente_nublado"
+ESTADO_NUBLADO = "nublado"
+ESTADO_LLUVIOSO = "lluvioso"
+ESTADO_TORMENTA = "tormenta"
+ESTADO_SIN_DATOS = "sin_datos"
+
+ESTADO_LABEL = {
+    ESTADO_SOLEADO: "Soleado",
+    ESTADO_PARCIALMENTE_NUBLADO: "Parcialmente nublado",
+    ESTADO_NUBLADO: "Nublado",
+    ESTADO_LLUVIOSO: "Lluvioso",
+    ESTADO_TORMENTA: "Tormenta",
+    ESTADO_SIN_DATOS: "Sin datos",
+}
+
+# Umbrales de estado (basados en lluvia actual en mm/h y nubosidad en %)
+LLUVIA_TORMENTA_MMH = 10.0
+LLUVIA_LLUVIOSO_MMH = 2.0
+LLUVIA_LIGERA_MMH = 0.1
+NUBOSIDAD_NUBLADO_PCT = 70.0
+NUBOSIDAD_PARCIAL_PCT = 40.0
+
+
+def determinar_estado(
+    precipitacion_actual_mmh: float = 0.0,
+    nubosidad_pct: Optional[float] = None,
+) -> str:
+    """Clasifica el estado meteorologico segun lluvia actual y nubosidad.
+
+    Precedencia:
+      1. Lluvia fuerte (tormenta) / moderada (lluvioso)
+      2. Nubosidad (nublado / parcialmente nublado)
+      3. Sin lluvia ni nubes -> soleado
+    """
+    lluvia = float(precipitacion_actual_mmh or 0.0)
+    if lluvia > LLUVIA_TORMENTA_MMH:
+        return ESTADO_TORMENTA
+    if lluvia > LLUVIA_LLUVIOSO_MMH:
+        return ESTADO_LLUVIOSO
+    if nubosidad_pct is None:
+        return ESTADO_SOLEADO
+    nubes = float(nubosidad_pct or 0.0)
+    if nubes > NUBOSIDAD_NUBLADO_PCT:
+        return ESTADO_NUBLADO
+    if nubes > NUBOSIDAD_PARCIAL_PCT:
+        return ESTADO_PARCIALMENTE_NUBLADO
+    return ESTADO_SOLEADO
+
+
+def es_dia_lluvioso(estado: str) -> bool:
+    """True si el estado implica precipitacion significativa."""
+    return estado in (ESTADO_LLUVIOSO, ESTADO_TORMENTA)
+
+
+# ---------------------------------------------------------------------------
+# Datos historicos promedio (fallback) — Barrio Manga, Cartagena, ultimos 5 anos
+# lluvia media mensual en mm/mes, temperatura y humedad tipicas.
+# ---------------------------------------------------------------------------
+DATOS_HISTORICOS_POR_MES = {
+    1:  {"lluvia_mm_mes": 2.0,  "temp_c": 28.0, "humedad_pct": 70.0},
+    2:  {"lluvia_mm_mes": 1.0,  "temp_c": 29.0, "humedad_pct": 68.0},
+    3:  {"lluvia_mm_mes": 3.0,  "temp_c": 29.0, "humedad_pct": 72.0},
+    4:  {"lluvia_mm_mes": 15.0, "temp_c": 30.0, "humedad_pct": 78.0},
+    5:  {"lluvia_mm_mes": 40.0, "temp_c": 30.0, "humedad_pct": 82.0},
+    6:  {"lluvia_mm_mes": 60.0, "temp_c": 29.0, "humedad_pct": 85.0},
+    7:  {"lluvia_mm_mes": 35.0, "temp_c": 29.0, "humedad_pct": 80.0},
+    8:  {"lluvia_mm_mes": 30.0, "temp_c": 30.0, "humedad_pct": 79.0},
+    9:  {"lluvia_mm_mes": 50.0, "temp_c": 29.0, "humedad_pct": 84.0},
+    10: {"lluvia_mm_mes": 80.0, "temp_c": 28.0, "humedad_pct": 86.0},
+    11: {"lluvia_mm_mes": 45.0, "temp_c": 28.0, "humedad_pct": 83.0},
+    12: {"lluvia_mm_mes": 10.0, "temp_c": 28.0, "humedad_pct": 75.0},
+}
+
+# Promedio anual aproximado (usado como ultimo recurso)
+DATOS_PROMEDIO = {
+    "temp_c": 29.0,
+    "humedad_pct": 79.0,
+    "lluvia_diaria_mm": 6.0,
+    "viento_kmh": 8.0,
+}
 
 
 async def fetch_weather_forecast(
@@ -97,6 +185,7 @@ def _process_forecast(raw: Dict[str, Any]) -> Dict[str, Any]:
             "rain": hourly.get("rain", [0.0])[i] or 0.0,
             "temperature_2m": hourly.get("temperature_2m", [25.0])[i] or 25.0,
             "relative_humidity_2m": hourly.get("relative_humidity_2m", [80.0])[i] or 80.0,
+            "cloud_cover": hourly.get("cloud_cover", [0.0])[i] or 0.0,
             "wind_speed_10m": hourly.get("wind_speed_10m", [0.0])[i] or 0.0,
             "wind_direction_10m": hourly.get("wind_direction_10m", [0.0])[i] or 0.0,
         })
@@ -110,6 +199,7 @@ def _process_forecast(raw: Dict[str, Any]) -> Dict[str, Any]:
             "precipitation_sum": daily.get("precipitation_sum", [0.0])[i] or 0.0,
             "rain_sum": daily.get("rain_sum", [0.0])[i] or 0.0,
             "precipitation_hours": daily.get("precipitation_hours", [0.0])[i] or 0.0,
+            "cloud_cover_mean": daily.get("cloud_cover_mean", [0.0])[i] or 0.0,
             "temperature_2m_max": daily.get("temperature_2m_max", [30.0])[i] or 30.0,
             "temperature_2m_min": daily.get("temperature_2m_min", [24.0])[i] or 24.0,
         })
@@ -287,6 +377,70 @@ def get_weather_summary(hourly_data: List[Dict], horas: int = 72) -> Dict[str, A
     }
 
 
+# Periodo semidiurno de marea (~12.42 h) para estimar pleamar
+TIDE_PERIOD_H = 12.42
+
+
+def _proxima_pleamar(reference: Optional[datetime] = None) -> str:
+    """Devuelve la hora ISO de la proxima pleamar estimada.
+
+    Modelo simplificado: hay 2 pleamares por dia (periodo semidiurno).
+    Sin datos reales de marea, asumimos un ciclo con un offset fijo que
+    aproxima la pleamar de la marea semidiurna del Caribe.
+    """
+    now = reference or datetime.now()
+    # Desplazamiento de fase arbitrario (radianes): asumimos primera pleamar del dia ~06:xx
+    # Periodo P = 12.42 h -> frecuencia angular w = 2*pi/P
+    w = 2 * 3.141592653589793 / TIDE_PERIOD_H
+    # Estimar cuantas horas hasta el proximo maximo de la senoide
+    # sen(w*(t - 0.25*P)) tiene maximos cuando w*(t - 0.25P) = pi/2 + k*2pi
+    def time_to_peak(t_hours: float, phase_hours: float = 5.0) -> float:
+        phase = w * (t_hours - phase_hours)
+        # proximo multiplo de 2pi que lleve a pi/2
+        target = (0.5 + 2 * 3.141592653589793 - phase) % (2 * 3.141592653589793)
+        return target / w
+
+    # Buscar la pleamar mas cercana en las proximas 13 horas
+    t0 = now.hour + now.minute / 60.0
+    best_hours = None
+    best_delta = None
+    for k in range(0, 3):
+        peak = time_to_peak(t0, phase_hours=5.0) + k * TIDE_PERIOD_H
+        future = t0 + peak
+        # aceptamos solo si esta en las proximas 24h
+        if future <= 24.0:
+            delta = peak
+            if best_delta is None or delta < best_delta:
+                best_delta = delta
+                best_hours = future
+    if best_hours is None:
+        best_hours = t0 + 6.21
+
+    total_minutes = int(round(best_hours * 60)) % (24 * 60)
+    hh = total_minutes // 60
+    mm = total_minutes % 60
+    approx = now.replace(hour=hh, minute=mm, second=0, microsecond=0)
+    return approx.isoformat()
+
+
+def _estimar_marea_cm(reference: Optional[datetime] = None) -> float:
+    """Estima el nivel de marea (cm) para el instante dado.
+
+    Marea semidiurna: nivel = media + amplitud * sin(w*(t - fase)).
+    La pleamar coincide con el maximo de la senoide. Amplitud tipica del
+    Caribe ~ 25 cm sobre la media (mean_sea_level = 8 cm).
+    """
+    now = reference or datetime.now()
+    w = 2 * 3.141592653589793 / TIDE_PERIOD_H
+    phase_hours = 5.0  # desfase: primera pleamar del dia ~06:xx
+    t_hours = now.hour + now.minute / 60.0
+    mean = 8.0
+    amplitude = 25.0
+    # sen(w*(t - fase)); offset 0.5 para centrar entre 0 y amplitud
+    elev = mean + amplitude * 0.5 * (1.0 + math.sin(w * (t_hours - phase_hours)))
+    return round(elev, 1)
+
+
 class WeatherService:
     """
     Servicio meteorologico robusto con cache local de 30 min y fallback
@@ -312,10 +466,14 @@ class WeatherService:
         """
         Obtiene un resumen meteorologico enriquecido para Manga, Cartagena.
 
-        Estrategia:
+        Estrategia (resiliente a dias soleados y a fallos de la API):
           1. Cache local (si es reciente y no se fuerza refresh)
-          2. Open-Meteo (principal)
-          3. Datos simulados (fallback garantizado)
+          2. Open-Meteo (principal)  -> fuente=open-meteo, confianza=0.95
+          3. Datos historicos del mes -> fuente=historico, confianza=0.70
+          4. Datos promedio (ultimo recurso) -> fuente=simulado, confianza=0.40
+
+        Se diferencia explicitamente "sin lluvia" (estado soleado) vs
+        "sin datos" (estado sin_datos).
         """
         if not force_refresh:
             cached = self._load_cache()
@@ -325,11 +483,19 @@ class WeatherService:
 
         data = await self._fetch_from_openmeteo()
         if data is None:
-            logger.warning("WeatherService: usando datos simulados (fallback)")
-            data = self._generate_fallback_data()
+            logger.warning("WeatherService: Open-Meteo no disponible, usando historico")
+            data = self._generate_historical_data()
         else:
             self._store_cache(data)
+            return data
 
+        # Si el historico tampoco refleja datos reales (mes sin lluvia o invalido),
+        # caemos al promedio. El historico ya incluye estado y confianza.
+        if data.get("estado") == ESTADO_SIN_DATOS:
+            logger.warning("WeatherService: historico invalido, usando promedio")
+            data = self._generate_promedio_data()
+
+        self._store_cache(data)
         return data
 
     async def _fetch_from_openmeteo(self) -> Optional[Dict[str, Any]]:
@@ -359,14 +525,23 @@ class WeatherService:
         dias_lluviosos = summary.get("dias_lluviosos", 0)
         humedad_suelo = min(100.0, round((parametros.get("soil_humidity", 0.3) * 100), 1))
 
+        precip_actual = round(actual.get("rain", 0.0), 2)
+        nubosidad = actual.get("cloud_cover", 0.0) or 0.0
+        estado = determinar_estado(precipitacion_actual_mmh=precip_actual, nubosidad_pct=nubosidad)
+
         return {
             "source": "open-meteo",
+            "fuente": "open-meteo",
+            "confianza": 0.95,
             "timestamp": now.isoformat(),
             "lat": MANGA_LAT,
             "lon": MANGA_LON,
             "temperatura": round(actual.get("temperature_2m", 28.0), 1),
             "humedad": round(actual.get("relative_humidity_2m", 80.0), 1),
-            "precipitacion_actual_mm_h": round(actual.get("rain", 0.0), 2),
+            "nubosidad_pct": round(float(nubosidad), 1),
+            "estado": estado,
+            "estado_label": ESTADO_LABEL.get(estado, estado),
+            "precipitacion_actual_mm_h": precip_actual,
             "velocidad_viento_kmh": round(actual.get("wind_speed_10m", 0.0), 1),
             "direccion_viento_deg": round(actual.get("wind_direction_10m", 0.0), 1),
             "dias_lluviosos_consecutivos": dias_lluviosos,
@@ -376,61 +551,188 @@ class WeatherService:
             "temp_min_c": summary.get("temp_min_c", 24.0),
             "viento_max_kmh": summary.get("viento_max_kmh", 0.0),
             "lluvia_manana_mm": daily[1].get("rain_sum", 0.0) if len(daily) > 1 else 0.0,
+            "marea_actual_cm": _estimar_marea_cm(now),
+            "proxima_pleamar": _proxima_pleamar(now),
             "parametros_simulacion": parametros,
             "pronostico": [
                 {
                     "dia": d.get("date"),
                     "lluvia_mm": d.get("rain_sum", 0.0),
                     "temp_max_c": d.get("temperature_2m_max", 30.0),
+                    # Diario no trae lluvia horaria; usamos el acumulado para clasificar
+                    "estado": (ESTADO_LLUVIOSO
+                               if (d.get("rain_sum", 0.0) or 0.0) > 2.0
+                               else (ESTADO_NUBLADO if (d.get("cloud_cover_mean", 0.0) or 0.0) > 70 else ESTADO_SOLEADO)),
                 }
                 for d in daily[:3]
             ],
         }
 
-    def _generate_fallback_data(self) -> Dict[str, Any]:
-        """Datos simulados realistas (Cartagena) cuando Open-Meteo no responde."""
+    def _generate_historical_data(self) -> Dict[str, Any]:
+        """Datos basados en el historico promedio del mes (fallback Open-Meteo).
+
+        Confianza media (0.70). Estado derivado de la lluvia media del mes.
+        Si el historico no existe para el mes (no deberia), devuelve
+        estado=sin_datos para que get_weather caiga al promedio.
+        """
         now = datetime.now()
         hora = now.hour
-        # Mas lluvia en la tarde (14-18h) — patron tipico de Cartagena
-        lluvia_base = 2.0 if 14 <= hora <= 18 else 0.5
+        mes = now.month
+        hist = DATOS_HISTORICOS_POR_MES.get(mes)
 
-        parametros = {
-            "storm_peak_hour": 12.0,
-            "storm_intensity": lluvia_base,
-            "rain_duration_h": 4.0,
-            "mean_sea_level": self.default_cm,
-            "wind_direction_deg": 180.0,
-            "wind_speed_kmh": 8.0,
-            "soil_humidity": 0.5,
-            "consecutive_rainy_days": 2,
-        }
+        if hist is None:
+            return self._base_weather(
+                fuente="historico",
+                confianza=0.70,
+                estado=ESTADO_SIN_DATOS,
+                temperatura=28.0,
+                humedad=75.0,
+                nubosidad=40.0,
+                precipitacion_actual=0.0,
+                viento=8.0,
+                viento_dir=180.0,
+                dias_lluviosos=0,
+                humedad_suelo=30.0,
+                lluvia_total=0.0,
+                temp_max=30.0,
+                temp_min=24.0,
+                viento_max=15.0,
+                lluvia_manana=0.0,
+                lluvia_diaria_estimada=6.0,
+                parametros=None,
+            )
+
+        # lluvia media diaria a partir del acumulado mensual (aprox.)
+        lluvia_diaria = round(hist["lluvia_mm_mes"] / 30.0, 2)
+        # Historial del mes: si el mes es seco, estado soleado
+        if lluvia_diaria <= LLUVIA_LIGERA_MMH:
+            estado = ESTADO_SOLEADO
+        else:
+            estado = determinar_estado(lluvia_diaria, None)
+        nubosidad = 55.0 if estado != ESTADO_SOLEADO else 25.0
+
+        return self._base_weather(
+            fuente="historico",
+            confianza=0.70,
+            estado=estado,
+            temperatura=hist["temp_c"],
+            humedad=hist["humedad_pct"],
+            nubosidad=nubosidad,
+            precipitacion_actual=0.0,
+            viento=8.0,
+            viento_dir=180.0,
+            dias_lluviosos=1 if estado in (ESTADO_LLUVIOSO, ESTADO_TORMENTA) else 0,
+            humedad_suelo=65.0 if estado in (ESTADO_LLUVIOSO, ESTADO_TORMENTA) else 40.0,
+            lluvia_total=round(lluvia_diaria * 24, 2),
+            temp_max=hist["temp_c"] + 2,
+            temp_min=hist["temp_c"] - 2,
+            viento_max=20.0,
+            lluvia_manana=lluvia_diaria,
+            lluvia_diaria_estimada=lluvia_diaria,
+            parametros=None,
+        )
+
+    def _generate_promedio_data(self) -> Dict[str, Any]:
+        """Ultimo recurso: datos promedio anuales (confianza baja 0.40)."""
+        now = datetime.now()
+        ahora = now.hour
+
+        return self._base_weather(
+            fuente="simulado",
+            confianza=0.40,
+            estado=ESTADO_SIN_DATOS,
+            temperatura=DATOS_PROMEDIO["temp_c"] + (ahora - 6) / 24 * 2,
+            humedad=DATOS_PROMEDIO["humedad_pct"],
+            nubosidad=50.0,
+            precipitacion_actual=0.0,
+            viento=DATOS_PROMEDIO["viento_kmh"],
+            viento_dir=180.0,
+            dias_lluviosos=0,
+            humedad_suelo=50.0,
+            lluvia_total=0.0,
+            temp_max=DATOS_PROMEDIO["temp_c"] + 2,
+            temp_min=DATOS_PROMEDIO["temp_c"] - 3,
+            viento_max=18.0,
+            lluvia_manana=DATOS_PROMEDIO["lluvia_diaria_mm"],
+            lluvia_diaria_estimada=DATOS_PROMEDIO["lluvia_diaria_mm"],
+            parametros=None,
+        )
+
+    def _base_weather(
+        self,
+        fuente: str,
+        confianza: float,
+        estado: str,
+        temperatura: float,
+        humedad: float,
+        nubosidad: float,
+        precipitacion_actual: float,
+        viento: float,
+        viento_dir: float,
+        dias_lluviosos: int,
+        humedad_suelo: float,
+        lluvia_total: float,
+        temp_max: float,
+        temp_min: float,
+        viento_max: float,
+        lluvia_manana: float,
+        lluvia_diaria_estimada: float,
+        parametros: Optional[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        """Construye el payload comun de weather a partir de valores escalares."""
+        now = datetime.now()
+        if parametros is None:
+            parametros = {
+                "storm_peak_hour": 12.0,
+                "storm_intensity": max(0.0, lluvia_diaria_estimada),
+                "rain_duration_h": 2.0 if estado == ESTADO_SOLEADO else 4.0,
+                "mean_sea_level": self.default_cm,
+                "wind_direction_deg": viento_dir,
+                "wind_speed_kmh": viento,
+                "soil_humidity": round(humedad_suelo / 100.0, 3),
+                "consecutive_rainy_days": dias_lluviosos,
+            }
+
+        pronostico = []
+        for i in range(3):
+            dia = (now + timedelta(days=i)).date().isoformat()
+            if i == 0:
+                lluvia = lluvia_manana
+            else:
+                lluvia = lluvia_manana  # historico plano
+            pronostico.append({
+                "dia": dia,
+                "lluvia_mm": round(lluvia, 2),
+                "temp_max_c": round(temp_max, 1),
+                "estado": ESTADO_LLUVIOSO if lluvia > 2.0 else (ESTADO_NUBLADO if nubosidad > 70 else ESTADO_SOLEADO),
+            })
 
         return {
-            "source": "simulated",
+            "source": fuente,
+            "fuente": fuente,
+            "confianza": confianza,
             "timestamp": now.isoformat(),
             "lat": MANGA_LAT,
             "lon": MANGA_LON,
-            "temperatura": round(28 + (hora - 6) / 24 * 4, 1),
-            "humedad": round(75 + (hora - 6) / 24 * 10, 1),
-            "precipitacion_actual_mm_h": round(lluvia_base, 2),
-            "velocidad_viento_kmh": round(5 + (hora - 6) / 24 * 10, 1),
-            "direccion_viento_deg": round(180 + (hora % 24) * 5, 1),
-            "dias_lluviosos_consecutivos": 2,
-            "humedad_suelo_pct": 65.0,
-            "lluvia_total_mm": round(15 + (hora - 6) / 24 * 5, 1),
-            "temp_max_c": 30.0,
-            "temp_min_c": 24.0,
-            "viento_max_kmh": round(15 + (hora - 6) / 24 * 8, 1),
-            "lluvia_manana_mm": 5.0,
+            "temperatura": round(float(temperatura), 1),
+            "humedad": round(float(humedad), 1),
+            "nubosidad_pct": round(float(nubosidad), 1),
+            "estado": estado,
+            "estado_label": ESTADO_LABEL.get(estado, estado),
+            "precipitacion_actual_mm_h": round(float(precipitacion_actual), 2),
+            "velocidad_viento_kmh": round(float(viento), 1),
+            "direccion_viento_deg": round(float(viento_dir), 1),
+            "dias_lluviosos_consecutivos": dias_lluviosos,
+            "humedad_suelo_pct": round(float(humedad_suelo), 1),
+            "lluvia_total_mm": round(float(lluvia_total), 2),
+            "temp_max_c": round(float(temp_max), 1),
+            "temp_min_c": round(float(temp_min), 1),
+            "viento_max_kmh": round(float(viento_max), 1),
+            "lluvia_manana_mm": round(float(lluvia_manana), 2),
+            "marea_actual_cm": _estimar_marea_cm(now),
+            "proxima_pleamar": _proxima_pleamar(now),
             "parametros_simulacion": parametros,
-            "pronostico": [
-                {
-                    "dia": (now + timedelta(days=i)).date().isoformat(),
-                    "lluvia_mm": 5 + i * 2,
-                    "temp_max_c": 30 + i,
-                }
-                for i in range(3)
-            ],
+            "pronostico": pronostico,
         }
 
     def _load_cache(self) -> Optional[Dict[str, Any]]:

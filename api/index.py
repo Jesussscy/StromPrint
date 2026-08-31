@@ -53,6 +53,13 @@ from .security import (
     verify_api_key,
 )
 from .weather_service import (
+    ESTADO_SOLEADO,
+    ESTADO_NUBLADO,
+    ESTADO_LLUVIOSO,
+    ESTADO_TORMENTA,
+    ESTADO_SIN_DATOS,
+    ESTADO_LABEL,
+    es_dia_lluvioso,
     extract_simulation_params,
     fetch_weather_forecast,
     get_weather_summary,
@@ -185,6 +192,12 @@ class PrediccionResponse(BaseModel):
     narrativa: str = ""
     recomendacion: str = ""
     notificaciones: list[dict] = Field(default_factory=list)
+    estado_meteorologico: str = "soleado"
+    estado_label: str = "Soleado"
+    confianza_meteo: float = 1.0
+    fuente_meteo: str = "open-meteo"
+    es_dia_lluvioso: bool = False
+    proxima_pleamar: str = ""
 
 
 class InfraResponse(BaseModel):
@@ -322,7 +335,19 @@ async def predecir(
     try:
         # 1. Obtener datos meteorologicos si se solicita
         weather_data = None
+        estado_meteo = ESTADO_SOLEADO
+        confianza_meteo = 1.0
+        fuente_meteo = "open-meteo"
+        proxima_pleamar = ""
+
         if payload.usar_datos_meteo:
+            # Estado/confianza con resiliencia (open-meteo -> historico -> promedio)
+            wea = await weather_service.get_weather()
+            estado_meteo = wea.get("estado", ESTADO_SOLEADO)
+            confianza_meteo = wea.get("confianza", 1.0)
+            fuente_meteo = wea.get("fuente", "open-meteo")
+            proxima_pleamar = wea.get("proxima_pleamar", "")
+
             forecast = await fetch_weather_forecast(forecast_days=7)
             weather_data = extract_simulation_params(
                 hourly_data=forecast["hourly"],
@@ -333,6 +358,14 @@ async def predecir(
                 hourly_data=forecast["hourly"],
                 horas=payload.horas_pronostico,
             )
+
+            # Dia soleado (sin lluvia): la EDO se rige por marea/viento, sin F_lluvia
+            if not es_dia_lluvioso(estado_meteo):
+                weather_data["storm_intensity"] = 0.0
+                weather_data["rain_duration_h"] = 0.0
+                meteo_summary["lluvia_total_mm"] = 0.0
+                meteo_summary["horas_con_lluvia"] = 0
+                meteo_summary["dias_lluviosos"] = 0
         else:
             # Modo manual: usar intensidad proporcionada
             meteo_summary = {
@@ -420,6 +453,8 @@ async def predecir(
         nivel_max = max_record["water_level_cm"]
         hora_pico = max_record["hour"]
         estado_max = max_record["risk_level"]
+        dia_lluvioso = es_dia_lluvioso(estado_meteo)
+        estado_label = ESTADO_LABEL.get(estado_meteo, estado_meteo)
 
         if estado_max == "Normal":
             recomendacion = "Drene sus patios y mantenga limpias las alcantarillas para prevenir acumulacion."
@@ -430,24 +465,40 @@ async def predecir(
         else:
             recomendacion = "EVACUE inmediatamente las zonas inundables. Dirijase a los puntos de alta en Manga."
 
-        if nivel_max > 5:
+        if estado_meteo == ESTADO_TORMENTA:
             narrativa = (
-                f"Segun el modelo, el nivel del agua alcanzara {nivel_max:.0f} cm en la hora "
-                f"{hora_pico:.0f} ({hora_pico/24:.1f} dias). "
+                f"Tormenta en curso ({estado_label}): el modelo estima un nivel maximo de "
+                f"{nivel_max:.0f} cm hacia la hora {hora_pico:.0f}. "
             )
-            if tendencia == "creciente":
-                narrativa += "La tendencia es creciente por la combinacion de lluvia y marea alta. "
-            elif tendencia == "decreciente":
-                narrativa += "El nivel esta en descenso. La lluvia disminuye y el drenaje actua. "
-            else:
-                narrativa += "El nivel se mantiene estable en este periodo. "
-            narrativa += f"Se recomienda: {recomendacion}"
+            narrativa += (
+                "La lluvia intensa se combina con la marea y reduce la capacidad de drenaje. "
+                if tendencia == "creciente" else
+                "La tormenta va cediendo y el sistema de drenaje recupera terreno. "
+            )
+        elif dia_lluvioso:
+            narrativa = (
+                f"Jornada lluviosa ({estado_label}): se prevé acumulacion de hasta "
+                f"{nivel_max:.0f} cm hacia la hora {hora_pico:.0f}. "
+            )
+            narrativa += (
+                "El aporte pluvial mantiene el nivel en aumento. "
+                if tendencia == "creciente" else
+                "Aunque llueve, el nivel se mantiene bajo control por el drenaje. "
+            )
         else:
+            # Dia soleado o parcialmente nublado: riesgo dominado por marea y viento
             narrativa = (
-                "El modelo indica condiciones normales sin acumulacion significativa de agua. "
-                "El drenaje territorial funciona adecuadamente. "
-                f"Recomendacion: {recomendacion}"
+                f"Dia {estado_label.lower()} sin lluvia significativa: el nivel sigue la marea "
+                f"(proxima pleamar {proxima_pleamar or 'hoy'}) con aporte modesto de viento. "
             )
+            narrativa += (
+                "Máximo previsto de "
+                + f"{nivel_max:.0f} cm hacia la hora {hora_pico:.0f}. "
+                + ("El nivel crece con la marea entrante. " if tendencia == "creciente" else
+                   "El nivel desciende conforme baja la marea. " if tendencia == "decreciente" else
+                   "El nivel oscila suavemente con la marea. ")
+            )
+            narrativa += f"Se recomienda: {recomendacion}"
 
         # 6. Notificaciones automaticas por umbral de riesgo (solo si se usa meteo)
         notificaciones = []
@@ -489,6 +540,12 @@ async def predecir(
             narrativa=narrativa,
             recomendacion=recomendacion,
             notificaciones=notificaciones,
+            estado_meteorologico=estado_meteo,
+            estado_label=estado_label,
+            confianza_meteo=confianza_meteo,
+            fuente_meteo=fuente_meteo,
+            es_dia_lluvioso=dia_lluvioso,
+            proxima_pleamar=proxima_pleamar,
         )
 
     except ValueError as exc:

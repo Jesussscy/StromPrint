@@ -224,12 +224,19 @@ export default function MetricsPanel({ punto, prediccion, isLoading, error }: Me
         />
       </div>
 
+      {/* KPIs secondary - mobile friendly */}
+      <div className="grid grid-cols-3 gap-2">
+        <KPI label="Marea" value={punto ? punto.marea_cm.toFixed(1) : "—"} unit="cm" color="#6366F1" icon={<IconTide />} />
+        <KPI label="Suelo" value={punto ? (punto.saturacion_suelo * 100).toFixed(0) : "—"} unit="%" color="#D97706" icon={<IconSoil />} />
+        <KPI label="Cambio" value={punto ? punto.velocidad_cambio.toFixed(2) : "—"} unit="cm/h" color="#E9C46A" icon={<IconVelocity />} />
+      </div>
+
       {/* Chart */}
       <div className="glass rounded-2xl p-3 flex-1">
         <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-500">
           Proyección H(t) — 48 Horas
         </p>
-        <div className="h-52 w-full">
+        <div className="h-48 sm:h-52 w-full">
           {chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
@@ -269,13 +276,6 @@ export default function MetricsPanel({ punto, prediccion, isLoading, error }: Me
             </div>
           )}
         </div>
-      </div>
-
-      {/* Secondary */}
-      <div className="grid grid-cols-3 gap-2">
-        <KPI label="Marea" value={punto ? punto.marea_cm.toFixed(1) : "—"} unit="cm" color="#6366F1" icon={<IconTide />} />
-        <KPI label="Suelo" value={punto ? (punto.saturacion_suelo * 100).toFixed(0) : "—"} unit="%" color="#D97706" icon={<IconSoil />} />
-        <KPI label="Cambio" value={punto ? punto.velocidad_cambio.toFixed(2) : "—"} unit="cm/h" color="#E9C46A" icon={<IconVelocity />} />
       </div>
 
       {prediccion && <Narrative narrativa={prediccion.narrativa} recomendacion={prediccion.recomendacion} />}

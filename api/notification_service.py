@@ -57,6 +57,12 @@ class NotificationService:
         """Clasifica el nivel, decide si notificar (anti-spam) y envia."""
         riesgo, mensaje = self._clasificar(nivel_cm)
 
+        # Anade contexto meteorologico (estado del dia) al mensaje
+        if weather_data:
+            estado_label = weather_data.get("estado_label")
+            if estado_label:
+                mensaje = f"[Estado del dia: {estado_label}] {mensaje}"
+
         if not self._should_send_notification(riesgo, nivel_cm):
             return []
 
@@ -134,12 +140,15 @@ class NotificationService:
             body = (
                 "StormPrint - Alerta de Inundacion\n\n"
                 f"Ubicacion: Barrio Manga, Cartagena\n"
-                f"Nivel de agua: {nivel_cm:.1f} cm\n\n"
+                f"Nivel de agua: {nivel_cm:.1f} cm\n"
+                f"Estado del dia: {w.get('estado_label', 'N/A')} "
+                f"(confianza {w.get('confianza', 'N/A')})\n\n"
                 f"Temperatura: {w.get('temperatura', 'N/A')} C\n"
                 f"Humedad: {w.get('humedad', 'N/A')}%\n"
                 f"Lluvia: {w.get('precipitacion_actual_mm_h', w.get('precipitacion_actual', 'N/A'))} mm/h\n"
                 f"Viento: {w.get('velocidad_viento_kmh', w.get('velocidad_viento', 'N/A'))} km/h\n"
-                f"Fuente: {w.get('source', 'N/A')}\n\n"
+                f"Proxima pleamar: {w.get('proxima_pleamar', 'N/A')}\n"
+                f"Fuente: {w.get('fuente', w.get('source', 'N/A'))}\n\n"
                 f"{mensaje}\n\n"
                 f"Dashboard: {DASHBOARD_URL}\n"
             )
@@ -169,10 +178,12 @@ class NotificationService:
                 "-------------------------------\n"
                 f"Ubicacion: Barrio Manga, Cartagena\n"
                 f"Nivel de agua: {nivel_cm:.1f} cm\n"
+                f"Estado: {w.get('estado_label', 'N/A')} (conf {w.get('confianza', 'N/A')})\n"
                 f"Temp: {w.get('temperatura', 'N/A')} C | "
                 f"Humedad: {w.get('humedad', 'N/A')}%\n"
                 f"Lluvia: {w.get('precipitacion_actual_mm_h', w.get('precipitacion_actual', 'N/A'))} mm/h\n"
                 f"Viento: {w.get('velocidad_viento_kmh', w.get('velocidad_viento', 'N/A'))} km/h\n"
+                f"Pleamar: {w.get('proxima_pleamar', 'N/A')}\n"
                 f"\n{mensaje}\n\n{DASHBOARD_URL}"
             )
             payload = {"text": text}

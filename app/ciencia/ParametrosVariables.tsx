@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { compararMetodos, ComparacionResponse } from "../lib/api";
 
 interface Parametros {
@@ -78,32 +79,27 @@ export default function ParametrosVariables() {
       </p>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <div className="rounded-xl bg-ocean p-3">
-          <p className="font-mono text-[10px] text-slate-500">Masa · m</p>
-          <p className="font-display text-lg font-bold text-white">{p.mass} kg</p>
-        </div>
-        <div className="rounded-xl bg-ocean p-3">
-          <p className="font-mono text-[10px] text-slate-500">c(t) · drenaje</p>
-          <p className="font-display text-lg font-bold text-cyan">{p.damping} N·s/m</p>
-        </div>
-        <div className="rounded-xl bg-ocean p-3">
-          <p className="font-mono text-[10px] text-slate-500">k(t) · rigidez</p>
-          <p className="font-display text-lg font-bold text-[#FF7700]">{p.stiffness} N/m</p>
-        </div>
-        <div className="rounded-xl bg-ocean p-3">
-          <p className="font-mono text-[10px] text-slate-500">ωₙ · frecuencia natural</p>
-          <p className="font-display text-lg font-bold text-[#B000FF]">{omegaN.toFixed(3)} rad/h</p>
-        </div>
-        <div className="rounded-xl bg-ocean p-3">
-          <p className="font-mono text-[10px] text-slate-500">ζ · amortiguamiento</p>
-          <p className="font-display text-lg font-bold text-[#00FF87]">{zeta.toFixed(3)}</p>
-        </div>
-        <div className="rounded-xl bg-ocean p-3">
-          <p className="font-mono text-[10px] text-slate-500">Humedad del suelo</p>
-          <p className="font-display text-lg font-bold text-sky-300">
-            {Math.round(p.soil_humidity * 100)}% · {p.consecutive_rainy_days}d
-          </p>
-        </div>
+        {[
+          { label: "Masa · m", valor: `${p.mass} kg`, color: "text-white" },
+          { label: "c(t) · drenaje", valor: `${p.damping} N·s/m`, color: "text-cyan" },
+          { label: "k(t) · rigidez", valor: `${p.stiffness} N/m`, color: "text-[#FF7700]" },
+          { label: "ωₙ · frecuencia natural", valor: `${omegaN.toFixed(3)} rad/h`, color: "text-[#B000FF]" },
+          { label: "ζ · amortiguamiento", valor: `${zeta.toFixed(3)}`, color: "text-[#00FF87]" },
+          { label: "Humedad del suelo", valor: `${Math.round(p.soil_humidity * 100)}% · ${p.consecutive_rainy_days}d`, color: "text-sky-300" },
+        ].map((item, i) => (
+          <motion.div
+            key={item.label}
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: i * 0.08, duration: 0.3 }}
+            whileHover={{ y: -3, boxShadow: "0 8px 22px rgba(0,229,255,0.12)" }}
+            className="rounded-xl bg-ocean p-3 border border-white/5"
+          >
+            <p className="font-mono text-[10px] text-slate-500">{item.label}</p>
+            <p className={`font-display text-lg font-bold font-tabular ${item.color}`}>{item.valor}</p>
+          </motion.div>
+        ))}
       </div>
 
       <div className="mt-4 rounded-xl bg-ocean-mid p-3 border border-cyan/10">

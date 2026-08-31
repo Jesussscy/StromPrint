@@ -267,6 +267,21 @@ input[type="range"]::-webkit-slider-thumb:hover {
   box-shadow: 0 0 20px rgba(0, 229, 255, 0.7);
 }
 
+/* Larger touch thumb on mobile */
+@media (max-width: 640px) {
+  input[type="range"] {
+    height: 6px;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    width: 22px;
+    height: 22px;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+  }
+}
+
 input[type="range"]::-moz-range-thumb {
   width: 16px;
   height: 16px;
@@ -297,6 +312,8 @@ input[type="range"]::-moz-range-thumb {
 
 @layer utilities {
   .text-balance { text-wrap: balance; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 }
 
 /* ─── Cesium ────────────────────────────────────────────────────────────── */
@@ -318,4 +335,105 @@ input[type="range"]::-moz-range-thumb {
 
 .cesium-viewer-toolbar {
   display: none !important;
+}
+
+/* ─── Mobile & Touch ────────────────────────────────────────────────── */
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Prevent overscroll on iOS */
+html, body {
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Improve touch targets - minimum 44px */
+button, a, [role="button"], input[type="range"] {
+  touch-action: manipulation;
+}
+
+/* Better tap highlight on mobile */
+a, button {
+  -webkit-tap-highlight-color: rgba(0, 229, 255, 0.15);
+}
+
+/* Remove tap highlight on desktop */
+@media (hover: hover) and (pointer: fine) {
+  a, button {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Mobile typography improvements */
+@media (max-width: 640px) {
+  html {
+    font-size: 15px;
+  }
+
+  .glass {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .glass-strong {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+}
+
+/* Prevent horizontal scroll on mobile */
+#panel-vivo,
+#meteo,
+#historial,
+#datos,
+#como-funciona,
+#contacto,
+#tecnologia,
+#pronostico {
+  overflow-x: hidden;
+}
+
+/* Mobile-friendly scroll behavior */
+@media (max-width: 768px) {
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 60px;
+  }
+
+  /* Better focus visible styles for keyboard nav */
+  :focus-visible {
+    outline: 2px solid var(--cyan);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+/* Reduce animations on mobile for performance */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .glass, .glass-strong, .glass-subtle {
+    border-width: 2px;
+    border-color: rgba(0, 229, 255, 0.5);
+  }
+}
+
+/* Print styles */
+@media print {
+  nav, .fixed, canvas, .pointer-events-none {
+    display: none !important;
+  }
 }

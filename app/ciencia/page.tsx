@@ -11,6 +11,17 @@ import ParametrosVariables from "./ParametrosVariables";
 import ConvolucionVisual from "./ConvolucionVisual";
 import AnalyticalWave3D from "./AnalyticalWave3D";
 import DataFlowDiagram from "@/app/components/DataFlowDiagram";
+import Navbar from "@/app/components/Navbar";
+import NotificationBanner from "@/app/components/NotificationBanner";
+import MobileBottomNav, {
+  type MobileNavItem,
+  IconPanel,
+  IconChart,
+  IconWeather,
+  IconBell,
+  IconHistory,
+  IconScience,
+} from "@/app/components/MobileBottomNav";
 
 const KaTeXBlock = dynamic(() => import("./KaTeXBlock"), { ssr: false });
 
@@ -27,6 +38,17 @@ const SECCIONES = [
   { id: "flujo", num: "03", label: "Flujo de Datos" },
   { id: "validacion", num: "04", label: "Validación" },
   { id: "hardware", num: "05", label: "Hardware y Software" },
+];
+
+// Barra de navegación inferior móvil específica de la página /ciencia:
+// secciones de la página + acceso al panel principal.
+const NAV_CIENCIA: MobileNavItem[] = [
+  { href: "/", label: "Panel", action: "route", icon: <IconPanel /> },
+  { href: "#modelo", label: "Modelo", action: "scroll", icon: <IconScience /> },
+  { href: "#analitica", label: "Analítica", action: "scroll", icon: <IconChart /> },
+  { href: "#flujo", label: "Flujo", action: "scroll", icon: <IconWeather /> },
+  { href: "#validacion", label: "Validación", action: "scroll", icon: <IconBell /> },
+  { href: "#hardware", label: "Hardware", action: "scroll", icon: <IconHistory /> },
 ];
 
 export default function CienciaPage() {
@@ -56,10 +78,15 @@ export default function CienciaPage() {
 
   return (
     <main className="min-h-screen bg-ocean">
+      {/* Mismo navbar que el panel principal: marca + navegación y volver */}
+      <Navbar />
+      {/* Notificaciones del sistema (igual que en el home) */}
+      <NotificationBanner />
+
       {/* Barra de progreso de scroll */}
       <motion.div
         style={{ scaleX: progress }}
-        className="fixed top-0 left-0 right-0 z-[60] h-[3px] origin-left bg-gradient-to-r from-cyan via-[#00FF87] to-[#B000FF]"
+        className="fixed top-[53px] left-0 right-0 z-[60] h-[3px] origin-left bg-gradient-to-r from-cyan via-[#00FF87] to-[#B000FF]"
       />
 
       {/* Navegación de secciones (fija, escritorio) */}
@@ -141,7 +168,7 @@ export default function CienciaPage() {
       <div className="mx-auto max-w-4xl px-6 md:px-12 py-16 space-y-20">
 
         {/* Navegación horizontal móvil */}
-        <div className="lg:hidden -mx-6 px-6 sticky top-0 z-40 bg-ocean/80 backdrop-blur-md border-b border-white/5 -mt-6 -mb-4 py-3 overflow-x-auto whitespace-nowrap flex gap-2">
+        <div className="lg:hidden -mx-6 px-6 sticky top-[53px] z-40 bg-ocean/80 backdrop-blur-md border-b border-white/5 -mt-6 -mb-4 py-3 overflow-x-auto whitespace-nowrap flex gap-2">
           {SECCIONES.map((s, i) => (
             <a
               key={s.id}
@@ -319,6 +346,9 @@ export default function CienciaPage() {
           </Link>
         </div>
       </div>
+
+      {/* Barra de navegación inferior móvil (compartida con el panel principal) */}
+      <MobileBottomNav items={NAV_CIENCIA} />
     </main>
   );
 }

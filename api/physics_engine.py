@@ -91,6 +91,8 @@ class PhysicalParameters:
     wind_direction_deg: float = 0.0  # direccion del viento (grados)
     wind_speed_kmh: float = 0.0    # velocidad del viento (km/h)
     mean_sea_level: float = 8.0    # nivel medio del mar para marea (cm)
+    storm_peak_hour: float = 12.0  # hora del pico de lluvia (h) — se llena por el motor
+    storm_intensity: float = 25.0  # intensidad pico de lluvia (mm/h) — se llena por el motor
 
 
 # ---------------------------------------------------------------------------
@@ -98,24 +100,38 @@ class PhysicalParameters:
 # ---------------------------------------------------------------------------
 def effective_damping(t: float, params: PhysicalParameters) -> float:
     """
-    c(t) = c_0 * max(0.2, 1 - d * 0.1)
+    c(t) = c_0 * (1 - saturacion) * max(0.2, 1 - d * 0.1)
 
     Dias consecutivos de lluvia saturan el sistema de alcantarillado,
-    reduciendo la capacidad de evacuacion.
+    reduciendo la capacidad de evacuacion. Ademas, la lluvia del evento en
+    curso satura el drenaje cerca del pico de la tormenta, por lo que el
+    amortiguamiento efectivo baja conforme el pulso de lluvia gana intensidad.
     """
     d = params.consecutive_rainy_days
     factor = max(0.2, 1.0 - d * 0.1)
-    return params.damping * factor
+    c0 = params.damping * factor
+
+    # Saturacion por el evento actual: gaussiana centrada en el pico de lluvia.
+    sigma = max(1.0, params.rain_duration_h)
+    rain = params.storm_intensity * math.exp(-((t - params.storm_peak_hour) ** 2) / (2 * sigma ** 2))
+    sat = min(0.55, rain * 0.004)
+    return c0 * (1.0 - sat)
 
 
 def effective_stiffness(t: float, params: PhysicalParameters) -> float:
     """
-    k(t) = k_0 * (1 + h_suelo * 0.5)
+    k(t) = k_0 * (1 + h_suelo * 0.5) * (1 + saturacion)
 
     Si el suelo esta humedo, absorbe menos agua y la rigidez efectiva
-    del terreno aumenta (el agua se queda en superficie).
+    del terreno aumenta (el agua se queda en superficie); el agua de lluvia
+    del evento actual incrementa esa saturacion cerca del pico.
     """
-    return params.stiffness * (1.0 + params.soil_humidity * 0.5)
+    k0 = params.stiffness * (1.0 + params.soil_humidity * 0.5)
+
+    sigma = max(1.0, params.rain_duration_h)
+    rain = params.storm_intensity * math.exp(-((t - params.storm_peak_hour) ** 2) / (2 * sigma ** 2))
+    sat = min(0.6, rain * 0.005)
+    return k0 * (1.0 + sat)
 
 
 # ---------------------------------------------------------------------------
@@ -296,6 +312,8 @@ def run_simulation(
     primer orden con scipy.integrate.solve_ivp (Runge-Kutta 45).
     """
     p = params or PhysicalParameters()
+    p.storm_peak_hour = float(storm_peak_hour)
+    p.storm_intensity = float(storm_intensity)
 
     def system(t: float, y: np.ndarray) -> List[float]:
         """

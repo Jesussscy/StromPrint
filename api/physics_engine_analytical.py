@@ -323,6 +323,9 @@ class PhysicsEngineAnalytical:
         """
         t_eval = np.arange(0.0, duration_hours, resolution_hours)
 
+        self.params.storm_peak_hour = float(storm_peak_hour)
+        self.params.storm_intensity = float(storm_intensity)
+
         H0, V0 = 0.0, 0.0
         records: List[dict] = []
         n = len(t_eval)

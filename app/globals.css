@@ -316,6 +316,37 @@ input[type="range"]::-moz-range-thumb {
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 }
 
+/* ─── KaTeX (ecuaciones) ─────────────────────────────────────────────────── */
+
+/* Evita que las fórmulas display sobresalgan de la tarjeta: se centran y, si
+   son más anchas que el contenedor, se pueden recorrer horizontalmente. */
+.katex-block {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+.katex-block::-webkit-scrollbar {
+  height: 4px;
+}
+.katex-block::-webkit-scrollbar-thumb {
+  background: rgba(0, 210, 255, 0.3);
+  border-radius: 999px;
+}
+.katex-block .katex-display {
+  margin: 0.4em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.25em 0;
+  -webkit-overflow-scrolling: touch;
+}
+.katex-block .katex {
+  max-width: 100%;
+}
+
 /* ─── Cesium ────────────────────────────────────────────────────────────── */
 
 .cesium-viewer {

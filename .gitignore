@@ -14,3 +14,6 @@ stormprint.db-journal
 # Cache local/clima y historial de notificaciones (generados en runtime local)
 weather_cache.json
 notifications.json
+# Logs de ejecucion local (backend/dev)
+*.log
+*.err.log

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import Navbar from "@/app/components/Navbar";
 import TopographicMesh from "@/app/components/TopographicMesh";
@@ -17,7 +18,9 @@ import AlertDrawer from "@/app/components/AlertDrawer";
 import AnimatedCounter from "@/app/components/AnimatedCounter";
 import SummaryDashboard from "@/app/components/SummaryDashboard";
 import NotificationBanner from "@/app/components/NotificationBanner";
-import CesiumMap from "@/app/components/CesiumMap";
+// Cesium (WebGL) es pesado (varios MB). Se carga de forma diferida (dynamic)
+// solo cuando el cliente lo monta, con ssr:false para no renderizar en el
+// servidor. En móvil además se carga apenas entra en viewport (loading lazy).
 import ZonasMangaPanel from "@/app/components/ZonasMangaPanel";
 import WaterLevelBars from "@/app/components/WaterLevelBars";
 import WeatherStation from "@/app/components/WeatherStation";
@@ -26,6 +29,7 @@ import MobileBottomNav from "@/app/components/MobileBottomNav";
 import {
   predecir,
   computeDaySummaries,
+  riskColor,
   type PrediccionResponse,
 } from "@/app/lib/api";
 
@@ -35,6 +39,23 @@ const FADE = {
   viewport: { once: true, margin: "-40px" },
   transition: { duration: 0.5 },
 };
+
+// Mapa 3D Cesium cargado de forma diferida (rendimiento móvil).
+// ssr:false evita ejecutar WebGL/cesium en el servidor; el skeleton se muestra
+// mientras se descarga el bundle del visor.
+const CesiumMap = dynamic(() => import("@/app/components/CesiumMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="absolute inset-0 flex items-center justify-center bg-ocean">
+      <div className="flex flex-col items-center gap-3">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-cyan/40 border-t-cyan" />
+        <span className="font-mono text-[10px] uppercase tracking-widest text-cyan/70">
+          Cargando visor 3D…
+        </span>
+      </div>
+    </div>
+  ),
+});
 
 /* ——— HERO ——————————————————————————————————————————————————————————————— */
 
@@ -137,7 +158,7 @@ function ProblemSection() {
             { num: "02", title: "Infraestructura Limitada", desc: "Alcantarillas sin dimensionar, calles angostas y canales obstruidos.", color: "#FFD600" },
             { num: "03", title: "Sin Datos en Tiempo Real", desc: "No existe un sistema que combine clima, mareas y topografía para alertar antes.", color: "#00F3FF" },
           ].map((item) => (
-            <motion.div key={item.num} {...FADE} className="glass rounded-2xl p-6 group hover:border-cyan/25 transition-all duration-300">
+            <motion.div key={item.num} {...FADE} className="glass glow-card rounded-2xl p-6 group">
               <span className="font-display text-5xl font-black" style={{ color: item.color, opacity: 0.15 }}>{item.num}</span>
               <h3 className="font-display text-lg font-bold text-white mt-3">{item.title}</h3>
               <p className="mt-2 text-sm text-slate-400 leading-relaxed">{item.desc}</p>
@@ -166,7 +187,7 @@ function HowItWorksSection() {
             { step: "02", title: "Modelo", desc: "Solución analítica por tramos con la integral de convolución de Duhamel. Sin integración paso a paso. Precisión: 98.7%.", icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00F3FF" strokeWidth="1.5"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" /><circle cx="12" cy="12" r="4" /></svg> },
             { step: "03", title: "Acción", desc: "Dashboard en tiempo real con niveles de riesgo, recomendaciones y rutas de evacuación.", icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FF0055" strokeWidth="1.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg> },
           ].map((item) => (
-            <motion.div key={item.step} {...FADE} className="glass rounded-2xl p-6 text-center hud-connector float-card group hover:border-cyan/25 transition-all duration-300">
+            <motion.div key={item.step} {...FADE} className="glass glow-card rounded-2xl p-6 text-center hud-connector float-card group">
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl glass-glow">
                 {item.icon}
               </div>
@@ -200,7 +221,7 @@ function DataSourceSection() {
             { title: "Topografía y Batimetría", desc: "Modelos de Elevación Digital del terreno de Cartagena.", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00F3FF" strokeWidth="1.5"><path d="M3 20l5-10 4 6 4-4 5 8" /><line x1="3" y1="20" x2="21" y2="20" /></svg> },
             { title: "Conexión IoT", desc: "Datos por 4G/5G al servidor en la nube. Latencia < 30 segundos.", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00F3FF" strokeWidth="1.5"><path d="M5 12.55a11 11 0 0 1 14.08 0" /><path d="M1.42 9a16 16 0 0 1 21.16 0" /><path d="M8.53 16.11a6 6 0 0 1 6.95 0" /><circle cx="12" cy="20" r="1" fill="#00F3FF" /></svg> },
           ].map((item) => (
-            <motion.div key={item.title} {...FADE} className="glass rounded-2xl p-5 group hover:border-cyan/25 transition-all duration-300 float-card">
+            <motion.div key={item.title} {...FADE} className="glass glow-card rounded-2xl p-5 group float-card">
               <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl glass-glow">
                 {item.icon}
               </div>
@@ -244,6 +265,7 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
         horas_pronostico: 168,
         intensidad_lluvia_mm_h: usarMeteo ? undefined : lluvia,
         nivel_marea_cm: marea,
+        eficiencia_drenaje: drenaje,
         usar_datos_meteo: usarMeteo,
       });
       setPrediccion(result);
@@ -256,7 +278,7 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
     } finally {
       setIsLoading(false);
     }
-  }, [lluvia, marea, usarMeteo]);
+  }, [lluvia, marea, drenaje, usarMeteo]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadPrediction(); }, []);
@@ -283,6 +305,13 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
 
   const daySummaries = useMemo(() => prediccion ? computeDaySummaries(prediccion.puntos) : [], [prediccion]);
 
+  // Estado del punto de pico (para el color del resumen móvil)
+  const nivelPicoTone = useMemo(() => {
+    if (!prediccion || prediccion.puntos.length === 0) return "#00E5FF";
+    const pico = prediccion.puntos.reduce((m, p) => (p.nivel_agua_cm > m.nivel_agua_cm ? p : m));
+    return riskColor(pico.estado);
+  }, [prediccion]);
+
   return (
     <div className="mx-auto max-w-7xl">
       {/* Controls */}
@@ -294,7 +323,12 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
               MONITOREO · BARRIO MANGA
             </p>
           </div>
-          <WeatherBadge meteorologia={prediccion?.meteorologia_resumen ?? null} isLoading={isLoading} />
+          <WeatherBadge
+            meteorologia={prediccion?.meteorologia_resumen ?? null}
+            isLoading={isLoading}
+            estado={prediccion?.estado_meteorologico ?? (usarMeteo ? "sin_datos" : "soleado")}
+            confianza={prediccion?.confianza_meteo}
+          />
         </div>
         <p className="text-xs text-slate-500 mb-4">
           Simulación del nivel de acumulación de agua H(t) con datos meteorológicos en tiempo real.
@@ -325,7 +359,7 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
 
       {/* Main Grid: Map + Zonas + Metrics */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.7fr_1fr]">
-        <div className="glass-strong rounded-2xl h-[340px] p-1 md:h-[640px] lg:h-[640px] overflow-hidden relative">
+        <div className="glass-strong rounded-2xl h-[420px] p-1 md:h-[640px] lg:h-[640px] overflow-hidden relative hud-scanlines">
           {/* Visor 3D de Cesium exclusivo para el panel en vivo */}
           <CesiumMap
             nivelAguaCm={activePunto?.nivel_agua_cm ?? 0}
@@ -417,6 +451,23 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
           <SummaryDashboard puntos={prediccion.puntos} daySummaries={daySummaries} />
         </div>
       )}
+
+      {/* Resumen de un vistazo — solo móvil: métricas clave en carrusel
+          horizontal con scroll-snap para lectura rápida sin desplazarse. */}
+      <div className="mt-6 lg:hidden snap-scroll-x" aria-label="Resumen en vivo">
+        {[
+          { label: "Nivel actual", value: activePunto ? `${activePunto.nivel_agua_cm.toFixed(0)} cm` : "—", tone: activePunto ? riskColor(activePunto.estado) : "#00E5FF" },
+          { label: "Pico máximo", value: prediccion ? `${prediccion.nivel_maximo_cm.toFixed(0)} cm` : "—", tone: nivelPicoTone },
+          { label: "Pronóstico", value: prediccion ? `${prediccion.horas_pronostico} h` : "—", tone: "#FFFFFF" },
+          { label: "Marea (config)", value: `${marea} cm`, tone: "#B000FF" },
+          { label: "Drenaje (config)", value: `${drenaje}%`, tone: "#00E5FF" },
+        ].map((s) => (
+          <div key={s.label} className="glass-strong rounded-2xl p-4">
+            <p className="font-mono text-[9px] uppercase tracking-widest text-slate-500">{s.label}</p>
+            <p className="mt-1 font-display text-xl font-bold font-tabular" style={{ color: s.tone }}>{s.value}</p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -425,13 +476,24 @@ function Slider({ label, value, onChange, min, max, step, unit, color, disabled 
   label: string; value: number; onChange: (v: number) => void;
   min: number; max: number; step: number; unit: string; color: string; disabled?: boolean;
 }) {
+  const pct = ((value - min) / (max - min)) * 100;
   return (
-    <div className={disabled ? "opacity-40 pointer-events-none" : ""}>
+    <div className={disabled ? "opacity-40 pointer-events-none select-none" : ""}>
       <div className="flex justify-between items-center mb-1.5">
         <span className="font-mono text-[10px] uppercase tracking-wider text-slate-500">{label}</span>
         <span className="font-mono text-xs font-tabular" style={{ color }}>{value.toFixed(step < 1 ? 1 : 0)} {unit}</span>
       </div>
-      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(parseFloat(e.target.value))} className="w-full h-2" />
+      <input
+        type="range"
+        min={min} max={max} step={step}
+        value={value}
+        onChange={(e) => onChange(parseFloat(e.target.value))}
+        className="w-full h-2 slider-cyber"
+        style={{
+          background: `linear-gradient(to right, ${color} 0%, ${color} ${pct}%, rgba(255,255,255,0.08) ${pct}%, rgba(255,255,255,0.08) 100%)`,
+          boxShadow: disabled ? "none" : `0 0 12px ${color}33`,
+        }}
+      />
     </div>
   );
 }
@@ -580,7 +642,7 @@ function CTASection() {
               Solicitar demo
             </a>
             <a href="/ciencia" className="glass rounded-lg px-6 py-3 font-mono text-[11px] uppercase tracking-wider text-slate-400 hover:text-cyan transition">
-              Documentación técnica
+              Ciencia
             </a>
           </div>
         </motion.div>

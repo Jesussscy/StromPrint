@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -7,6 +7,13 @@ export const metadata: Metadata = {
     "Sistema predictivo de inundaciones para el Barrio Manga, Cartagena de Indias. Simulación en tiempo real con datos meteorológicos, mareas y drenaje territorial.",
   icons: { icon: "/favicon.svg" },
   robots: { index: true, follow: true },
+  applicationName: "STORM//PRINT",
+  appleWebApp: {
+    capable: true,
+    title: "STORM//PRINT",
+    statusBarStyle: "black-translucent",
+  },
+  formatDetection: { telephone: false },
   openGraph: {
     title: "STORM//PRINT — Monitoreo Inteligente de Inundaciones",
     description:
@@ -16,6 +23,17 @@ export const metadata: Metadata = {
   },
 };
 
+// Metadatos específicos para móvil/PWA: viewport-fit=cover permite que el
+// contenido use el área segura bajo las barras de iOS, y theme-color tiñe la
+// barra de estado del navegador con la identidad visual.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#050A0F",
+  colorScheme: "dark",
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -23,7 +41,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" className="dark" suppressHydrationWarning>
-      <body className="min-h-screen bg-ocean antialiased font-body" suppressHydrationWarning>{children}</body>
+      <body className="min-h-screen bg-ocean antialiased font-body safe-area-pad" suppressHydrationWarning>{children}</body>
     </html>
   );
 }

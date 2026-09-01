@@ -1,7 +1,0 @@
-INFO:     127.0.0.1:51627 - "GET /api/v1/health HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54686 - "GET /api/v1/weather?force_refresh=true HTTP/1.1" 200 OK
-INFO:     127.0.0.1:58879 - "POST /api/v1/predecir HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49891 - "POST /api/v1/predecir HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49891 - "POST /api/v1/comparacion HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57075 - "GET /api/v1/notifications?limit=5 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65290 - "GET /api/v1/notifications?limit=50&nivel_cm=5.82&nivel_maximo=40.64&tendencia_cm_h=-9.365 HTTP/1.1" 200 OK

@@ -75,6 +75,20 @@ ECUACION_DISPLAY = (
 )
 
 
+def _drenaje_a_amortiguamiento(eficiencia_drenaje: Optional[float]) -> float:
+    """Convierte la eficiencia de drenaje (%) del dashboard en el coeficiente
+    de amortiguamiento c_0 del modelo fisico.
+
+    Mejor drenaje (100%) -> mayor amortiguamiento: el agua se evacua rapido.
+    Peor drenaje (0%)   -> menor amortiguamiento: el agua se acumula.
+    Fuera de rango, se devuelve None para usar el default del modelo."""
+    if eficiencia_drenaje is None:
+        return 0.45  # default de PhysicalParameters
+    eff = max(0.0, min(100.0, float(eficiencia_drenaje)))
+    # Mapeo lineal: 0% -> 0.10 · 100% -> 0.90 (dentro del rango valido ge=0.01, le=5.0)
+    return round(0.10 + (eff / 100.0) * 0.80, 3)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
@@ -84,7 +98,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="StormPrint API",
     description="La huella que deja cada tormenta en el territorio — Manga, Cartagena",
-    version="2.0.0",
+    version="2.7.0",
     docs_url=None,
     redoc_url=None,
     openapi_url=None,
@@ -151,6 +165,7 @@ class PrediccionRequest(BaseModel):
     horas_pronostico: int = Field(default=72, ge=1, le=168)
     intensidad_lluvia_mm_h: Optional[float] = Field(default=None, ge=0.0, le=200.0)
     nivel_marea_cm: float = Field(default=8.0, ge=0.0, le=100.0)
+    eficiencia_drenaje: Optional[float] = Field(default=None, ge=0.0, le=100.0)
     usar_datos_meteo: bool = Field(default=True)
 
 
@@ -204,7 +219,7 @@ class InfraResponse(BaseModel):
     status: str
     service: str = "stormprint-api"
     territory: str = "manga-cartagena"
-    version: str = "2.1.0"
+    version: str = "2.7.0"
 
 
 # ---------------------------------------------------------------------------
@@ -395,6 +410,7 @@ async def predecir(
 
         # 2. Configurar parametros fisicos
         params = PhysicalParameters(
+            damping=_drenaje_a_amortiguamiento(payload.eficiencia_drenaje),
             soil_humidity=weather_data.get("soil_humidity", 0.3),
             consecutive_rainy_days=weather_data.get("consecutive_rainy_days", 0),
             rain_duration_h=weather_data.get("rain_duration_h", 6.0),

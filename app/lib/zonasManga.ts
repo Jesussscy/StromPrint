@@ -3,6 +3,8 @@
 // Las 20 zonas críticas de inundación del Barrio Manga, Cartagena
 // ---------------------------------------------------------------------------
 
+import { clasificarNivel as clasificarNivelCentral } from "@/app/lib/riesgo";
+
 export type NivelRiesgo = "CRITICO" | "EMERGENCIA" | "ALERTA" | "NORMAL";
 export type TipoAmenaza = "Marea Alta" | "Lluvias Intensas" | "Drenaje" | "Mixto";
 
@@ -164,10 +166,14 @@ export const RIESGO_META: Record<
 export const ORDEN_RIESGO: NivelRiesgo[] = ["CRITICO", "EMERGENCIA", "ALERTA", "NORMAL"];
 
 export function clasificarNivelCm(cm: number): NivelRiesgo {
-  if (cm >= 100) return "CRITICO";
-  if (cm >= 60) return "EMERGENCIA";
-  if (cm >= 30) return "ALERTA";
-  return "NORMAL";
+  const nivel = clasificarNivelCentral(cm);
+  const map: Record<string, NivelRiesgo> = {
+    Normal: "NORMAL",
+    Alerta: "ALERTA",
+    Emergencia: "EMERGENCIA",
+    Critico: "CRITICO",
+  };
+  return map[nivel];
 }
 
 export function colorDeNivel(cm: number): string {

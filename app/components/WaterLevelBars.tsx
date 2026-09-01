@@ -2,38 +2,23 @@
 
 import { motion } from "framer-motion";
 import type { PuntoPrediccion } from "@/app/lib/api";
+import { clasificarNivel, colorDeNivelCm, UMBRAL_CRITICO, UMBRAL_EMERGENCIA, UMBRAL_ALERTA } from "@/app/lib/riesgo";
 
 /* Niveles de referencia de la "escala" vertical (cm) */
 const LEVELS = [150, 120, 90, 60, 30, 0];
 
-/* Umbrales de riesgo reales de StormPrint (cm) */
-const THRESHOLDS = {
-  alerta: 30,
-  emergencia: 60,
-  critico: 100,
-};
-
 function clasificar(nivelCm: number): string {
-  if (nivelCm >= THRESHOLDS.critico) return "Critico";
-  if (nivelCm >= THRESHOLDS.emergencia) return "Emergencia";
-  if (nivelCm >= THRESHOLDS.alerta) return "Alerta";
-  return "Normal";
+  return clasificarNivel(nivelCm);
 }
 
 function colorNivel(nivelCm: number): string {
-  const c = clasificar(nivelCm);
-  switch (c) {
-    case "Critico": return "#B000FF";
-    case "Emergencia": return "#FF0055";
-    case "Alerta": return "#FFD600";
-    default: return "#00E5FF";
-  }
+  return colorDeNivelCm(nivelCm);
 }
 
 function colorBar(nivel: number): string {
-  if (nivel >= THRESHOLDS.critico) return "#B000FF";
-  if (nivel >= THRESHOLDS.emergencia) return "#FF0055";
-  if (nivel >= THRESHOLDS.alerta) return "#FFD600";
+  if (nivel >= UMBRAL_CRITICO) return "#B000FF";
+  if (nivel >= UMBRAL_EMERGENCIA) return "#FF0055";
+  if (nivel >= UMBRAL_ALERTA) return "#FFD600";
   return "#00E5FF";
 }
 

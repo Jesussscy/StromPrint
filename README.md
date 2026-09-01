@@ -47,7 +47,7 @@ m·H''(t) + c·H'(t) + k·H(t) = F_lluvia(t) + F_marea(t)
 Se resuelve numéricamente con `scipy.integrate.solve_ivp` (Runge-Kutta 45),
 persistiendo cada paso de tiempo en SQLite (`FloodRecord`).
 
-Umbrales de riesgo: `< 15cm` bajo · `15–30cm` moderado · `30–45cm` alto · `≥ 45cm` crítico.
+Umbrales de riesgo: `< 30cm` Normal · `30–59cm` Alerta · `60–99cm` Emergencia · `≥ 100cm` Crítico.
 
 ## Solución analítica (académica)
 

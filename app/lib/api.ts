@@ -4,6 +4,8 @@
 // Barrio Manga, Cartagena de Indias
 // ---------------------------------------------------------------------------
 
+import { riscoColorEstilo, etiquetaNivel } from "@/app/lib/riesgo";
+
 // --- Tipos legacy (backwards compatibility) ---
 
 export interface FloodRecord {
@@ -200,6 +202,7 @@ export function predecir(params: {
   horas_pronostico?: number;
   intensidad_lluvia_mm_h?: number;
   nivel_marea_cm?: number;
+  eficiencia_drenaje?: number;
   usar_datos_meteo?: boolean;
 }): Promise<PrediccionResponse> {
   return stormprintFetch<PrediccionResponse>("/api/v1/predecir", {
@@ -255,35 +258,11 @@ export function compararMetodos(params: {
 // --- Utilidades de UI ---
 
 export function riskColor(estado: string): string {
-  switch (estado) {
-    case "Critico":
-    case "critical":
-      return "#B000FF";
-    case "Emergencia":
-    case "high":
-      return "#FF0055";
-    case "Alerta":
-    case "moderate":
-      return "#FFD600";
-    default:
-      return "#00E5FF";
-  }
+  return riscoColorEstilo(estado);
 }
 
 export function riskLabel(estado: string): string {
-  switch (estado) {
-    case "Critico":
-    case "critical":
-      return "Critico";
-    case "Emergencia":
-    case "high":
-      return "Emergencia";
-    case "Alerta":
-    case "moderate":
-      return "Alerta";
-    default:
-      return "Normal";
-  }
+  return etiquetaNivel(estado);
 }
 
 export function riskIcon(estado: string): string {

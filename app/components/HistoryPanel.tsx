@@ -7,20 +7,10 @@ import {
 } from "recharts";
 import type { PrediccionGuardada } from "@/app/lib/api";
 import { fetchPredicciones } from "@/app/lib/api";
-
-const RISK_COLOR: Record<string, string> = {
-  Critico: "#B000FF",
-  critical: "#B000FF",
-  Emergencia: "#FF0055",
-  high: "#FF0055",
-  Alerta: "#FFD600",
-  moderate: "#FFD600",
-  Normal: "#00E5FF",
-  low: "#00E5FF",
-};
+import { riscoColorEstilo } from "@/app/lib/riesgo";
 
 function riskColor(estado: string): string {
-  return RISK_COLOR[estado] ?? "#00E5FF";
+  return riscoColorEstilo(estado);
 }
 
 export default function HistoryPanel() {

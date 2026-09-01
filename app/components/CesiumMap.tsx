@@ -13,6 +13,7 @@ import {
   type ZonaManga,
   type NivelRiesgo,
 } from "@/app/lib/zonasManga";
+import { riscoColorEstilo, clasificarNivel as clasificarNivelCentral } from "@/app/lib/riesgo";
 import { pinTexture, radialGlowTexture } from "@/app/lib/cesiumTextures";
 
 // Zonas territoriales (columnas de inundación base que animan con el agua).
@@ -136,6 +137,7 @@ export default function CesiumMap({
 
   useEffect(() => {
     let cancelado = false;
+    let handleResize: (() => void) | null = null;
 
     async function init() {
       if (!containerRef.current || viewerRef.current) return;
@@ -197,6 +199,17 @@ export default function CesiumMap({
         viewer.scene.screenSpaceCameraController.enableCollisionDetection = true;
         viewer.scene.screenSpaceCameraController.minimumZoomDistance = 250;
         viewer.scene.screenSpaceCameraController.maximumZoomDistance = 4500;
+
+        // ── Recalcular el canvas cuando cambia el tamaño (movil/orientacion) ──
+        handleResize = () => {
+          try {
+            viewer.resize();
+          } catch (_e) {
+            /* noop */
+          }
+        };
+        window.addEventListener("resize", handleResize);
+        handleResize();
 
         // ── Lock de cámara: devolver a Manga si el centro de la vista sale ──
         let lockManga = false;
@@ -313,10 +326,10 @@ export default function CesiumMap({
               // height explícito para desactivar el "clamping" al terreno y
               // permitir contornos (evita el warning de outlines en terreno 3D)
               height: 0,
-              material: Cesium.Color.fromCssColorString(RIESGO_META[nivelBase].color).withAlpha(0.22),
+              material: Cesium.Color.fromCssColorString(RIESGO_META[nivelBase].color).withAlpha(0.1),
               outline: true,
-              outlineColor: Cesium.Color.fromCssColorString(RIESGO_META[nivelBase].color).withAlpha(0.6),
-              outlineWidth: 2,
+              outlineColor: Cesium.Color.fromCssColorString(RIESGO_META[nivelBase].color).withAlpha(0.3),
+              outlineWidth: 1,
             },
             properties: { zonaCriticaId: zona.id, tipo: "influencia" },
           });
@@ -348,14 +361,16 @@ export default function CesiumMap({
             properties: { zonaCriticaId: zona.id, tipo: "marcador" },
           });
 
-          // Capa de calor (billboard con glow radial)
+          // Capa de calor (billboard con glow radial) — apagada por defecto
+          // para no saturar el mapa con halos de color; se enciende suave
+          // solo cuando el usuario activa el toggle "Calor".
           const heat = viewer.entities.add({
             position: Cesium.Cartesian3.fromDegrees(lng, lat, 0.8),
             billboard: {
               image: heatTex[nivelBase],
               width: zona.radio_influencia * (8 + RIESGO_META[nivelBase].peso * 2.5),
               height: zona.radio_influencia * (8 + RIESGO_META[nivelBase].peso * 2.5),
-              color: Cesium.Color.WHITE.withAlpha(0.55),
+              color: Cesium.Color.WHITE.withAlpha(heatmapRef.current ? 0.2 : 0.0),
               disableDepthTestDistance: Number.POSITIVE_INFINITY,
             },
             properties: { zonaCriticaId: zona.id, tipo: "heat" },
@@ -420,6 +435,7 @@ export default function CesiumMap({
 
     return () => {
       cancelado = true;
+      if (handleResize) window.removeEventListener("resize", handleResize);
       if (screenSpaceHandlerRef.current) {
         screenSpaceHandlerRef.current.destroy();
         screenSpaceHandlerRef.current = null;
@@ -520,7 +536,7 @@ export default function CesiumMap({
             Cesium.Color.fromCssColorString(meta.color).withAlpha(0.22)
           );
           influencia.ellipse.outlineColor = new Cesium.ColorMaterialProperty(
-            Cesium.Color.fromCssColorString(meta.color).withAlpha(0.6)
+            Cesium.Color.fromCssColorString(meta.color).withAlpha(0.32)
           );
           influencia.ellipse.semiMajorAxis = new Cesium.ConstantProperty(zona.radio_influencia);
           influencia.ellipse.semiMinorAxis = new Cesium.ConstantProperty(zona.radio_influencia);
@@ -531,7 +547,7 @@ export default function CesiumMap({
           const heatSize = zona.radio_influencia * (8 + meta.peso * 2.5);
           heat.billboard.width = heatSize;
           heat.billboard.height = heatSize;
-          heat.billboard.color = Cesium.Color.WHITE.withAlpha(heatmapRef.current ? 0.45 + meta.peso * 0.08 : 0);
+          heat.billboard.color = Cesium.Color.WHITE.withAlpha(heatmapRef.current ? 0.18 + meta.peso * 0.03 : 0);
         }
       });
 
@@ -582,7 +598,7 @@ export default function CesiumMap({
   }
 
   return (
-    <div className="relative w-full h-full min-h-[560px]">
+    <div className="relative w-full h-full min-h-[380px] sm:min-h-[560px]">
       <div ref={containerRef} className="absolute inset-0 rounded-2xl overflow-hidden" />
 
       {/* Cargando */}
@@ -735,24 +751,9 @@ function cesiumRiskColor(Cesium: any, nivel: string) {
 }
 
 function riesgoColorHex(nivel: string) {
-  switch (nivel.toLowerCase()) {
-    case "critico":
-    case "critical":
-      return "#B000FF";
-    case "emergencia":
-    case "high":
-      return "#FF0055";
-    case "alerta":
-    case "moderate":
-      return "#FFD600";
-    default:
-      return "#00E5FF";
-  }
+  return riscoColorEstilo(nivel);
 }
 
 function clasificarNivel(nivelCm: number): string {
-  if (nivelCm >= 100) return "Critico";
-  if (nivelCm >= 60) return "Emergencia";
-  if (nivelCm >= 30) return "Alerta";
-  return "Normal";
+  return clasificarNivelCentral(nivelCm);
 }

@@ -347,6 +347,23 @@ input[type="range"]::-moz-range-thumb {
   padding-top: env(safe-area-inset-top, 0px);
 }
 
+/* Padding completo (top + bottom) respetando la zonas seguras del dispositivo.
+   Se aplica al <body> con viewport-fit=cover para que nada quede bajo las
+   muescas, la Dynamic Island o la barra inferior de iOS. */
+.safe-area-pad {
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+/* El footer ya reserva espacio (pb-24) para la barra inferior; aquí solo
+   sumamos el safe-area del dispositivo para que nada quede tras los gestos
+   de la barra de inicio de iOS. */
+@media (max-width: 767px) {
+  body {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
 /* Prevent overscroll on iOS */
 html, body {
   overscroll-behavior: none;
@@ -423,6 +440,51 @@ a, button {
   }
 }
 
+/* ─── Mobile-first enhancements (2026) ─────────────────────────────────── */
+
+/* La barra de navegación inferior móvil (52px+) queda fija; reserva espacio
+   de scroll para que el último contenido no quede oculto al hacer scroll. */
+@media (max-width: 767px) {
+  #panel-vivo,
+  #meteo,
+  #historial,
+  #datos {
+    scroll-margin-top: 56px;
+  }
+
+  /* Scroll-snap en carruseles horizontales de tarjetas (pronóstico/días) */
+  .snap-scroll-x {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+  }
+  .snap-scroll-x::-webkit-scrollbar {
+    display: none;
+  }
+  .snap-scroll-x > * {
+    scroll-snap-align: start;
+    flex: 0 0 78%;
+    max-width: 280px;
+  }
+
+  /* Evita el zoom automático de iOS al enfocar inputs pequeños */
+  input, select, textarea {
+    font-size: 16px;
+  }
+}
+
+/* Target de toque mínimo de 44x44px para controles interactivos */
+@media (pointer: coarse) {
+  a, button, [role="button"], .slider-cyber {
+    min-height: 44px;
+  }
+}
+
+
 /* High contrast mode support */
 @media (prefers-contrast: high) {
   .glass, .glass-strong, .glass-subtle {
@@ -436,4 +498,114 @@ a, button {
   nav, .fixed, canvas, .pointer-events-none {
     display: none !important;
   }
+}
+/* ─── Visual polish (2026) ─────────────────────────────────────────────── */
+
+/* Cyber slider: custom thumb with glow */
+.slider-cyber {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  outline: none;
+  transition: box-shadow 0.25s ease;
+}
+.slider-cyber::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--cyan-bright);
+  box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.15), 0 0 14px var(--cyan-bright);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.slider-cyber::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 0 4px rgba(0, 240, 255, 0.25), 0 0 22px var(--cyan-bright);
+}
+.slider-cyber::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--cyan-bright);
+  box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.15), 0 0 14px var(--cyan-bright);
+  cursor: pointer;
+}
+
+/* Animated gradient shimmer for the hero title */
+.title-shimmer {
+  background: linear-gradient(
+    110deg,
+    #fff 20%,
+    var(--cyan-bright) 40%,
+    #fff 50%,
+    var(--cyan-bright) 60%,
+    #fff 80%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer-slide 6s linear infinite;
+}
+@keyframes shimmer-slide {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Glow sweep on hover for cards */
+.glow-card {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.glow-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(0, 229, 255, 0.35);
+  box-shadow: 0 12px 44px rgba(0, 0, 0, 0.55), 0 0 30px rgba(0, 229, 255, 0.12);
+}
+.glow-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(520px circle at 50% 0%,
+    rgba(0, 240, 255, 0.12), transparent 45%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.glow-card:hover::after {
+  opacity: 1;
+}
+
+/* Subtle HUD scanline overlay for live panels */
+.hud-scanlines {
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(0, 240, 255, 0.03) 0px,
+    rgba(0, 240, 255, 0.03) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+/* Soft gradient separated section divider */
+.section-glow {
+  border-top: 1px solid rgba(0, 229, 255, 0.1);
+  box-shadow: 0 -20px 60px rgba(0, 229, 255, 0.04);
+}
+
+/* Fade-sweep loading bar */
+.loading-bar {
+  background: linear-gradient(90deg, transparent, var(--cyan-bright), transparent);
+  background-size: 200% 100%;
+  animation: loading-bar 1.4s ease-in-out infinite;
+}
+@keyframes loading-bar {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }

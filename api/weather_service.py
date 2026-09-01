@@ -441,6 +441,73 @@ def _estimar_marea_cm(reference: Optional[datetime] = None) -> float:
     return round(elev, 1)
 
 
+def _closest_hour_record(
+    hourly: List[Dict], reference: Optional[datetime] = None
+) -> Dict[str, Any]:
+    """Selecciona el registro horario mas cercano al instante actual.
+
+    Open-Meteo devuelve horas desde el inicio del dia (America/Bogota). En vez
+    de tomar arbitrariamente hourly[0], elegimos la fila cuya hora de pronostico
+    este mas proxima a "ahora" para dar una lectura de temperatura/humedad
+    correcta en tiempo real.
+    """
+    now = reference or datetime.now()
+    best: Optional[Dict[str, Any]] = None
+    best_delta: Optional[float] = None
+    for rec in hourly:
+        t = rec.get("time")
+        if not t:
+            continue
+        try:
+            ts = datetime.fromisoformat(str(t).replace("Z", ""))
+        except (ValueError, TypeError):
+            continue
+        delta = abs((ts - now).total_seconds())
+        if best_delta is None or delta < best_delta:
+            best_delta = delta
+            best = rec
+    return best or (hourly[0] if hourly else {})
+
+
+def _actual_promediado(hourly: List[Dict], campo: str, default: float, ventana: int = 3) -> float:
+    """Promedia el campo (temp/humedad/etc.) en una pequena ventana centrada
+    en el registro mas cercano a ahora para suavizar lecturas puntuales."""
+    n = len(hourly)
+    if n == 0:
+        return default
+    actual = _closest_hour_record(hourly)
+    base_t = str(actual.get("time", ""))
+    try:
+        base = datetime.fromisoformat(base_t.replace("Z", ""))
+    except (ValueError, TypeError):
+        base = None
+
+    valores = []
+    if base is None:
+        # Sin referencias temporales: promediar los primeros `ventana` registros
+        for rec in hourly[:ventana]:
+            v = rec.get(campo, default)
+            if v is not None:
+                valores.append(float(v))
+    else:
+        for rec in hourly:
+            t = str(rec.get("time", ""))
+            try:
+                ts = datetime.fromisoformat(t.replace("Z", ""))
+            except (ValueError, TypeError):
+                continue
+            gap = abs((ts - base).total_seconds()) / 3600.0
+            if gap <= ventana:
+                v = rec.get(campo, default)
+                if v is not None:
+                    valores.append(float(v))
+
+    if not valores:
+        v = actual.get(campo, default)
+        return float(v) if v is not None else default
+    return sum(valores) / len(valores)
+
+
 class WeatherService:
     """
     Servicio meteorologico robusto con cache local de 30 min y fallback
@@ -521,13 +588,19 @@ class WeatherService:
         today = daily[0] if daily else {}
         now = datetime.now()
 
-        actual = hourly[0] if hourly else {}
+        actual = _closest_hour_record(hourly)
         dias_lluviosos = summary.get("dias_lluviosos", 0)
         humedad_suelo = min(100.0, round((parametros.get("soil_humidity", 0.3) * 100), 1))
 
         precip_actual = round(actual.get("rain", 0.0), 2)
         nubosidad = actual.get("cloud_cover", 0.0) or 0.0
         estado = determinar_estado(precipitacion_actual_mmh=precip_actual, nubosidad_pct=nubosidad)
+
+        # Lectura "ahora" suavizada: promedio de la ventana centrada en la hora
+        # mas cercana al instante actual (temperatura/humedad mas fiel).
+        temp_actual = _actual_promediado(hourly, "temperature_2m", 28.0, ventana=3)
+        hum_actual = _actual_promediado(hourly, "relative_humidity_2m", 80.0, ventana=3)
+        viento_actual = _actual_promediado(hourly, "wind_speed_10m", 0.0, ventana=2)
 
         return {
             "source": "open-meteo",
@@ -536,13 +609,13 @@ class WeatherService:
             "timestamp": now.isoformat(),
             "lat": MANGA_LAT,
             "lon": MANGA_LON,
-            "temperatura": round(actual.get("temperature_2m", 28.0), 1),
-            "humedad": round(actual.get("relative_humidity_2m", 80.0), 1),
+            "temperatura": round(temp_actual, 1),
+            "humedad": round(hum_actual, 1),
             "nubosidad_pct": round(float(nubosidad), 1),
             "estado": estado,
             "estado_label": ESTADO_LABEL.get(estado, estado),
             "precipitacion_actual_mm_h": precip_actual,
-            "velocidad_viento_kmh": round(actual.get("wind_speed_10m", 0.0), 1),
+            "velocidad_viento_kmh": round(viento_actual, 1),
             "direccion_viento_deg": round(actual.get("wind_direction_10m", 0.0), 1),
             "dias_lluviosos_consecutivos": dias_lluviosos,
             "humedad_suelo_pct": humedad_suelo,

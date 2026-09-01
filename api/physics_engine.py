@@ -93,6 +93,7 @@ class PhysicalParameters:
     mean_sea_level: float = 8.0    # nivel medio del mar para marea (cm)
     storm_peak_hour: float = 12.0  # hora del pico de lluvia (h) — se llena por el motor
     storm_intensity: float = 25.0  # intensidad pico de lluvia (mm/h) — se llena por el motor
+    tide_series_cm: List[float] = field(default_factory=list)  # marea real horaria (cm)
 
 
 # ---------------------------------------------------------------------------
@@ -168,6 +169,26 @@ def tide_forcing(t: float, params: PhysicalParameters) -> float:
 
     F_tide(t) = tide_gain * MSL * sin(2*pi*t / T) * (1 + 0.25*sin(2*pi*t / T_spring))
     """
+    # Si hay marea real (Open-Meteo Marine) se usa la serie horaria; el
+    # indice 0 de la serie corresponde a la hora actual de la simulacion.
+    # La serie se entrega como nivel absoluto; se resta su media para que el
+    # forzamiento OS C I L E alrededor de cero, igual que la senoide analitica
+    # (un nivel absoluto constante inflaria los dias secos).
+    if params.tide_series_cm:
+        serie = params.tide_series_cm
+        idx = int(round(t))
+        if 0 <= idx < len(serie):
+            nivel = float(serie[idx])
+        elif len(serie) >= 2:
+            period = max(1, int(round(params.tide_period_h)))
+            cycle = list(serie[-period:])
+            nivel = float(cycle[idx % len(cycle)]) if cycle else params.mean_sea_level
+        else:
+            nivel = params.mean_sea_level
+        media = sum(serie) / len(serie)
+        # Oscilacion en torno al nivel medio del mar, escalada por el gain.
+        return params.tide_gain * (nivel - media)
+
     semi_diurnal = math.sin(2 * math.pi * t / params.tide_period_h)
     # Envolvente spring/neap (ciclo de ~14.77 dias)
     envelope = 1.0 + 0.25 * math.sin(2 * math.pi * t / (24 * 14.77))

@@ -52,6 +52,7 @@ from .security import (
     sanitize_exception_response,
     verify_api_key,
 )
+from .tide_service import tide_service
 from .weather_service import (
     ESTADO_SOLEADO,
     ESTADO_NUBLADO,
@@ -59,10 +60,10 @@ from .weather_service import (
     ESTADO_TORMENTA,
     ESTADO_SIN_DATOS,
     ESTADO_LABEL,
-    es_dia_lluvioso,
     extract_simulation_params,
     fetch_weather_forecast,
     get_weather_summary,
+    tiene_lluvia_en_horizonte,
     weather_service,
 )
 
@@ -87,6 +88,28 @@ def _drenaje_a_amortiguamiento(eficiencia_drenaje: Optional[float]) -> float:
     eff = max(0.0, min(100.0, float(eficiencia_drenaje)))
     # Mapeo lineal: 0% -> 0.10 · 100% -> 0.90 (dentro del rango valido ge=0.01, le=5.0)
     return round(0.10 + (eff / 100.0) * 0.80, 3)
+
+
+def computar_factores_dominantes(records: list[dict]) -> list[str]:
+    """Identifica que forzamientos realmente mueven el nivel durante la corrida.
+
+    Devuelve una lista ('lluvia' | 'marea' | 'viento') con los aportes cuyo pico
+    supera un umbral relativo al forzamiento dominante. En dias secos, la lluvia
+    simplemente no aparece; el nivel queda dominado por la marea y/o el viento.
+    """
+    if not records:
+        return ["marea"]
+    picos = {
+        "lluvia": max((abs(r.get("f_lluvia", 0.0)) for r in records), default=0.0),
+        "marea": max((abs(r.get("f_marea", 0.0)) for r in records), default=0.0),
+        "viento": max((abs(r.get("f_viento", 0.0)) for r in records), default=0.0),
+    }
+    dominante = max(picos.values())
+    # Un factor cuenta si aporta >= 10% del forzamiento dominante y es relevante
+    # en terminos absolutos de fuerza (umbral ~0.5 en unidades del modelo).
+    umbral = max(0.5, dominante * 0.10)
+    activos = [k for k, v in picos.items() if v > umbral]
+    return activos or ["marea"]
 
 
 @asynccontextmanager
@@ -213,6 +236,7 @@ class PrediccionResponse(BaseModel):
     fuente_meteo: str = "open-meteo"
     es_dia_lluvioso: bool = False
     proxima_pleamar: str = ""
+    factores_dominantes: list[str] = Field(default_factory=list)
 
 
 class InfraResponse(BaseModel):
@@ -354,6 +378,8 @@ async def predecir(
         confianza_meteo = 1.0
         fuente_meteo = "open-meteo"
         proxima_pleamar = ""
+        hay_lluvia_horizonte = False
+        tide_data = {"serie_cm": [], "marea_actual_cm": 8.0, "proxima_pleamar": ""}
 
         if payload.usar_datos_meteo:
             # Estado/confianza con resiliencia (open-meteo -> historico -> promedio)
@@ -363,21 +389,39 @@ async def predecir(
             fuente_meteo = wea.get("fuente", "open-meteo")
             proxima_pleamar = wea.get("proxima_pleamar", "")
 
+            # Marea real (Open-Meteo Marine, nivel del mar que incluye mareas
+            # para coordenadas de Manga; NOAA no cubre Cartagena). Con cache y
+            # fallback analitico si la API no responde.
+            tide_data = await tide_service.get_tide(duration_hours=float(payload.horas_pronostico))
+            tide_serie_cm = tide_data.get("serie_cm", [])
+            tide_actual_cm = tide_data.get("marea_actual_cm", 8.0)
+            if tide_data.get("proxima_pleamar"):
+                proxima_pleamar = tide_data["proxima_pleamar"]
+
             forecast = await fetch_weather_forecast(forecast_days=7)
+            # En modo meteo el nivel medio del mar lo decide la meteorologia
+            # (marea), NUNCA el deslizador deshabilitado del dashboard.
+            nivel_msl = tide_actual_cm or 8.0
             weather_data = extract_simulation_params(
                 hourly_data=forecast["hourly"],
                 horas_pronostico=payload.horas_pronostico,
-                nivel_marea_cm=payload.nivel_marea_cm,
+                nivel_marea_cm=nivel_msl,
             )
             meteo_summary = get_weather_summary(
                 hourly_data=forecast["hourly"],
                 horas=payload.horas_pronostico,
             )
 
-            # Dia soleado (sin lluvia): la EDO se rige por marea/viento, sin F_lluvia
-            if not es_dia_lluvioso(estado_meteo):
+            # La lluvia se anula SOLO si no hay ninguna gota en TODA la ventana
+            # de pronostico (puede estar soleado ahora y llover mas tarde).
+            # En estado "sin_datos" (fallback sin API) se conserva la lluvia
+            # promedio del historial: prudente y conservador, no minimiza riesgo.
+            hay_lluvia = tiene_lluvia_en_horizonte(forecast.get("hourly", []), payload.horas_pronostico)
+            hay_lluvia_horizonte = hay_lluvia
+            if not hay_lluvia and estado_meteo != ESTADO_SIN_DATOS:
                 weather_data["storm_intensity"] = 0.0
-                weather_data["rain_duration_h"] = 0.0
+                weather_data["storm_peak_hour"] = float(payload.horas_pronostico) * 0.25
+                weather_data["rain_duration_h"] = 2.0
                 meteo_summary["lluvia_total_mm"] = 0.0
                 meteo_summary["horas_con_lluvia"] = 0
                 meteo_summary["dias_lluviosos"] = 0
@@ -392,9 +436,10 @@ async def predecir(
                 "dias_lluviosos": 0,
                 "horas_con_lluvia": 0,
             }
+            hay_lluvia_horizonte = (payload.intensidad_lluvia_mm_h or 0.0) > 0.0
+            estimated_peak = payload.horas_pronostico * 0.25
             if payload.intensidad_lluvia_mm_h is not None:
                 # Estimar pico e intensidad a partir del valor manual
-                estimated_peak = payload.horas_pronostico * 0.25
                 weather_data = {
                     "storm_peak_hour": estimated_peak,
                     "storm_intensity": payload.intensidad_lluvia_mm_h,
@@ -407,16 +452,36 @@ async def predecir(
                 }
                 meteo_summary["lluvia_total_mm"] = payload.intensidad_lluvia_mm_h * 6.0
                 meteo_summary["horas_con_lluvia"] = 6
+            else:
+                # Sin lluvia manual: escenario seco -> marea y drenaje del
+                # dashboard. Antes esto dejaba weather_data=None y rompia en 500.
+                weather_data = {
+                    "storm_peak_hour": estimated_peak,
+                    "storm_intensity": 0.0,
+                    "rain_duration_h": 2.0,
+                    "mean_sea_level": payload.nivel_marea_cm,
+                    "wind_direction_deg": 0.0,
+                    "wind_speed_kmh": 0.0,
+                    "soil_humidity": 0.3,
+                    "consecutive_rainy_days": 0,
+                }
 
         # 2. Configurar parametros fisicos
+        #   - En modo meteo se ignoran los deslizadores deshabilitados del panel;
+        #     el amortiguamiento y el nivel medio del mar los decide el clima/marea.
+        drenaje_efectivo = None if payload.usar_datos_meteo else payload.eficiencia_drenaje
+        # En modo manual tambien se puede ofrecer la marea real si la serie esta
+        # disponible (se calcula bajo demanda abajo); por defecto se usa analitica.
+        serie_marea_cm = tide_data.get("serie_cm", []) if payload.usar_datos_meteo else []
         params = PhysicalParameters(
-            damping=_drenaje_a_amortiguamiento(payload.eficiencia_drenaje),
+            damping=_drenaje_a_amortiguamiento(drenaje_efectivo),
             soil_humidity=weather_data.get("soil_humidity", 0.3),
             consecutive_rainy_days=weather_data.get("consecutive_rainy_days", 0),
             rain_duration_h=weather_data.get("rain_duration_h", 6.0),
             wind_direction_deg=weather_data.get("wind_direction_deg", 0.0),
             wind_speed_kmh=weather_data.get("wind_speed_kmh", 0.0),
-            mean_sea_level=weather_data.get("mean_sea_level", payload.nivel_marea_cm),
+            mean_sea_level=weather_data.get("mean_sea_level", 8.0),
+            tide_series_cm=serie_marea_cm,
         )
 
         # 3. Resolver la EDO de segundo orden
@@ -424,8 +489,8 @@ async def predecir(
             duration_hours=float(payload.horas_pronostico),
             resolution_hours=1.0,
             storm_peak_hour=weather_data.get("storm_peak_hour", payload.horas_pronostico * 0.25),
-            storm_intensity=weather_data.get("storm_intensity", 20.0),
-            mean_sea_level=weather_data.get("mean_sea_level", payload.nivel_marea_cm),
+            storm_intensity=weather_data.get("storm_intensity", 0.0),
+            mean_sea_level=weather_data.get("mean_sea_level", 8.0),
             params=params,
         )
 
@@ -469,7 +534,10 @@ async def predecir(
         nivel_max = max_record["water_level_cm"]
         hora_pico = max_record["hour"]
         estado_max = max_record["risk_level"]
-        dia_lluvioso = es_dia_lluvioso(estado_meteo)
+        # "Jornada lluviosa" si esta lloviendo AHORA o si hay lluvia en
+        # cualquier punto del horizonte de pronostico (incluso si ahora hace sol).
+        dia_lluvioso = estado_meteo == ESTADO_TORMENTA or hay_lluvia_horizonte
+        factores = computar_factores_dominantes(records)
         estado_label = ESTADO_LABEL.get(estado_meteo, estado_meteo)
 
         if estado_max == "Normal":
@@ -562,6 +630,7 @@ async def predecir(
             fuente_meteo=fuente_meteo,
             es_dia_lluvioso=dia_lluvioso,
             proxima_pleamar=proxima_pleamar,
+            factores_dominantes=factores,
         )
 
     except ValueError as exc:

@@ -32,7 +32,7 @@ const QUESTIONS: Question[] = [
     id: "marea",
     label: "Efecto marea",
     icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 12c2-3 4-3 6 0s4 3 6 0 4-3 6 0" /></svg>,
-    answer: "La marea se obtiene del NOAA con actualización horaria. Un nivel alto de marea impide que el agua drene al mar, aumentando la inundación.",
+    answer: "La marea se obtiene del modelo marino global de Open-Meteo (nivel del mar que incluye mareas) con actualización horaria. Un nivel alto de marea impide que el agua drene al mar, aumentando la inundación.",
   },
   {
     id: "evacuacion",

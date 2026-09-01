@@ -19,7 +19,7 @@ const VARIABLES: Variable[] = [
   { id: "c", symbol: "c(t)", label: "Fricción", color: "#FFD600", description: "Coeficiente de fricción propio del terreno de Manga." },
   { id: "k", symbol: "k(t)", label: "Amortiguamiento", color: "#FF0055", description: "Coeficiente de amortiguamiento del sistema hídrico." },
   { id: "f_lluvia", symbol: "f_{lluvia}(t)", label: "Lluvia", color: "#00FF87", description: "Caudal de agua que entra por precipitación (sensores locales + Open-Meteo)." },
-  { id: "f_marea", symbol: "f_{marea}(t)", label: "Marea", color: "#B000FF", description: "Caudal de agua por influencia del mar (datos NOAA)." },
+  { id: "f_marea", symbol: "f_{marea}(t)", label: "Marea", color: "#B000FF", description: "Caudal de agua por influencia del mar (mareas reales de Cartagena vía Open-Meteo Marine)." },
   { id: "f_drenaje", symbol: "f_{drenaje}(t)", label: "Drenaje", color: "#F1FAEE", description: "Capacidad de absorción del suelo y alcantarillado (DEM topográfico)." },
 ];
 

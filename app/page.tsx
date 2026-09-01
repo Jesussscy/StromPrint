@@ -183,7 +183,7 @@ function HowItWorksSection() {
 
         <div className="grid gap-8 md:grid-cols-3">
           {[
-            { step: "01", title: "Captura", desc: "Estaciones DAVIS y pluviómetros miden lluvia, viento y temperatura cada minuto. Mareas del NOAA.", icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00F3FF" strokeWidth="1.5"><circle cx="12" cy="12" r="10" /><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg> },
+            { step: "01", title: "Captura", desc: "Estaciones DAVIS y pluviómetros miden lluvia, viento y temperatura cada minuto. Mareas reales de Cartagena vía Open-Meteo Marine.", icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00F3FF" strokeWidth="1.5"><circle cx="12" cy="12" r="10" /><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg> },
             { step: "02", title: "Modelo", desc: "Solución analítica por tramos con la integral de convolución de Duhamel. Sin integración paso a paso. Precisión: 98.7%.", icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00F3FF" strokeWidth="1.5"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" /><circle cx="12" cy="12" r="4" /></svg> },
             { step: "03", title: "Acción", desc: "Dashboard en tiempo real con niveles de riesgo, recomendaciones y rutas de evacuación.", icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FF0055" strokeWidth="1.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg> },
           ].map((item) => (
@@ -217,7 +217,7 @@ function DataSourceSection() {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {[
             { title: "Estaciones Meteorológicas", desc: "Sensores DAVIS y pluviómetros de balancín en puntos estratégicos de Manga.", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00F3FF" strokeWidth="1.5"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" /><circle cx="12" cy="12" r="4" /></svg> },
-            { title: "Satélites y Modelos Globales", desc: "API de Open-Meteo y datos del NOAA para predicciones a 7 días.", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00F3FF" strokeWidth="1.5"><circle cx="12" cy="12" r="10" /><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg> },
+            { title: "Satélites y Modelos Globales", desc: "API de Open-Meteo para clima y mareas marinas reales, con predicciones a 7 días.", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00F3FF" strokeWidth="1.5"><circle cx="12" cy="12" r="10" /><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg> },
             { title: "Topografía y Batimetría", desc: "Modelos de Elevación Digital del terreno de Cartagena.", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00F3FF" strokeWidth="1.5"><path d="M3 20l5-10 4 6 4-4 5 8" /><line x1="3" y1="20" x2="21" y2="20" /></svg> },
             { title: "Conexión IoT", desc: "Datos por 4G/5G al servidor en la nube. Latencia < 30 segundos.", icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00F3FF" strokeWidth="1.5"><path d="M5 12.55a11 11 0 0 1 14.08 0" /><path d="M1.42 9a16 16 0 0 1 21.16 0" /><path d="M8.53 16.11a6 6 0 0 1 6.95 0" /><circle cx="12" cy="20" r="1" fill="#00F3FF" /></svg> },
           ].map((item) => (
@@ -602,7 +602,7 @@ function TechnologySection() {
         <div className="grid gap-4 md:grid-cols-3">
           {[
             { title: "Modelo Analítico (Duhamel)", desc: "Resolución por integral de convolución por tramos. Responde a cada impulso de lluvia y marea sin integración numérica escalón a escalón." },
-            { title: "Datos en Tiempo Real", desc: "API de Open-Meteo para pronósticos horarios de lluvia, viento y temperatura, más mareas del NOAA." },
+            { title: "Datos en Tiempo Real", desc: "API de Open-Meteo para pronósticos horarios de lluvia, viento y temperatura, más mareas marinas reales de Cartagena." },
             { title: "Modelo Territorial", desc: "La topografía de Manga, casi a nivel del mar (1.2 m s. n. m.), modula la capacidad de absorción y acumulación del agua." },
           ].map((item) => (
             <motion.div key={item.title} {...FADE} className="glass rounded-xl p-5">

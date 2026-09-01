@@ -105,6 +105,22 @@ def es_dia_lluvioso(estado: str) -> bool:
     return estado in (ESTADO_LLUVIOSO, ESTADO_TORMENTA)
 
 
+def tiene_lluvia_en_horizonte(hourly_data: List[Dict], horas: Optional[int] = None) -> bool:
+    """True si hay alguna gota de lluvia dentro de la ventana de pronostico.
+
+    A diferencia de es_dia_lluvioso (que mira solo el estado actual), aqui se
+    recorre todo el horizonte de pronostico: puede estar soleado "ahora" y
+    llover mas tarde en el dia; en ese caso el modelo debe conservar la lluvia.
+    """
+    window = hourly_data[:horas] if horas is not None else hourly_data
+    for h in window:
+        if (h.get("precipitation", 0.0) or 0.0) > LLUVIA_LIGERA_MMH:
+            return True
+        if (h.get("rain", 0.0) or 0.0) > LLUVIA_LIGERA_MMH:
+            return True
+    return False
+
+
 # ---------------------------------------------------------------------------
 # Datos historicos promedio (fallback) — Barrio Manga, Cartagena, ultimos 5 anos
 # lluvia media mensual en mm/mes, temperatura y humedad tipicas.

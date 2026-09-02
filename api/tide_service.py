@@ -126,6 +126,7 @@ def serie_marea_desde_ahora(
     ultimo ciclo semidiurno disponible (fallback).
     """
     now = reference or datetime.now()
+    duration_hours = max(1, int(duration_hours))
     idx = _closest_index(time, now, at_or_after=True)
     if idx is None:
         return []
@@ -166,6 +167,7 @@ class TideService:
         duration_hours: int = 168,
         force_refresh: bool = False,
     ) -> Dict[str, Any]:
+        duration_hours = max(1, int(duration_hours))
         if not force_refresh:
             cached = self._load_cache()
             if cached is not None:

@@ -102,6 +102,28 @@ def test_predecir_manual_sin_lluvia_no_rompe(client):
     assert len(r.json()["puntos"]) == 24
 
 
+def test_serie_marea_acepta_duracion_float():
+    """Regresion: predecir envia horas_pronostico como float (pydantic) y
+    serie_marea_desde_ahora usaba el float como indice de slice -> TypeError.
+    El slice debe funcionar con float (se coerce a int)."""
+    import datetime as _dt
+
+    from api.tide_service import serie_marea_desde_ahora
+
+    tiempos = [
+        "2026-09-02T00:00",
+        "2026-09-02T01:00",
+        "2026-09-02T02:00",
+        "2026-09-02T03:00",
+    ]
+    niveles = [10.0, 20.0, 30.0, 40.0]
+    ref = _dt.datetime(2026, 9, 2, 1, 0)
+    out = serie_marea_desde_ahora(tiempos, niveles, 72.0, ref)  # 72.0 float
+    assert isinstance(out, list)
+    assert out
+    assert len(out) == 72
+
+
 def test_subscribe_rechaza_email_invalido(client):
     r = client.post("/api/v1/notify/subscribe", json={"email": "no-es-un-email"})
     assert r.status_code == 422

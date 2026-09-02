@@ -12,7 +12,10 @@ const nextConfig = {
   async rewrites() {
     const IS_VERCEL = process.env.VERCEL === "1";
     if (IS_VERCEL) {
-      return [{ source: "/api/v1/:path*", destination: "/api/index.py" }];
+      // En Vercel el enrutado de /api/v1/* lo hace vercel.json (rewrite hacia
+      // la funcion `/api`). Si Next lo reescribe tambien, intercepta y responde
+      // 404 antes de que la funcion Python pueda atender el request.
+      return [];
     }
     // Desarrollo local: reenviar al backend FastAPI (ejecutar con uvicorn)
     return [{ source: "/api/v1/:path*", destination: "http://127.0.0.1:8000/api/v1/:path*" }];

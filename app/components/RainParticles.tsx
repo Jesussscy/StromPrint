@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { prefersReducedMotion } from "@/app/lib/accessibility";
 
 interface RainParticlesProps {
   intensity: number; // 0-1
@@ -12,6 +13,10 @@ export default function RainParticles({ intensity, active }: RainParticlesProps)
   const animRef = useRef<number | null>(null);
 
   useEffect(() => {
+    // Accesibilidad: si el usuario prefiere menos movimiento, no animamos la
+    // lluvia y dejamos el efecto estático (o nulo) — evita mareos/epilepsia.
+    if (prefersReducedMotion()) return;
+
     const canvas = canvasRef.current;
     if (!canvas || !active) return;
 

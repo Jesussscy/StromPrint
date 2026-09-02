@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { motion } from "framer-motion";
 import type { DaySummary } from "@/app/lib/api";
 import { riskColor } from "@/app/lib/api";
@@ -107,7 +108,7 @@ function MiniBarChart({ lluviaMax }: { lluviaMax: number }) {
   );
 }
 
-export default function ForecastDayCard({ summary, index }: ForecastDayCardProps) {
+function ForecastDayCard({ summary, index }: ForecastDayCardProps) {
   const accent = riskColor(summary.estadoDominante);
   const rainPct = summary.horasTotales > 0
     ? Math.round((summary.horasConLluvia / summary.horasTotales) * 100)
@@ -171,3 +172,5 @@ export default function ForecastDayCard({ summary, index }: ForecastDayCardProps
     </motion.div>
   );
 }
+
+export default memo(ForecastDayCard);

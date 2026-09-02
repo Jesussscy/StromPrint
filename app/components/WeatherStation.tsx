@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import FreshnessBadge from "@/app/components/FreshnessBadge";
+import { SkeletonStat, Skeleton } from "@/app/components/Skeleton";
 import {
   ESTADO_METEO_COLOR,
   ESTADO_METEO_LABEL,
@@ -97,23 +99,38 @@ export default function WeatherStation() {
             <p className="font-display text-sm font-bold text-white">Estación Meteorológica — Manga</p>
             <p className="font-mono text-[9px] uppercase tracking-widest text-slate-500">
               {weather ? (weather.fuente === "open-meteo" ? <><svg className="inline-block mr-1 -mt-0.5" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#00E5FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 20h.01m2.99-3H8m-4.99 3L8 9l3 3 3-6 2 4h2.01" /></svg>Open-Meteo en vivo</> : weather.fuente === "historico" ? <><svg className="inline-block mr-1 -mt-0.5" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FFD600" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>Histórico mensual</> : <><svg className="inline-block mr-1 -mt-0.5" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FF8A00" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>Promedio estimado</>) : "Cargando..."}
-              {weather && ` · ${new Date(weather.timestamp).toLocaleString("es-CO", { hour: "2-digit", minute: "2-digit" })}`}
             </p>
           </div>
         </div>
-        <button
-          onClick={() => fetchWeather(true)}
-          disabled={refreshing}
-          className="glass-glow rounded-lg px-4 py-2 font-mono text-[11px] uppercase tracking-wider text-cyan hover:bg-cyan/10 transition disabled:opacity-50"
-        >
-          {refreshing ? "Actualizando..." : <><svg className="inline-block mr-1 -mt-0.5" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></svg>Actualizar</>}
-        </button>
+        <div className="flex items-center gap-2">
+          <FreshnessBadge timestamp={weather?.timestamp} fuente={weather?.fuente} labelPrefix="Actualizado" />
+          <button
+            onClick={() => fetchWeather(true)}
+            disabled={refreshing}
+            className="glass-glow rounded-lg px-4 py-2 font-mono text-[11px] uppercase tracking-wider text-cyan hover:bg-cyan/10 transition disabled:opacity-50 min-h-[44px]"
+          >
+            {refreshing ? "Actualizando..." : <><svg className="inline-block mr-1 -mt-0.5" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></svg>Actualizar</>}
+          </button>
+        </div>
       </div>
 
       {loading && !weather ? (
-        <div className="h-40 flex items-center justify-center font-mono text-xs text-slate-500">Cargando datos meteorológicos...</div>
+        <div className="space-y-4" aria-busy="true" aria-label="Cargando datos meteorológicos">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+            {Array.from({ length: 6 }).map((_, i) => <SkeletonStat key={i} />)}
+          </div>
+          <Skeleton className="h-24" />
+        </div>
       ) : error && !weather ? (
-        <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">{error}</div>
+        <div className="flex flex-col items-center gap-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-6 text-sm text-red-400">
+          <p>{error}</p>
+          <button
+            onClick={() => fetchWeather(true)}
+            className="glass-glow rounded-lg px-4 py-2 font-mono text-[11px] uppercase tracking-wider text-cyan hover:bg-cyan/10 transition min-h-[44px]"
+          >
+            Reintentar
+          </button>
+        </div>
       ) : weather ? (
         <>
           {/* Banner de estado meteorológico + confianza de la fuente */}

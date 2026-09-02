@@ -13,6 +13,7 @@ Los umbrales coinciden con la fuente de verdad de physics_engine.py:
 import json
 import logging
 import os
+import re
 import smtplib
 from datetime import datetime, timedelta
 from email.mime.multipart import MIMEMultipart
@@ -40,8 +41,15 @@ class NotificationService:
         if os.getenv("VERCEL")
         else "notifications.json"
     )
+    SUBSCRIPTIONS_FILE = (
+        "/tmp/stormprint_subscriptions.json"
+        if os.getenv("VERCEL")
+        else "subscriptions.json"
+    )
     MAX_HISTORY = 100
     RISK_COOLDOWN_SECONDS = 1800  # 30 min: no repetir el mismo nivel de riesgo
+
+    EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
     def __init__(self):
         self.smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
@@ -50,6 +58,59 @@ class NotificationService:
         self.smtp_password = os.getenv("SMTP_PASSWORD", "")
         self.webhook_url = os.getenv("WEBHOOK_URL", "")
         self.notification_history = self._load_history()
+        self.subscriptions: List[str] = self._load_subscriptions()
+
+    # ------------------------------------------------------------------
+    # Suscripciones de destinatarios por email
+    # ------------------------------------------------------------------
+    def _load_subscriptions(self) -> List[str]:
+        try:
+            if os.path.exists(self.SUBSCRIPTIONS_FILE):
+                with open(self.SUBSCRIPTIONS_FILE, "r", encoding="utf-8") as fh:
+                    data = json.load(fh)
+                if isinstance(data, list):
+                    emails = [str(e).strip().lower() for e in data if self.EMAIL_RE.match(str(e).strip())]
+                    return list(dict.fromkeys(emails))  # dedupe preservando orden
+        except Exception:
+            pass
+        return []
+
+    def _save_subscriptions(self) -> None:
+        try:
+            with open(self.SUBSCRIPTIONS_FILE, "w", encoding="utf-8") as fh:
+                json.dump(self.subscriptions, fh)
+        except Exception as exc:
+            logger.warning("No se pudo guardar suscripciones: %s", exc)
+
+    def validar_email(self, email: str) -> bool:
+        return bool(self.EMAIL_RE.match(email))
+
+    def subscribe(self, email: str) -> int:
+        """Agrega un correo a los destinatarios de alertas. Devuelve el total."""
+        email = email.strip().lower()
+        if not self.validar_email(email):
+            raise ValueError("email_invalido")
+        if email not in self.subscriptions:
+            self.subscriptions.append(email)
+            self._save_subscriptions()
+        return len(self.subscriptions)
+
+    def unsubscribe(self, email: str) -> int:
+        """Quita un correo de los destinatarios. Devuelve el total."""
+        email = email.strip().lower()
+        before = len(self.subscriptions)
+        self.subscriptions = [e for e in self.subscriptions if e != email]
+        if len(self.subscriptions) != before:
+            self._save_subscriptions()
+        return len(self.subscriptions)
+
+    def recipient_list(self) -> List[str]:
+        """Destinatarios finales: suscriptores + SMTP_TO (sin duplicados)."""
+        dest = os.getenv("SMTP_TO", self.smtp_user)
+        recipients: List[str] = list(self.subscriptions)
+        if dest and dest not in recipients:
+            recipients.append(dest)
+        return recipients
 
     async def check_and_notify(
         self, nivel_cm: float, weather_data: Dict[str, Any]
@@ -126,40 +187,47 @@ class NotificationService:
     async def _send_email(
         self, mensaje: str, nivel_cm: float, weather_data: Dict[str, Any]
     ) -> bool:
-        """Envia correo (solo si SMTP esta configurado)."""
+        """Envia correo (solo si SMTP esta configurado) a todos los
+        suscriptores y al destinatario por defecto (SMTP_TO)."""
         if not self.smtp_user or not self.smtp_password:
             return False
+
+        recipients = self.recipient_list()
+        if not recipients:
+            return False
+
+        w = weather_data or {}
+        body = (
+            "StormPrint - Alerta de Inundacion\n\n"
+            f"Ubicacion: Barrio Manga, Cartagena\n"
+            f"Nivel de agua: {nivel_cm:.1f} cm\n"
+            f"Estado del dia: {w.get('estado_label', 'N/A')} "
+            f"(confianza {w.get('confianza', 'N/A')})\n\n"
+            f"Temperatura: {w.get('temperatura', 'N/A')} C\n"
+            f"Humedad: {w.get('humedad', 'N/A')}%\n"
+            f"Lluvia: {w.get('precipitacion_actual_mm_h', w.get('precipitacion_actual', 'N/A'))} mm/h\n"
+            f"Viento: {w.get('velocidad_viento_kmh', w.get('velocidad_viento', 'N/A'))} km/h\n"
+            f"Proxima pleamar: {w.get('proxima_pleamar', 'N/A')}\n"
+            f"Fuente: {w.get('fuente', w.get('source', 'N/A'))}\n\n"
+            f"{mensaje}\n\n"
+            f"Dashboard: {DASHBOARD_URL}\n"
+        )
+
+        enviados = 0
         try:
-            dest = os.getenv("SMTP_TO", self.smtp_user)
-            msg = MIMEMultipart()
-            msg["From"] = self.smtp_user
-            msg["To"] = dest
-            msg["Subject"] = "StormPrint - Alerta de Inundacion (Manga)"
-
-            w = weather_data or {}
-            body = (
-                "StormPrint - Alerta de Inundacion\n\n"
-                f"Ubicacion: Barrio Manga, Cartagena\n"
-                f"Nivel de agua: {nivel_cm:.1f} cm\n"
-                f"Estado del dia: {w.get('estado_label', 'N/A')} "
-                f"(confianza {w.get('confianza', 'N/A')})\n\n"
-                f"Temperatura: {w.get('temperatura', 'N/A')} C\n"
-                f"Humedad: {w.get('humedad', 'N/A')}%\n"
-                f"Lluvia: {w.get('precipitacion_actual_mm_h', w.get('precipitacion_actual', 'N/A'))} mm/h\n"
-                f"Viento: {w.get('velocidad_viento_kmh', w.get('velocidad_viento', 'N/A'))} km/h\n"
-                f"Proxima pleamar: {w.get('proxima_pleamar', 'N/A')}\n"
-                f"Fuente: {w.get('fuente', w.get('source', 'N/A'))}\n\n"
-                f"{mensaje}\n\n"
-                f"Dashboard: {DASHBOARD_URL}\n"
-            )
-            msg.attach(MIMEText(body, "plain"))
-
             server = smtplib.SMTP(self.smtp_server, self.smtp_port, timeout=10)
             server.starttls()
             server.login(self.smtp_user, self.smtp_password)
-            server.send_message(msg)
+            for dest in recipients:
+                msg = MIMEMultipart()
+                msg["From"] = self.smtp_user
+                msg["To"] = dest
+                msg["Subject"] = "StormPrint - Alerta de Inundacion (Manga)"
+                msg.attach(MIMEText(body, "plain"))
+                server.send_message(msg)
+                enviados += 1
             server.quit()
-            logger.info("Email enviado")
+            logger.info("Email enviado a %d destinatario(s)", enviados)
             return True
         except Exception as exc:
             logger.error("Error enviando email: %s", exc)
@@ -236,21 +304,21 @@ class NotificationService:
         table = {
             "CRITICO": {
                 "icono": "",
-                "color": "#FF0055",
+                "color": "#B000FF",
                 "titulo": "¡ALERTA CRÍTICA!",
                 "zona": "Manga Oeste",
                 "ubicacion": "Av. Pedro de Heredia",
             },
             "EMERGENCIA": {
                 "icono": "",
-                "color": "#FF7700",
+                "color": "#FF0055",
                 "titulo": "Alerta de Emergencia",
                 "zona": "Manga Centro",
                 "ubicacion": "Calle 24",
             },
             "ALERTA": {
                 "icono": "",
-                "color": "#F3F300",
+                "color": "#FFD600",
                 "titulo": "Nivel en Aumento",
                 "zona": "Manga Este",
                 "ubicacion": "Calle 30",

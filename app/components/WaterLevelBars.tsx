@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { motion } from "framer-motion";
 import type { PuntoPrediccion } from "@/app/lib/api";
 import { clasificarNivel, colorDeNivelCm, UMBRAL_CRITICO, UMBRAL_EMERGENCIA, UMBRAL_ALERTA } from "@/app/lib/riesgo";
@@ -28,7 +29,7 @@ interface WaterLevelBarsProps {
   zonasCriticas?: number;
 }
 
-export default function WaterLevelBars({ nivelAguaCm, punto, zonasCriticas = 0 }: WaterLevelBarsProps) {
+function WaterLevelBars({ nivelAguaCm, punto, zonasCriticas = 0 }: WaterLevelBarsProps) {
   const maxMark = 150;
   const pct = Math.min(1, Math.max(0, nivelAguaCm / maxMark));
 
@@ -127,3 +128,5 @@ export default function WaterLevelBars({ nivelAguaCm, punto, zonasCriticas = 0 }
     </div>
   );
 }
+
+export default memo(WaterLevelBars);

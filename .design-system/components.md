@@ -65,7 +65,7 @@ Clases definidas en `app/globals.css`. Se usan como `className` en cualquier ele
 |---|---|
 | `Navbar` | Navegación superior |
 | `MetricsPanel` | Métricas del punto activo |
-| `LeafletMap` / `CesiumMap` | Mapa 2D / visor 3D Cesium |
+| `CesiumMap` | Visor 3D Cesium (Panel en vivo) |
 | `ForecastChart` / `ForecastDayCard` | Pronóstico |
 | `RainParticles` | Lluvia animada (estado tormenta) |
 | `AlertDrawer` | Panel de alertas |

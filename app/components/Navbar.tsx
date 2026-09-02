@@ -7,6 +7,7 @@ const NAV_LINKS = [
   { href: "#datos", label: "Datos" },
   { href: "#panel-vivo", label: "Panel en vivo" },
   { href: "/ciencia", label: "Ciencia" },
+  { href: "/alertas", label: "Alertas" },
   { href: "#contacto", label: "Contacto" },
 ];
 
@@ -41,7 +42,7 @@ export default function Navbar() {
   }, []);
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+    <nav aria-label="Navegación principal" className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
       scrolled ? "glass-strong shadow-lg shadow-black/30" : "glass-subtle"
     } border-b border-cyan/10`}>
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 md:px-12">

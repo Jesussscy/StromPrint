@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { prefersReducedMotion } from "@/app/lib/accessibility";
 
 export default function CursorTracker() {
   const cursorRef = useRef<HTMLDivElement>(null);
@@ -14,6 +15,9 @@ export default function CursorTracker() {
   useEffect(() => {
     const isMobile = window.matchMedia("(max-width: 1023px)").matches;
     if (isMobile) return;
+    // Accesibilidad: el cursor decorativo desaparece si el usuario prefiere
+    // menos movimiento (el cursor nativo del sistema queda igual).
+    if (prefersReducedMotion()) return;
 
     const handleMove = (e: MouseEvent) => {
       target.current = { x: e.clientX, y: e.clientY };

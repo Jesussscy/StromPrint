@@ -8,6 +8,8 @@ import {
 import type { PrediccionGuardada } from "@/app/lib/api";
 import { fetchPredicciones } from "@/app/lib/api";
 import { riscoColorEstilo } from "@/app/lib/riesgo";
+import { formatFechaHoraCartagena, formatFechaCartagena } from "@/app/lib/datetime";
+import { Skeleton } from "@/app/components/Skeleton";
 
 function riskColor(estado: string): string {
   return riscoColorEstilo(estado);
@@ -31,7 +33,7 @@ export default function HistoryPanel() {
 
   const trend = useMemo(() => {
     return predicciones.slice().reverse().map((p) => ({
-      dia: new Date(p.timestamp).toLocaleDateString("es-CO", { day: "2-digit", month: "2-digit" }),
+      dia: formatFechaCartagena(p.timestamp),
       nivel: p.max_water_level_cm,
     }));
   }, [predicciones]);
@@ -39,7 +41,7 @@ export default function HistoryPanel() {
   const exportCSV = () => {
     const header = ["Fecha", "Nivel max (cm)", "Hora pico (h)", "Riesgo", "Pronostico (h)", "Origen de datos"];
     const rows = predicciones.map((p) => [
-      new Date(p.timestamp).toLocaleString("es-CO"),
+      formatFechaHoraCartagena(p.timestamp, true),
       p.max_water_level_cm.toFixed(1),
       p.peak_hour.toFixed(0),
       p.risk_level,
@@ -52,6 +54,17 @@ export default function HistoryPanel() {
     const a = document.createElement("a");
     a.href = url;
     a.download = "stormprint-historial.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportJSON = () => {
+    const payload = JSON.stringify({ predicciones }, null, 2);
+    const blob = new Blob([payload], { type: "application/json;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "stormprint-historial.json";
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -70,22 +83,52 @@ export default function HistoryPanel() {
             </p>
           </div>
         </div>
-        <button
-          onClick={exportCSV}
-          disabled={predicciones.length === 0}
-          className="glass-glow rounded-lg px-4 py-2 font-mono text-[11px] uppercase tracking-wider text-cyan hover:bg-cyan/10 transition disabled:opacity-40"
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
-          Exportar CSV
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={exportJSON}
+            disabled={predicciones.length === 0}
+            className="glass rounded-lg px-4 py-2 font-mono text-[11px] uppercase tracking-wider text-slate-400 hover:text-cyan transition disabled:opacity-40 min-h-[44px]"
+          >
+            JSON
+          </button>
+          <button
+            onClick={() => window.print()}
+            disabled={predicciones.length === 0}
+            title="Abrir el diálogo de impresión del navegador (Guardar como PDF)"
+            className="glass rounded-lg px-4 py-2 font-mono text-[11px] uppercase tracking-wider text-slate-400 hover:text-cyan transition disabled:opacity-40 min-h-[44px]"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="inline-block mr-1 -mt-0.5"><polyline points="6 9 6 2 18 2 18 9" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="8" /></svg>
+            Imprimir
+          </button>
+          <button
+            onClick={exportCSV}
+            disabled={predicciones.length === 0}
+            className="glass-glow rounded-lg px-4 py-2 font-mono text-[11px] uppercase tracking-wider text-cyan hover:bg-cyan/10 transition disabled:opacity-40 min-h-[44px]"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+            Exportar CSV
+          </button>
+        </div>
       </div>
 
       {loading ? (
-        <div className="h-40 flex items-center justify-center font-mono text-xs text-slate-500">Cargando historial...</div>
+        <div className="space-y-3" aria-busy="true" aria-label="Cargando historial">
+          <Skeleton className="h-10" />
+          {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-9" />)}
+        </div>
       ) : error ? (
         <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">{error}</div>
       ) : predicciones.length === 0 ? (
-        <p className="py-8 text-center font-mono text-xs text-slate-500">Aún no hay predicciones guardadas. Ejecutá una simulación para ver el historial.</p>
+        <div className="flex flex-col items-center gap-3 py-10 text-center">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#334155" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18" /><path d="M8 12l3-3 3 3 4-4" /></svg>
+          <p className="max-w-sm font-mono text-xs text-slate-500">
+            Aún no hay predicciones guardadas. Ejecutá una simulación en el panel en vivo para ver el historial.
+          </p>
+          <a href="#panel-vivo" className="glass-glow rounded-lg px-5 py-2.5 font-mono text-[11px] uppercase tracking-wider text-cyan hover:bg-cyan/10 transition inline-flex items-center gap-2 min-h-[44px]">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5,3 19,12 5,21" /></svg>
+            Ir al Panel en vivo
+          </a>
+        </div>
       ) : (
         <>
           {/* Tabla */}
@@ -111,7 +154,7 @@ export default function HistoryPanel() {
                   return (
                     <tr key={p.id} className="border-b border-white/5">
                       <td className="py-2 pr-4 font-mono text-xs text-slate-400">
-                        {new Date(p.timestamp).toLocaleString("es-CO")}
+                        {formatFechaHoraCartagena(p.timestamp)}
                       </td>
                       <td className="py-2 pr-4 font-display font-bold font-tabular text-slate-200">
                         {p.max_water_level_cm.toFixed(0)} cm

@@ -16,12 +16,14 @@ import {
 } from "recharts";
 import type { PuntoPrediccion, PrediccionResponse } from "@/app/lib/api";
 import { riskColor, riskLabel, formatHourShort } from "@/app/lib/api";
+import { Skeleton } from "@/app/components/Skeleton";
 
 interface MetricsPanelProps {
   punto: PuntoPrediccion | null;
   prediccion: PrediccionResponse | null;
   isLoading: boolean;
   error: string | null;
+  onRetry?: () => void;
 }
 
 function RiskSemaphore({ estado }: { estado: string }) {
@@ -108,14 +110,6 @@ const IconDrain = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="no
 const IconSoil = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2"><path d="M2 22h20M7 22V12c0-2 1-4 5-4s5 2 5 4v10" /></svg>;
 const IconVelocity = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#E9C46A" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>;
 
-const HISTORICAL_MAX: number[] = [
-  10, 12, 14, 16, 19, 22, 26, 30, 34, 38,
-  42, 46, 50, 54, 58, 61, 64, 67, 69, 71,
-  72, 73, 74, 75, 75, 74, 73, 71, 69, 67,
-  64, 61, 58, 54, 50, 46, 42, 38, 34, 30,
-  26, 22, 19, 16, 14, 12, 11, 10,
-];
-
 function GlowingDot(props: Record<string, unknown>) {
   const cx = props.cx as number | undefined;
   const cy = props.cy as number | undefined;
@@ -192,16 +186,15 @@ function DrainageIndicator({ eficiencia_drenaje, saturacion_suelo }: { eficienci
   );
 }
 
-export default function MetricsPanel({ punto, prediccion, isLoading, error }: MetricsPanelProps) {
+export default function MetricsPanel({ punto, prediccion, isLoading, error, onRetry }: MetricsPanelProps) {
   const accent = punto ? riskColor(punto.estado) : "#00E5FF";
 
   const chartData = prediccion
-    ? prediccion.puntos.map((p, i) => ({
+    ? prediccion.puntos.map((p) => ({
         hora: p.tiempo_hora,
         nivel: p.nivel_agua_cm,
         f_lluvia: p.f_lluvia,
         f_marea: Math.abs(p.f_marea),
-        historical: HISTORICAL_MAX[i] ?? 0,
       }))
     : [];
 
@@ -256,7 +249,6 @@ export default function MetricsPanel({ punto, prediccion, isLoading, error }: Me
                     if (name === "nivel") return [`${value.toFixed(1)} cm`, "Nivel H(t)"];
                     if (name === "f_lluvia") return [`${value.toFixed(1)} mm/h`, "Lluvia"];
                     if (name === "f_marea") return [`${value.toFixed(1)} cm`, "Marea"];
-                    if (name === "historical") return [`${value.toFixed(0)} cm`, "Máx histórico"];
                     return [value, name];
                   }}
                 />
@@ -267,12 +259,22 @@ export default function MetricsPanel({ punto, prediccion, isLoading, error }: Me
                 <Area type="monotone" dataKey="nivel" stroke="#00E5FF" strokeWidth={2.5} fill="url(#gradWater)" dot={<PeakDot />} activeDot={{ r: 5, fill: "#00E5FF", stroke: "#00E5FF", strokeWidth: 2 }} name="Nivel H(t)" isAnimationActive={false} />
                 <Bar dataKey="f_lluvia" fill="#00F3FF" opacity={0.2} name="Lluvia (mm/h)" isAnimationActive={false} />
                 <Line type="monotone" dataKey="f_marea" stroke="#94A3B8" strokeWidth={1.5} dot={false} strokeDasharray="3 3" name="Marea (cm)" isAnimationActive={false} />
-                <Line type="monotone" dataKey="historical" stroke="#FF0055" strokeWidth={1.5} dot={false} strokeDasharray="4 4" strokeOpacity={0.4} name="Máx histórico" isAnimationActive={false} />
               </ComposedChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex h-full items-center justify-center font-mono text-xs text-slate-500">
-              {isLoading ? "Calculando proyección..." : "Sin datos"}
+            <div className="flex h-full items-center justify-center">
+              {isLoading ? (
+                <div className="w-full space-y-2" aria-busy="true" aria-label="Calculando proyección">
+                  <Skeleton className="h-3 w-40 mx-auto" />
+                  <div className="flex items-end justify-between gap-2 h-28 px-4">
+                    {Array.from({ length: 16 }).map((_, i) => (
+                      <Skeleton key={i} className="w-3" style={{ height: `${25 + ((i * 37) % 70)}%` }} />
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <span className="font-mono text-xs text-slate-500">Sin datos</span>
+              )}
             </div>
           )}
         </div>
@@ -281,7 +283,17 @@ export default function MetricsPanel({ punto, prediccion, isLoading, error }: Me
       {prediccion && <Narrative narrativa={prediccion.narrativa} recomendacion={prediccion.recomendacion} />}
 
       {error && (
-        <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">{error}</div>
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          <span>{error}</span>
+          {onRetry && (
+            <button
+              onClick={onRetry}
+              className="glass-glow shrink-0 rounded-lg px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-cyan hover:bg-cyan/10 transition min-h-[44px] min-w-[44px]"
+            >
+              Reintentar
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ZONAS_MANGA,
   RIESGO_META,
@@ -12,11 +12,26 @@ import {
   type ZonaManga,
 } from "@/app/lib/zonasManga";
 
+const FAV_STORAGE_KEY = "stormprint:zonas-favoritas";
+
 interface ZonasMangaPanelProps {
   nivelAguaCm: number;
   nivelMaximoCm: number;
   selectedId?: number | null;
   onSelect: (zona: ZonaManga | null) => void;
+}
+
+function cargarFavoritos(): number[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(FAV_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed.filter((v) => typeof v === "number");
+    return [];
+  } catch {
+    return [];
+  }
 }
 
 export default function ZonasMangaPanel({
@@ -27,6 +42,19 @@ export default function ZonasMangaPanel({
 }: ZonasMangaPanelProps) {
   const [filtro, setFiltro] = useState<NivelRiesgo | "TODOS">("TODOS");
   const [busqueda, setBusqueda] = useState("");
+  const [favoritas, setFavoritas] = useState<number[]>(cargarFavoritos);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(FAV_STORAGE_KEY, JSON.stringify(favoritas));
+    } catch {
+      // almacenamiento no disponible: ignoramos
+    }
+  }, [favoritas]);
+
+  function toggleFavorita(id: number) {
+    setFavoritas((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }
 
   // Estado vivo de cada zona según la predicción
   const enVivo = useMemo(() => {
@@ -82,7 +110,16 @@ export default function ZonasMangaPanel({
       <div className="px-4 pt-4 pb-3 border-b border-cyan/10">
         <div className="flex items-center justify-between">
           <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-cyan">Zonas de riesgo</p>
-          <span className="font-display text-xs font-bold text-slate-400">{ZONAS_MANGA.length}</span>
+          <div className="flex items-center gap-2">
+            <span
+              className="inline-flex items-center gap-1 font-mono text-[10px] text-slate-500"
+              title="Zonas marcadas como favoritas (guardadas en este navegador)"
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill={favoritas.length > 0 ? "#FFD600" : "none"} stroke="#64748B" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
+              {favoritas.length}
+            </span>
+            <span className="font-display text-xs font-bold text-slate-400">{ZONAS_MANGA.length}</span>
+          </div>
         </div>
         <p className="font-display text-sm font-bold text-white mt-1">Zonas Críticas · Manga</p>
 
@@ -151,38 +188,50 @@ export default function ZonasMangaPanel({
         )}
         {filtradas.map(({ zona, nivel, riesgo }) => {
           const seleccionada = selectedId === zona.id;
+          const esFavorita = favoritas.includes(zona.id);
           return (
-            <button
+            <div
               key={zona.id}
-              onClick={() => onSelect(seleccionada ? null : zona)}
-              className={`w-full text-left rounded-xl px-3 py-3 transition min-h-[52px] ${
+              className={`w-full text-left rounded-xl px-1 py-1 transition flex items-center gap-1 ${
                 seleccionada ? "bg-cyan/10 ring-1 ring-cyan/40" : "hover:bg-white/5 active:bg-white/5"
               }`}
             >
-              <div className="flex items-center gap-2.5">
+              <button
+                onClick={() => toggleFavorita(zona.id)}
+                aria-pressed={esFavorita}
+                aria-label={esFavorita ? `Quitar ${zona.nombre} de zonas favoritas` : `Marcar ${zona.nombre} como zona favorita`}
+                title={esFavorita ? "Favorita (guardada en este navegador)" : "Marcar como favorita (se guarda en este navegador)"}
+                className="shrink-0 self-center rounded-lg p-2 text-slate-500 hover:text-slate-200 transition min-w-[36px] min-h-[36px]"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill={esFavorita ? "#FFD600" : "none"} stroke={esFavorita ? "#FFD600" : "currentColor"} strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
+              </button>
+              <button
+                onClick={() => onSelect(seleccionada ? null : zona)}
+                className="flex-1 min-w-0 flex items-center gap-2.5 rounded-xl px-2 py-2"
+              >
                 <span
                   className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
                   style={{ background: colorDeRiesgo(riesgo), boxShadow: riesgo === "CRITICO" ? "0 0 8px #B000FF" : undefined }}
                 />
-                <div className="flex-1 min-w-0">
-                  <p className="text-[12px] font-semibold text-white truncate flex items-center gap-1.5">
+                <span className="flex-1 min-w-0">
+                  <span className="text-[12px] font-semibold text-white truncate flex items-center gap-1.5">
                     <span className="font-mono text-[10px] text-slate-500">{String(zona.id).padStart(2, "0")}.</span>
                     {zona.nombre}
-                  </p>
-                  <p className="text-[10px] text-slate-500 truncate">
+                  </span>
+                  <span className="text-[10px] text-slate-500 truncate block">
                     {zona.ubicacion} · {zona.tipo_amenaza}
-                  </p>
-                </div>
-                <div className="text-right shrink-0">
-                  <p className="text-[11px] font-bold font-tabular" style={{ color: colorDeRiesgo(riesgo) }}>
+                  </span>
+                </span>
+                <span className="text-right shrink-0">
+                  <span className="text-[11px] font-bold font-tabular" style={{ color: colorDeRiesgo(riesgo) }}>
                     {nivel.toFixed(1)} cm
-                  </p>
-                  <p className="text-[9px] font-mono uppercase tracking-wider" style={{ color: colorDeRiesgo(riesgo) }}>
+                  </span>
+                  <span className="block text-[9px] font-mono uppercase tracking-wider" style={{ color: colorDeRiesgo(riesgo) }}>
                     {RIESGO_META[riesgo].label}
-                  </p>
-                </div>
-              </div>
-            </button>
+                  </span>
+                </span>
+              </button>
+            </div>
           );
         })}
       </div>

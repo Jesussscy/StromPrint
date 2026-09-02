@@ -25,7 +25,10 @@ import ZonasMangaPanel from "@/app/components/ZonasMangaPanel";
 import WaterLevelBars from "@/app/components/WaterLevelBars";
 import WeatherStation from "@/app/components/WeatherStation";
 import HistoryPanel from "@/app/components/HistoryPanel";
+import ScenarioComparator from "@/app/components/ScenarioComparator";
+import PeakAlert from "@/app/components/PeakAlert";
 import MobileBottomNav from "@/app/components/MobileBottomNav";
+import LazyMount from "@/app/components/LazyMount";
 import {
   predecir,
   computeDaySummaries,
@@ -85,7 +88,7 @@ function HeroSection() {
 
           <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mb-12">
             {[
-              { value: "98.7%", label: "Precisión" },
+              { value: "48 h", label: "Ventana de pronóstico" },
               { value: "24/7", label: "Monitoreo" },
               { value: "7 días", label: "Pronóstico" },
             ].map((stat) => (
@@ -184,7 +187,7 @@ function HowItWorksSection() {
         <div className="grid gap-8 md:grid-cols-3">
           {[
             { step: "01", title: "Captura", desc: "Estaciones DAVIS y pluviómetros miden lluvia, viento y temperatura cada minuto. Mareas reales de Cartagena vía Open-Meteo Marine.", icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00F3FF" strokeWidth="1.5"><circle cx="12" cy="12" r="10" /><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg> },
-            { step: "02", title: "Modelo", desc: "Solución analítica por tramos con la integral de convolución de Duhamel. Sin integración paso a paso. Precisión: 98.7%.", icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00F3FF" strokeWidth="1.5"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" /><circle cx="12" cy="12" r="4" /></svg> },
+            { step: "02", title: "Modelo", desc: "Solución analítica por tramos con la integral de convolución de Duhamel. Validada en cada corrida contra la solución numérica (solve_ivp) y contrastada con la estación DAVIS.", icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00F3FF" strokeWidth="1.5"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" /><circle cx="12" cy="12" r="4" /></svg> },
             { step: "03", title: "Acción", desc: "Dashboard en tiempo real con niveles de riesgo, recomendaciones y rutas de evacuación.", icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FF0055" strokeWidth="1.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg> },
           ].map((item) => (
             <motion.div key={item.step} {...FADE} className="glass glow-card rounded-2xl p-6 text-center hud-connector float-card group">
@@ -239,9 +242,18 @@ function DataSourceSection() {
 
 const PLAYBACK_SPEED_MS = 200;
 
+// URL compartible: ?hora=NN adelanta la simulación y ?zona=ID enfoca la zona.
+function leerParamURL(nombre: string): string | null {
+  if (typeof window === "undefined") return null;
+  return new URLSearchParams(window.location.search).get(nombre);
+}
+
 function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; onToggleStorm: () => void }) {
   const [prediccion, setPrediccion] = useState<PrediccionResponse | null>(null);
-  const [currentHour, setCurrentHour] = useState(0);
+  const [currentHour, setCurrentHour] = useState(() => {
+    const h = parseFloat(leerParamURL("hora") ?? "");
+    return Number.isFinite(h) && h >= 0 ? h : 0;
+  });
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -249,13 +261,53 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
   const [marea, setMarea] = useState(8);
   const [drenaje, setDrenaje] = useState(70);
   const [usarMeteo, setUsarMeteo] = useState(true);
-  const [zonaEnfocada, setZonaEnfocada] = useState<number | null>(null);
+  const [zonaEnfocada, setZonaEnfocada] = useState<number | null>(() => {
+    const z = leerParamURL("zona");
+    return z ? Number(z) : null;
+  });
   const [heatmapVisible, setHeatmapVisible] = useState(true);
   const playbackRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const urlHoraRef = useRef(false);
 
   const onSelectZona = useCallback((z: { id: number } | null) => {
     setZonaEnfocada(z ? z.id : null);
   }, []);
+
+  const onTogglePlay = useCallback(() => setIsPlaying((p) => !p), []);
+
+  // Scrub del timeline: sincroniza además la URL (?hora=NN) para compartir.
+  const handleScrub = useCallback((h: number) => {
+    setCurrentHour(h);
+    if (typeof window !== "undefined") history.replaceState(null, "", `?hora=${h}`);
+  }, []);
+
+  // Hora compartida vía URL o vía clic en el gráfico (evento global).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onHora = (e: Event) => {
+      const hora = Number((e as CustomEvent).detail?.hora);
+      if (Number.isFinite(hora)) {
+        setCurrentHour(hora);
+        setIsPlaying(false);
+        if (typeof window !== "undefined") history.replaceState(null, "", `?hora=${hora}`);
+        document.getElementById("panel-vivo")?.scrollIntoView({ behavior: "smooth" });
+      }
+    };
+    window.addEventListener("stormprint:hora", onHora);
+    return () => window.removeEventListener("stormprint:hora", onHora);
+  }, []);
+
+  // Al cargar la predicción, respetar la hora del deep-link una sola vez.
+  useEffect(() => {
+    if (prediccion && !urlHoraRef.current) {
+      urlHoraRef.current = true;
+      const h = parseFloat(leerParamURL("hora") ?? "");
+      if (Number.isFinite(h) && h >= 0) {
+        setCurrentHour(h);
+        setIsPlaying(false);
+      }
+    }
+  }, [prediccion]);
 
   const loadPrediction = useCallback(async () => {
     setIsLoading(true);
@@ -360,18 +412,38 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
       {/* Main Grid: Map + Zonas + Metrics */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.7fr_1fr]">
         <div className="glass-strong rounded-2xl h-[420px] p-1 md:h-[640px] lg:h-[640px] overflow-hidden relative hud-scanlines">
-          {/* Visor 3D de Cesium exclusivo para el panel en vivo */}
-          <CesiumMap
-            nivelAguaCm={activePunto?.nivel_agua_cm ?? 0}
-            nivelMaximoCm={prediccion?.nivel_maximo_cm ?? 100}
-            heatmapVisible={heatmapVisible}
-            focusZonaId={zonaEnfocada}
-            onSelectZona={onSelectZona}
-          />
+          {/* Visor 3D de Cesium exclusivo para el panel en vivo. LazyMount
+              difiere la descarga del bundle de Cesium hasta que el panel se
+              acerca al viewport (scroll), y el skeleton mantiene la altura. */}
+          <LazyMount
+            placeholder={
+              <div className="absolute inset-0 flex items-center justify-center bg-ocean">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-cyan/40 border-t-cyan" />
+                  <span className="font-mono text-[10px] uppercase tracking-widest text-cyan/70">
+                    Visor 3D listo al hacer scroll…
+                  </span>
+                </div>
+              </div>
+            }
+          >
+            <CesiumMap
+              nivelAguaCm={activePunto?.nivel_agua_cm ?? 0}
+              nivelMaximoCm={prediccion?.nivel_maximo_cm ?? 100}
+              heatmapVisible={heatmapVisible}
+              focusZonaId={zonaEnfocada}
+              onSelectZona={onSelectZona}
+              horaLocal={Math.floor(currentHour) % 24}
+              stormMode={stormMode}
+              puntoMeteo={activePunto}
+              meteorologia={prediccion?.meteorologia_resumen ?? null}
+            />
+          </LazyMount>
 
           {/* Toggle capa de calor */}
           <button
             onClick={() => setHeatmapVisible((v) => !v)}
+            aria-pressed={heatmapVisible}
             className={`absolute top-14 right-3 z-10 rounded-lg px-3 py-2 text-[10px] font-mono uppercase tracking-wider transition flex items-center gap-1.5 ${
               heatmapVisible ? "glass-glow text-cyan" : "glass text-slate-500"
             }`}
@@ -411,8 +483,13 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
             selectedId={zonaEnfocada}
             onSelect={onSelectZona}
           />
-          <MetricsPanel punto={activePunto} prediccion={prediccion} isLoading={isLoading} error={error} />
+          <MetricsPanel punto={activePunto} prediccion={prediccion} isLoading={isLoading} error={error} onRetry={loadPrediction} />
         </div>
+      </div>
+
+      {/* Aviso proactivo del pico previsto */}
+      <div className="mt-4">
+        <PeakAlert prediccion={prediccion} />
       </div>
 
       {/* Barras de nivel de agua en tiempo real */}
@@ -442,7 +519,7 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
 
       {/* Timeline */}
       <div className="mt-4">
-        <TimelineSlider puntos={prediccion?.puntos ?? []} currentHour={currentHour} onScrub={setCurrentHour} isPlaying={isPlaying} onTogglePlay={() => setIsPlaying((p) => !p)} />
+        <TimelineSlider puntos={prediccion?.puntos ?? []} currentHour={currentHour} onScrub={handleScrub} isPlaying={isPlaying} onTogglePlay={onTogglePlay} />
       </div>
 
       {/* 7-Day Summary Dashboard */}
@@ -500,7 +577,7 @@ function Slider({ label, value, onChange, min, max, step, unit, color, disabled 
 
 /* ——— PRONÓSTICO 48H ————————————————————————————————————————————————————— */
 
-function ForecastSection({ puntos }: { puntos: import("@/app/lib/api").PuntoPrediccion[] }) {
+function ForecastSection({ puntos, onSeleccionarPunto }: { puntos: import("@/app/lib/api").PuntoPrediccion[]; onSeleccionarPunto?: (p: import("@/app/lib/api").PuntoPrediccion) => void }) {
   return (
     <section id="pronostico" className="relative py-24 px-6">
       <div className="mx-auto max-w-6xl">
@@ -512,7 +589,7 @@ function ForecastSection({ puntos }: { puntos: import("@/app/lib/api").PuntoPred
           </p>
         </motion.div>
         {puntos.length > 0 ? (
-          <ForecastChart puntos={puntos} />
+          <ForecastChart puntos={puntos} onSeleccionarPunto={onSeleccionarPunto} />
         ) : (
           <motion.div {...FADE} className="glass rounded-2xl p-8 text-center">
             <p className="text-slate-500 text-sm">Desplazá el panel de monitoreo para ver la curva de pronóstico.</p>
@@ -529,7 +606,7 @@ function NarrativeSection() {
   const events = [
     { year: "2023", title: "El pasado", desc: "Inundaciones recurrentes sin sistema de alerta. Daños materiales y desplazamiento forzado.", color: "#FF0055" },
     { year: "2025", title: "El presente", desc: "Sensores DAVIS instalados. Datos meteorológicos en tiempo real. Primera versión del modelo.", color: "#FFD600" },
-    { year: "2026", title: "El futuro", desc: "Predicción con 98.7% de precisión. Alertas automáticas. Resiliencia climática para Manga.", color: "#00E5FF" },
+    { year: "2026", title: "El futuro", desc: "Alertas automáticas tempranas, validación continua del modelo contra la solución numérica y datos reales de la estación DAVIS. Resiliencia climática para Manga.", color: "#00E5FF" },
   ];
 
   return (
@@ -685,6 +762,17 @@ export default function LandingPage() {
       .catch(() => {});
   }, []);
 
+  // Clic en el gráfico de la sección Pronóstico: reproduce esa hora en el
+  // visor 3D (evento global que escucha DashboardEmbedded).
+  const onSeleccionarPunto = useCallback(
+    (p: import("@/app/lib/api").PuntoPrediccion) => {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("stormprint:hora", { detail: { hora: p.tiempo_hora } }));
+      }
+    },
+    []
+  );
+
   return (
     <>
       <Navbar />
@@ -700,10 +788,11 @@ export default function LandingPage() {
         }}
       />
 
-      <HeroSection />
-      <ProblemSection />
-      <HowItWorksSection />
-      <DataSourceSection />
+      <main id="contenido">
+        <HeroSection />
+        <ProblemSection />
+        <HowItWorksSection />
+        <DataSourceSection />
 
       {/* Panel en Vivo */}
       <section id="panel-vivo" className="relative py-24 px-6">
@@ -721,7 +810,7 @@ export default function LandingPage() {
         <DashboardEmbedded stormMode={stormMode} onToggleStorm={() => setStormMode((s) => !s)} />
       </section>
 
-      <ForecastSection puntos={prediccion?.puntos ?? []} />
+      <ForecastSection puntos={prediccion?.puntos ?? []} onSeleccionarPunto={onSeleccionarPunto} />
       <NarrativeSection />
 
       {/* Estación Meteorológica */}
@@ -732,6 +821,17 @@ export default function LandingPage() {
           <h2 className="font-display text-2xl md:text-4xl font-bold text-white">Estación Meteorológica — Manga</h2>
           </motion.div>
           <WeatherStation />
+        </div>
+      </section>
+
+      {/* Comparador de escenarios */}
+      <section id="comparador" className="relative py-24 px-6">
+        <div className="mx-auto max-w-6xl">
+          <motion.div {...FADE} className="text-center mb-12">
+            <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-cyan mb-4">Planificación</p>
+            <h2 className="font-display text-2xl md:text-4xl font-bold text-white">Comparador de Escenarios</h2>
+          </motion.div>
+          <ScenarioComparator />
         </div>
       </section>
 
@@ -749,6 +849,7 @@ export default function LandingPage() {
       <TechnologySection />
       <CTASection />
       <FooterSection />
+      </main>
       <CommandCenter />
       <MobileBottomNav />
     </>

@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { motion } from "framer-motion";
 import {
   ESTADO_METEO_COLOR,
@@ -41,7 +42,7 @@ function WeatherIcon({ lluvia }: { lluvia: number }) {
   );
 }
 
-export default function WeatherBadge({ meteorologia, isLoading, estado, confianza }: WeatherBadgeProps) {
+function WeatherBadge({ meteorologia, isLoading, estado, confianza }: WeatherBadgeProps) {
   if (isLoading) {
     return (
       <div className="flex items-center gap-2 glass-subtle rounded-lg px-3 py-1.5">
@@ -88,3 +89,5 @@ export default function WeatherBadge({ meteorologia, isLoading, estado, confianz
     </motion.div>
   );
 }
+
+export default memo(WeatherBadge);

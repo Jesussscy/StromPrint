@@ -170,6 +170,19 @@ export interface PrediccionGuardada {
 
 const API_KEY = process.env.NEXT_PUBLIC_STORMPRINT_API_KEY ?? "";
 
+// Dedup de peticiones en vuelo: si dos llamadas piden exactamente lo mismo al
+// mismo tiempo (p. ej. en el montaje de la página y del panel en vivo), se
+// reutiliza la misma promesa en vez de duplicar el request al backend.
+const inflightCache = new Map<string, Promise<unknown>>();
+
+function dedupeFetch<T>(key: string, make: () => Promise<T>): Promise<T> {
+  const existing = inflightCache.get(key);
+  if (existing) return existing as Promise<T>;
+  const promise = make().finally(() => inflightCache.delete(key));
+  inflightCache.set(key, promise);
+  return promise;
+}
+
 async function stormprintFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -177,10 +190,29 @@ async function stormprintFetch<T>(path: string, init?: RequestInit): Promise<T> 
     ...(init?.headers as Record<string, string> ?? {}),
   };
 
-  const response = await fetch(path, {
-    ...init,
-    headers,
-  });
+  // Timeout por request: evita que la UI quede colgada si el backend
+  // (serverless) tarda mas de lo razonable. 25s por defecto, configurable.
+  const timeoutMs = init?.signal ? Infinity : 25_000;
+  const controller = new AbortController();
+  const timer = timeoutMs !== Infinity ? setTimeout(() => controller.abort(), timeoutMs) : null;
+
+  let response: Response;
+  try {
+    response = await fetch(path, {
+      ...init,
+      headers,
+      signal: controller.signal,
+    });
+  } catch (e) {
+    if (timer) clearTimeout(timer);
+    const aborted = e instanceof Error && e.name === "AbortError";
+    throw new Error(
+      aborted
+        ? "StormPrint tardó demasiado en responder. Intentá de nuevo."
+        : "No se pudo conectar con StormPrint. Revisá tu conexión."
+    );
+  }
+  if (timer) clearTimeout(timer);
 
   if (!response.ok) {
     let message = "Ocurrio un error al comunicarse con StormPrint.";
@@ -205,10 +237,13 @@ export function predecir(params: {
   eficiencia_drenaje?: number;
   usar_datos_meteo?: boolean;
 }): Promise<PrediccionResponse> {
-  return stormprintFetch<PrediccionResponse>("/api/v1/predecir", {
-    method: "POST",
-    body: JSON.stringify(params),
-  });
+  const key = `POST /api/v1/predecir ${JSON.stringify(params)}`;
+  return dedupeFetch(key, () =>
+    stormprintFetch<PrediccionResponse>("/api/v1/predecir", {
+      method: "POST",
+      body: JSON.stringify(params),
+    })
+  );
 }
 
 export function runPrediction(params: SimulationRequestParams): Promise<SimulationResponse> {

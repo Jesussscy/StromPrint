@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { motion } from "framer-motion";
 import { useCallback, useMemo } from "react";
 import type { PuntoPrediccion } from "@/app/lib/api";
@@ -13,7 +14,7 @@ interface TimelineSliderProps {
   onTogglePlay: () => void;
 }
 
-export default function TimelineSlider({ puntos, currentHour, onScrub, isPlaying, onTogglePlay }: TimelineSliderProps) {
+export default memo(function TimelineSlider({ puntos, currentHour, onScrub, isPlaying, onTogglePlay }: TimelineSliderProps) {
   const maxHour = puntos.length > 0 ? puntos[puntos.length - 1].tiempo_hora : 48;
   const progressPct = Math.min(100, (currentHour / (maxHour || 48)) * 100);
 
@@ -104,4 +105,4 @@ export default function TimelineSlider({ puntos, currentHour, onScrub, isPlaying
       </div>
     </div>
   );
-}
+});

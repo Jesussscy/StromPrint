@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 
 type Nivel = "CRITICO" | "EMERGENCIA" | "ALERTA" | "INFO";
 
@@ -10,8 +11,8 @@ const NIVEL_STYLE: Record<
   { color: string; label: string; icon: string; glow: string }
 > = {
   CRITICO: { color: "#FF0055", label: "CRÍTICO", icon: "", glow: "rgba(255,0,85,0.35)" },
-  EMERGENCIA: { color: "#FF7700", label: "EMERGENCIA", icon: "", glow: "rgba(255,119,0,0.32)" },
-  ALERTA: { color: "#F3F300", label: "ALERTA", icon: "", glow: "rgba(243,243,0,0.26)" },
+  EMERGENCIA: { color: "#FF0055", label: "EMERGENCIA", icon: "", glow: "rgba(255,0,85,0.32)" },
+  ALERTA: { color: "#FFD600", label: "ALERTA", icon: "", glow: "rgba(255,214,0,0.26)" },
   INFO: { color: "#00E5FF", label: "INFO", icon: "", glow: "rgba(0,229,255,0.22)" },
 };
 
@@ -35,8 +36,26 @@ interface AlertDrawerProps {
   onVerEnMapa?: () => void;
 }
 
-const toNivel = (r?: string): Nivel =>
-  r === "CRITICO" || r === "EMERGENCIA" || r === "ALERTA" ? (r as Nivel) : "INFO";
+// Normaliza el nivel/riesgo que llega del backend (puede venir en mayúsculas,
+// minúsculas o con los aliases legacy en inglés). Cualquier forma desconocida
+// cae a INFO sin perder severidad de tornas.
+const NIVEL_ALIAS: Record<string, Nivel> = {
+  CRITICO: "CRITICO",
+  CRÍTICO: "CRITICO",
+  CRITICAL: "CRITICO",
+  EMERGENCIA: "EMERGENCIA",
+  HIGH: "EMERGENCIA",
+  ALERTA: "ALERTA",
+  MODERATE: "ALERTA",
+  NORMAL: "INFO",
+  LOW: "INFO",
+};
+
+const toNivel = (r?: string): Nivel => {
+  if (!r) return "INFO";
+  const up = String(r).toUpperCase().replace("Í", "I").trim();
+  return NIVEL_ALIAS[up] ?? "INFO";
+};
 
 const getTimeAgo = (ts: string, now: number): string => {
   const t = new Date(ts).getTime();
@@ -153,6 +172,52 @@ export default function AlertDrawer({ nivelAguaCm, nivelMaximo, tendenciaCmH, on
     });
   };
 
+  // Accesibilidad del panel: es un diálogo modal. Al abrir se enfoca el
+  // botón de cierre; ESC cierra; Tab queda atrapado dentro del panel.
+  const drawerRef = useRef<HTMLElement>(null);
+  const cerrar = useCallback(() => setIsOpen(false), []);
+  const lastFocusedRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    lastFocusedRef.current = document.activeElement as HTMLElement | null;
+    const node = drawerRef.current;
+    const focusables = node
+      ? Array.from(
+          node.querySelectorAll<HTMLElement>(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          )
+        ).filter((el) => !el.hasAttribute("disabled") && el.getAttribute("aria-hidden") !== "true")
+      : [];
+    const target = focusables[0] as HTMLElement | undefined;
+    target?.focus?.();
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setIsOpen(false);
+        return;
+      }
+      if (e.key === "Tab" && node && focusables.length > 0) {
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        const active = document.activeElement as HTMLElement | null;
+        if (e.shiftKey && (active === first || !node.contains(active))) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && active === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      lastFocusedRef.current?.focus?.();
+    };
+  }, [isOpen]);
+
   return (
     <>
       {/* Icono de campana - HUD */}
@@ -189,10 +254,14 @@ export default function AlertDrawer({ nivelAguaCm, nivelMaximo, tendenciaCmH, on
               onClick={() => setIsOpen(false)}
             />
             <motion.aside
+              ref={drawerRef}
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Centro de Alertas"
               className="fixed right-0 top-0 bottom-0 z-[100] w-[380px] max-w-[94vw] overflow-y-auto backdrop-blur-xl"
               style={{
                 background: "rgba(8, 12, 20, 0.96)",
@@ -208,14 +277,14 @@ export default function AlertDrawer({ nivelAguaCm, nivelMaximo, tendenciaCmH, on
                       {unread} alertas activas · en vivo
                     </p>
                   </div>
-                  <button onClick={() => setIsOpen(false)} className="text-slate-500 hover:text-white transition">
+                  <button onClick={cerrar} aria-label="Cerrar centro de alertas" className="text-slate-500 hover:text-white transition flex items-center justify-center min-w-[44px] min-h-[44px]">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
                   </button>
                 </div>
 
                 {/* Métricas */}
                 <div className="mb-4 grid grid-cols-2 gap-2">
-                  <MiniMetric label="Alertas hoy" valor={String(metrics.alertas_hoy ?? 0)} color="#FF7700" />
+                  <MiniMetric label="Alertas hoy" valor={String(metrics.alertas_hoy ?? 0)} color="#FFD600" />
                   <MiniMetric
                     label="Última alerta"
                     valor={metrics.ultima_alerta ? getTimeAgo(metrics.ultima_alerta, now) : "—"}
@@ -302,6 +371,15 @@ export default function AlertDrawer({ nivelAguaCm, nivelMaximo, tendenciaCmH, on
                     })
                   )}
                 </div>
+
+                <Link
+                  href="/alertas"
+                  onClick={cerrar}
+                  className="mt-4 flex items-center justify-center gap-2 rounded-lg border border-cyan/20 px-3 py-2 font-mono text-[10px] uppercase tracking-wider text-cyan transition hover:bg-cyan/10"
+                >
+                  Ver el centro de alertas completo
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                </Link>
               </div>
             </motion.aside>
           </>

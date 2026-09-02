@@ -12,17 +12,20 @@ StormPrint/
 │   ├── database.py         SQLite async (SQLAlchemy 2 + aiosqlite)
 │   ├── security.py         Auth por API key, rate limiting, headers, CORS
 │   ├── physics_engine.py   EDO de 2do orden (SciPy solve_ivp, RK45)
-│   └── physics_engine_analytical.py  Solución analítica por tramos (Duhamel)
+│   ├── physics_engine_analytical.py  Solución analítica por tramos (Duhamel)
+│   ├── weather_service.py  Open-Meteo + cache resbaloso (vivo→histórico→promedio)
+│   ├── tide_service.py     Marea Open-Meteo Marine con fallback analítico
+│   └── notification_service.py  Alertas multi-canal + suscripciones por email
 ├── app/                    Next.js 14 App Router (React 18 + TS)
-│   ├── layout.tsx
-│   ├── page.tsx             Dashboard
-│   ├── globals.css          Tema Cyber-Hydro Glassmorphism
-│   ├── lib/api.ts           Cliente HTTP tipado hacia /api/v1/*
-│   └── components/
-│       ├── Canvas3D.tsx         Visor 3D (react-three-fiber + drei)
-│       ├── TimelineSlider.tsx   Control temporal 0–168h (Framer Motion)
-│       └── MetricsPanel.tsx     Tarjetas de riesgo + gráfico H(t)
-├── public/models/Map.glb
+│   ├── layout.tsx          
+│   ├── page.tsx            Dashboard
+│   ├── alertas/page.tsx    Centro de Alertas + suscripción
+│   ├── ciencia/page.tsx    Validación analítica vs numérica
+│   ├── middleware.ts       Bloqueo Edge de archivos sensibles (404)
+│   ├── globals.css         Tema Cyber-Hydro Glassmorphism
+│   ├── lib/api.ts          Cliente HTTP tipado con timeout y dedupe
+│   └── components/         Navbar, Panel, CesiumMap (visor 3D), Skeletons…
+├── tests/                  Suite pytest (umbrales, motor, notificaciones, API)
 ├── vercel.json
 ├── requirements.txt
 ├── package.json
@@ -68,16 +71,42 @@ Verificación: `python -m api.physics_engine_analytical`.
 ## Seguridad (OWASP Top 10)
 
 - **Auth**: header `X-StormPrint-Key`, comparado en tiempo constante contra un
-  hash SHA-256 salado. Nunca se registra ni se refleja el valor crudo.
-- **Rate limiting**: `slowapi`, 10 peticiones/min por IP en `/api/v1/predict`.
-- **Validación**: Pydantic V2 con límites estrictos en cada campo numérico.
+  hash SHA-256 salado. Cubre `/predict`, `/history`, `/weather` y `/comparacion`.
+  `/predecir`, `/predicciones`, `/health`, `/notifications` y `/notify/*` son
+  públicos y dependen de rate limiting + validación estricta.
+- **Rate limiting**: `slowapi`, 10 peticiones/min por IP en `/api/v1/predict`;
+  30/min en predecir, health y notificaciones; 10/min en suscripciones.
+- **Validación**: Pydantic V2 con límites estrictos en cada campo numérico
+  (ej. `storm_width` → `rain_duration_h`, clamps físicos 30/60/100).
 - **Errores sanitizados**: en producción, cualquier excepción no controlada
   responde `500` genérico sin trazas internas.
 - **Headers**: CSP, HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`,
   `Referrer-Policy`, `Permissions-Policy`.
 - **CORS**: lista blanca explícita vía `STORMPRINT_ALLOWED_ORIGINS`.
+- **Archivos sensibles**: el middleware Edge (`app/middleware.ts`) responde
+  `404` para `notifications.json`, `subscriptions.json`, `*.db`, `*.log` y `.env`;
+  los caches y suscripciones se gitignorean.
 - **Credenciales admin**: `generate_admin_credentials` / `verify_admin_credentials`
   en `security.py` usan PBKDF2-HMAC-SHA256 (100k iteraciones) con salt por usuario.
+
+## API
+
+```
+POST /api/v1/predecir       Predicción pública 0–168h (meteo Open-Meteo o manual)
+POST /api/v1/predict        Simulación legacy manual (requiere API key)
+GET  /api/v1/health         Healthcheck ampliado (DB, caches, uptime)
+GET  /api/v1/weather        Clima en vivo (requiere API key)
+GET  /api/v1/history        Historial de simulaciones (requiere API key)
+GET  /api/v1/predicciones   Últimas predicciones guardadas
+POST /api/v1/comparacion    Analítico vs numérico (requiere API key)
+GET  /api/v1/notifications  Historial de alertas + métricas
+POST /api/v1/notify/subscribe|unsubscribe   Suscripción por email
+GET  /api/v1/notify/status  Estado del canal de alertas
+```
+
+La UI de `/alertas` consume notificaciones + estado del canal y permite
+suscribirse por correo; `/ciencia` contrasta la solución analítica contra la
+numérica con métricas reales (promedio, máximo, RMSE).
 
 ## Desarrollo local
 
@@ -85,18 +114,21 @@ Verificación: `python -m api.physics_engine_analytical`.
 # Backend
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env   # completar STORMPRINT_API_KEY
+pip install pytest        # solo para correr los tests
+cp .env.example .env      # completar STORMPRINT_API_KEY
 
-uvicorn api.index:app --reload --port 8000
+npm run backend           # uvicorn api.index:app --reload --port 8000
+npm test                  # python -m pytest tests -q
+npm run typecheck         # tsc --noEmit
+npm run lint              # next lint
 
-# Frontend (en otra terminal)
+# Frontend (otra terminal)
 npm install
 npm run dev
 ```
 
-Durante desarrollo local, agrega un rewrite en `next.config.js` (o usa un
-proxy) apuntando `/api/v1/*` hacia `http://localhost:8000`, ya que en
-`vercel dev`/producción esto lo resuelve `vercel.json` automáticamente.
+Durante desarrollo local, `next.config.js` ya reenvía `/api/v1/*` hacia
+`http://localhost:8000`; en `vercel dev`/producción lo resuelve `vercel.json`.
 
 ## Despliegue en Vercel
 
@@ -111,6 +143,7 @@ proxy) apuntando `/api/v1/*` hacia `http://localhost:8000`, ya que en
 
 ## Modelo 3D
 
-`public/models/Map.glb` es el modelo territorial de Manga, Cartagena de Indias.
-`Canvas3D.tsx` busca un nodo con nombre que contenga "water" o "agua" para animar
-su elevación y color según `H(t)`. Si no lo encuentra, anima el primer mesh disponible.
+El visor 3D principal es `CesiumMap.tsx` (Cesium, lazy-load en el Panel en vivo):
+globo con imagery ArcGIS World Imagery + elevación ArcGIS, 20 zonas críticas de
+Manga con pins y círculos de influencia, columnas territoriales animadas por
+`H(t)`, capa de calor y HUD de nivel.

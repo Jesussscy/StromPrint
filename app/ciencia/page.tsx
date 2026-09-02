@@ -267,9 +267,11 @@ export default function CienciaPage() {
             </div>
             <h2 className="font-display text-2xl font-bold text-white">Validación del Modelo</h2>
           </div>
-          <p className="text-slate-400 leading-relaxed mb-6">
-            Comparamos los datos históricos reales de una inundación pasada con
-            lo que nuestro modelo predijo. La diferencia fue mínima.
+          <p className="text-slate-400 leading-relaxed mb-2">
+            Validamos el motor en dos frentes: internamente comparamos la <strong className="text-white">solución analítica por tramos</strong>{" "}
+            contra una <strong className="text-white">referencia numérica por pasos</strong> (solve_ivp) en el mismo escenario de
+            tormenta — la curva y los errores de abajo se calculan en vivo sobre esa corrida — y en campo, la
+            estación DAVIS registra eventos reales para afinar el modelo.
           </p>
           <ValidationChart />
         </motion.section>

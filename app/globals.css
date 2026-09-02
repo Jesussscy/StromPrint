@@ -2,8 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
-
 :root {
   --ocean: #050A0F;
   --ocean-deep: #050A0F;
@@ -25,13 +23,25 @@ html {
 }
 
 body {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--font-body), 'Inter', system-ui, sans-serif;
   color: #E2E8F0;
   background: var(--ocean-deep);
   overflow-x: hidden;
 }
 
 /* ─── Glass System ─────────────────────────────────────────────────────── */
+
+/* Performance/robustez: si el navegador no soporta backdrop-filter (o el
+   usuario lo deshabilitó por rendimiento), degradamos el vidrio a un fondo
+   sólido semitransparente en vez de aplicar un desenfoque costoso o dejar
+   los paneles ilegibles. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass, .glass-strong, .glass-subtle, .glass-glow {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(10, 17, 25, 0.92);
+  }
+}
 
 .glass {
   background: rgba(255, 255, 255, 0.03);
@@ -83,7 +93,7 @@ body {
 /* ─── Title Storm (Metallic Cyan Gradient) ──────────────────────────────── */
 
 .title-storm {
-  font-family: 'Exo 2', sans-serif;
+  font-family: var(--font-display), 'Exo 2', sans-serif;
   font-weight: 900;
   letter-spacing: -0.02em;
   background: linear-gradient(180deg, #FFFFFF 0%, #00E5FF 45%, #003366 100%);
@@ -350,7 +360,7 @@ input[type="range"]::-moz-range-thumb {
 /* ─── Cesium ────────────────────────────────────────────────────────────── */
 
 .cesium-viewer {
-  font-family: 'Inter', 'Space Grotesk', sans-serif;
+  font-family: var(--font-body), 'Inter', 'Space Grotesk', sans-serif;
   background: var(--ocean-deep);
 }
 
@@ -453,13 +463,34 @@ a, button {
     scroll-behavior: smooth;
     scroll-padding-top: 60px;
   }
+}
 
-  /* Better focus visible styles for keyboard nav */
-  :focus-visible {
-    outline: 2px solid var(--cyan);
-    outline-offset: 2px;
-    border-radius: 4px;
-  }
+/* Better focus visible styles for keyboard nav (se aplica en TODOS los
+   tamaños de pantalla, no solo móvil) */
+:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Skip-link: solo visible al recibir foco (teclado) */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 999;
+  background: var(--cyan);
+  color: var(--ocean-deep);
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 12px 20px;
+  border-radius: 0 0 8px 0;
+}
+.skip-link:focus {
+  left: 0;
 }
 
 /* Reduce animations on mobile for performance */

@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { motion } from "framer-motion";
 import type { PuntoPrediccion, DaySummary } from "@/app/lib/api";
 import { riskColor, riskLabel } from "@/app/lib/api";
@@ -41,7 +42,7 @@ function RiskBar({ count, total, label, color }: { count: number; total: number;
   );
 }
 
-export default function SummaryDashboard({ puntos, daySummaries }: SummaryDashboardProps) {
+function SummaryDashboard({ puntos, daySummaries }: SummaryDashboardProps) {
   if (puntos.length === 0) return null;
 
   const maxNivel = Math.max(...puntos.map((p) => p.nivel_agua_cm));
@@ -167,3 +168,5 @@ export default function SummaryDashboard({ puntos, daySummaries }: SummaryDashbo
     </div>
   );
 }
+
+export default memo(SummaryDashboard);

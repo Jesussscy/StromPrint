@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useState, useRef, useCallback } from "react";
+import { memo, useMemo, useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import type { PuntoPrediccion } from "@/app/lib/api";
 import { riskColor, formatHour } from "@/app/lib/api";
 
 interface ForecastChartProps {
   puntos: PuntoPrediccion[];
+  onSeleccionarPunto?: (punto: PuntoPrediccion) => void;
 }
 
 type ViewMode = "nivel" | "lluvia" | "marea" | "todos";
@@ -20,7 +21,7 @@ const PAD_B = 40;
 const PW = W - PAD_L - PAD_R;
 const PH = H - PAD_T - PAD_B;
 
-export default function ForecastChart({ puntos }: ForecastChartProps) {
+function ForecastChart({ puntos, onSeleccionarPunto }: ForecastChartProps) {
   const [viewMode, setViewMode] = useState<ViewMode>("nivel");
   const [zoom, setZoom] = useState(1);
   const [panOffset, setPanOffset] = useState(0);
@@ -163,6 +164,24 @@ export default function ForecastChart({ puntos }: ForecastChartProps) {
   const handleMouseUp = useCallback(() => { isDragging.current = false; }, []);
   const handleMouseLeave = useCallback(() => { isDragging.current = false; setHoveredPoint(null); setMousePos(null); }, []);
 
+  // Clic: sincroniza esa hora con el visor 3D (evento global página).
+  const handleClick = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
+    const svg = svgRef.current;
+    if (!svg || !chartData || !onSeleccionarPunto) return;
+    const rect = svg.getBoundingClientRect();
+    const svgX = e.clientX - rect.left;
+    const scaleW = W / rect.width;
+    const visibleHours = chartData.maxH / zoom;
+    const hoverH = panOffset + ((svgX * scaleW - PAD_L) / PW) * visibleHours;
+    let nearest = puntos[0];
+    let minDist = Infinity;
+    for (const p of puntos) {
+      const dist = Math.abs(p.tiempo_hora - hoverH);
+      if (dist < minDist) { minDist = dist; nearest = p; }
+    }
+    if (minDist < 2) onSeleccionarPunto(nearest);
+  }, [chartData, zoom, panOffset, puntos, onSeleccionarPunto]);
+
   if (!chartData) return null;
 
   const showNivel = viewMode === "nivel" || viewMode === "todos";
@@ -254,6 +273,7 @@ export default function ForecastChart({ puntos }: ForecastChartProps) {
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseLeave}
+          onClick={handleClick}
           style={{ userSelect: "none" }}
         >
           <defs>
@@ -360,3 +380,5 @@ export default function ForecastChart({ puntos }: ForecastChartProps) {
     </motion.div>
   );
 }
+
+export default memo(ForecastChart);

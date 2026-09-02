@@ -13,8 +13,10 @@ Endpoints:
 
 import json
 import logging
+import os
+import time
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Literal, Optional
 
 from fastapi import Depends, FastAPI, Request
@@ -23,6 +25,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .database import (
@@ -69,6 +72,9 @@ from .weather_service import (
 
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger("stormprint")
+
+APP_VERSION = "3.0.0"
+_START_TIMESTAMP = time.monotonic()
 
 ECUACION_DISPLAY = (
     "m\u00b7H''(t) + c(t)\u00b7H'(t) + k(t)\u00b7H(t) "
@@ -121,7 +127,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="StormPrint API",
     description="La huella que deja cada tormenta en el territorio — Manga, Cartagena",
-    version="2.7.0",
+    version=APP_VERSION,
     docs_url=None,
     redoc_url=None,
     openapi_url=None,
@@ -132,6 +138,25 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
+
+
+@app.middleware("http")
+async def log_request_duration(request: Request, call_next):
+    """Log de duracion por request para detectar endpoints lentos."""
+    start = time.monotonic()
+    response = await call_next(request)
+    elapsed_ms = (time.monotonic() - start) * 1000.0
+    if elapsed_ms >= 1500:
+        logger.warning(
+            "Slow request: %s %s -> %d (%.0f ms)",
+            request.method,
+            request.url.path,
+            response.status_code,
+            elapsed_ms,
+        )
+    return response
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=get_allowed_origins(),
@@ -243,7 +268,12 @@ class InfraResponse(BaseModel):
     status: str
     service: str = "stormprint-api"
     territory: str = "manga-cartagena"
-    version: str = "2.7.0"
+    version: str = APP_VERSION
+    timestamp: str = ""
+    uptime_seconds: float = 0.0
+    database: str = "ok"
+    fuentes: dict = Field(default_factory=dict)
+    suscripciones: int = 0
 
 
 # ---------------------------------------------------------------------------
@@ -261,8 +291,38 @@ class ComparacionRequest(BaseModel):
 # ---------------------------------------------------------------------------
 @app.get("/api/v1/health")
 @limiter.limit("30/minute")
-async def health(request: Request):
-    return InfraResponse(status="operational").model_dump()
+async def health(request: Request, session: AsyncSession = Depends(get_session)):
+    """Healthcheck ampliado: base de datos, antiguedad de caches y uptime."""
+    db_status = "ok"
+    try:
+        await session.execute(text("SELECT 1"))
+    except Exception:
+        logger.exception("Healthcheck: database check failed")
+        db_status = "error"
+
+    now = time.time()
+    fuentes = {}
+
+    def _cache_age(cache_file: str):
+        try:
+            if not os.path.exists(cache_file):
+                return None
+            return round(max(0.0, now - os.path.getmtime(cache_file)))
+        except OSError:
+            return None
+
+    fuentes["open_meteo_cache_age_s"] = _cache_age(weather_service.CACHE_FILE)
+    fuentes["mareas_cache_age_s"] = _cache_age(tide_service.CACHE_FILE)
+
+    status = "degraded" if db_status == "error" else "operational"
+    return InfraResponse(
+        status=status,
+        timestamp=datetime.now(timezone.utc).isoformat(),
+        uptime_seconds=round(time.monotonic() - _START_TIMESTAMP, 1),
+        database=db_status,
+        fuentes=fuentes,
+        suscripciones=len(notification_service.subscriptions),
+    ).model_dump()
 
 
 # ---------------------------------------------------------------------------
@@ -270,7 +330,11 @@ async def health(request: Request):
 # ---------------------------------------------------------------------------
 @app.get("/api/v1/weather")
 @limiter.limit("30/minute")
-async def get_weather(request: Request, force_refresh: bool = False):
+async def get_weather(
+    request: Request,
+    force_refresh: bool = False,
+    _api_key: str = Depends(verify_api_key),
+):
     try:
         data = await weather_service.get_weather(force_refresh=force_refresh)
         return {
@@ -332,13 +396,70 @@ async def get_notifications(
     }
 
 
+# ---------------------------------------------------------------------------
+# Routes — Suscripcion por email (Centro de Alertas)
+# ---------------------------------------------------------------------------
+class SubscribeRequest(BaseModel):
+    email: str
+
+
+@app.post("/api/v1/notify/subscribe")
+@limiter.limit("10/minute")
+async def subscribe(request: Request, payload: SubscribeRequest):
+    try:
+        total = notification_service.subscribe(payload.email)
+        return {
+            "status": "success",
+            "subscribed": True,
+            "total_suscripciones": total,
+            "email": payload.email.strip().lower(),
+        }
+    except ValueError as exc:
+        return JSONResponse(status_code=422, content={"error": "validation_error", "message": str(exc)})
+    except Exception as exc:
+        logger.exception("Unhandled error in /notify/subscribe")
+        return JSONResponse(status_code=500, content=sanitize_exception_response(exc))
+
+
+@app.post("/api/v1/notify/unsubscribe")
+@limiter.limit("10/minute")
+async def unsubscribe(request: Request, payload: SubscribeRequest):
+    try:
+        total = notification_service.unsubscribe(payload.email)
+        return {
+            "status": "success",
+            "subscribed": False,
+            "total_suscripciones": total,
+            "email": payload.email.strip().lower(),
+        }
+    except Exception as exc:
+        logger.exception("Unhandled error in /notify/unsubscribe")
+        return JSONResponse(status_code=500, content=sanitize_exception_response(exc))
+
+
+@app.get("/api/v1/notify/status")
+@limiter.limit("30/minute")
+async def notify_status(request: Request):
+    """Estado del canal de notificaciones para la interfaz."""
+    return {
+        "status": "success",
+        "smtp_configurado": bool(notification_service.smtp_user and notification_service.smtp_password),
+        "webhook_configurado": bool(notification_service.webhook_url),
+        "total_suscripciones": len(notification_service.subscriptions),
+    }
+
+
 
 # ---------------------------------------------------------------------------
 # Routes — Comparacion academica (solucion analitica vs numerica)
 # ---------------------------------------------------------------------------
 @app.post("/api/v1/comparacion")
 @limiter.limit(RATE_LIMIT_PREDECIR)
-async def comparacion(request: Request, payload: ComparacionRequest):
+async def comparacion(
+    request: Request,
+    payload: ComparacionRequest,
+    _api_key: str = Depends(verify_api_key),
+):
     try:
         params = PhysicalParameters(
             damping=0.45,
@@ -675,6 +796,7 @@ async def predict(
             mass=payload.mass,
             damping=payload.damping,
             stiffness=payload.stiffness,
+            rain_duration_h=payload.storm_width,
         )
         records = run_simulation(
             duration_hours=payload.duration_hours,

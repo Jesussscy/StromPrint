@@ -50,7 +50,7 @@ const QUESTIONS: Question[] = [
     id: "modelo",
     label: "Modelo predictivo",
     icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" /><circle cx="12" cy="12" r="4" /></svg>,
-    answer: "StormPrint resuelve el balance de agua con una solución analítica por tramos usando la integral de convolución de Duhamel (suma de las respuestas a cada impulso de lluvia y marea). Precisión validada: 98.7%.",
+    answer: "StormPrint resuelve el balance de agua con una solución analítica por tramos usando la integral de convolución de Duhamel (suma de las respuestas a cada impulso de lluvia y marea). El resultado se contrasta contra la resolución numérica por pasos (solve_ivp) en el módulo de comparación de /ciencia.",
   },
   {
     id: "sensores",
@@ -62,7 +62,7 @@ const QUESTIONS: Question[] = [
     id: "precision",
     label: "Precisión",
     icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>,
-    answer: "Precisión validada del 98.7% contra datos históricos. Error promedio < 2cm en predicciones de 48h. Se mejora continuamente con nuevos datos.",
+    answer: "El modelo analítico se contrasta contra la solución numérica por pasos (solve_ivp) en la página /ciencia: ahí se muestran en vivo el error promedio, el máximo y el RMSE de cada comparación.",
   },
 ];
 
@@ -84,6 +84,16 @@ export default function CommandCenter() {
     }
   }, [messages]);
 
+  // Accesibilidad: ESC cierra el asistente.
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [isOpen]);
+
   const handleQuestion = (q: Question) => {
     setMessages((prev) => [
       ...prev,
@@ -102,6 +112,9 @@ export default function CommandCenter() {
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Asistente de StormPrint"
             className="glass-strong mb-3 w-[calc(100vw-2rem)] max-w-[360px] rounded-2xl overflow-hidden"
           >
             {/* Header */}

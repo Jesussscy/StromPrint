@@ -335,6 +335,7 @@ def run_simulation(
     p = params or PhysicalParameters()
     p.storm_peak_hour = float(storm_peak_hour)
     p.storm_intensity = float(storm_intensity)
+    p.mean_sea_level = float(mean_sea_level)
 
     def system(t: float, y: np.ndarray) -> List[float]:
         """

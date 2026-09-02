@@ -2,6 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { formatFechaHoraCartagena } from '@/app/lib/datetime';
 import { AnimatePresence, motion } from 'framer-motion';
 
 interface Notification {
@@ -109,7 +110,7 @@ export const NotificationBanner = () => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
 
   return (
-    <div className="fixed top-16 right-3 left-3 sm:left-auto sm:right-4 z-[2000] sm:max-w-sm space-y-2">
+    <div className="fixed top-16 right-3 left-3 sm:left-auto sm:right-4 z-[2000] sm:max-w-sm space-y-2" role="region" aria-label="Notificaciones del sistema">
       <AnimatePresence>
         {notifications.slice(0, 3).map((notif, index) => (
           <motion.div
@@ -118,6 +119,8 @@ export const NotificationBanner = () => {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 50 }}
             transition={{ delay: index * 0.08 }}
+            role="status"
+            aria-live="polite"
             className={`p-4 rounded-xl border backdrop-blur-md shadow-glow ${getTipoStyles(notif.tipo)}`}
           >
             <div className="flex items-start gap-3">
@@ -130,7 +133,7 @@ export const NotificationBanner = () => {
                   </p>
                 )}
                 <p className="text-xs opacity-50 mt-1">
-                  {new Date(notif.timestamp).toLocaleString('es-CO')}
+                  {formatFechaHoraCartagena(notif.timestamp)}
                 </p>
                 {(notif.email_enviado || notif.webhook_enviado) && (
                   <div className="flex gap-1 mt-1.5">

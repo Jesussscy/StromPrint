@@ -8,6 +8,7 @@ import {
   ESTADO_METEO_COLOR,
   ESTADO_METEO_LABEL,
   ES_DIA_LLUVIOSO,
+  fetchWeather,
   fuenteLabel,
   formatConfianza,
   type EstadoMeteo,
@@ -17,6 +18,7 @@ interface PronosticoIter {
   dia: string;
   lluvia_mm: number;
   temp_max_c: number;
+  prob_lluvia_pct?: number;
   estado?: EstadoMeteo;
 }
 
@@ -27,12 +29,17 @@ interface WeatherData {
   estado: EstadoMeteo;
   estado_label: string;
   nubosidad_pct: number;
+  weather_code?: number | null;
   timestamp: string;
   temperatura: number;
   humedad: number;
   precipitacion_actual_mm_h: number;
   velocidad_viento_kmh: number;
   direccion_viento_deg: number;
+  rafagas_kmh?: number;
+  presion_msl_hpa?: number;
+  punto_rocio_c?: number;
+  sensacion_termica_c?: number;
   dias_lluviosos_consecutivos: number;
   humedad_suelo_pct: number;
   lluvia_total_mm: number;
@@ -67,14 +74,12 @@ export default function WeatherStation() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchWeather = useCallback(async (force = false) => {
+  const fetchWeatherData = useCallback(async (force = false) => {
     if (force) setRefreshing(true);
     else setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/v1/weather${force ? "?force_refresh=true" : ""}`);
-      if (!res.ok) throw new Error(`Error ${res.status}`);
-      const data = await res.json();
+      const data = await fetchWeather(force);
       setWeather(data.weather);
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo cargar el clima");
@@ -84,7 +89,7 @@ export default function WeatherStation() {
     }
   }, []);
 
-  useEffect(() => { fetchWeather(); }, [fetchWeather]);
+  useEffect(() => { fetchWeatherData(); }, [fetchWeatherData]);
 
   const dias = ["Hoy", "Mañana", "Pasado mañana"];
 
@@ -105,7 +110,7 @@ export default function WeatherStation() {
         <div className="flex items-center gap-2">
           <FreshnessBadge timestamp={weather?.timestamp} fuente={weather?.fuente} labelPrefix="Actualizado" />
           <button
-            onClick={() => fetchWeather(true)}
+            onClick={() => fetchWeatherData(true)}
             disabled={refreshing}
             className="glass-glow rounded-lg px-4 py-2 font-mono text-[11px] uppercase tracking-wider text-cyan hover:bg-cyan/10 transition disabled:opacity-50 min-h-[44px]"
           >
@@ -125,7 +130,7 @@ export default function WeatherStation() {
         <div className="flex flex-col items-center gap-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-6 text-sm text-red-400">
           <p>{error}</p>
           <button
-            onClick={() => fetchWeather(true)}
+            onClick={() => fetchWeatherData(true)}
             className="glass-glow rounded-lg px-4 py-2 font-mono text-[11px] uppercase tracking-wider text-cyan hover:bg-cyan/10 transition min-h-[44px]"
           >
             Reintentar
@@ -185,14 +190,23 @@ export default function WeatherStation() {
             <StatPill label="Marea" value={(weather.marea_actual_cm ?? weather.parametros_simulacion?.mean_sea_level ?? 8).toFixed(0)} unit="cm · pleamar " color="#6366F1" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12a6 6 0 0 1 6 0 6 6 0 0 0 6 0 6 6 0 0 1 6 0" /><path d="M2 17a6 6 0 0 1 6 0 6 6 0 0 0 6 0 6 6 0 0 1 6 0" /></svg>} />
           </div>
 
+          {/* Métricas adicionales de alta precisión (sensación, rocío, presión, ráfagas) */}
+          <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+            <StatPill label="Sensación" value={(weather.sensacion_termica_c ?? weather.temperatura).toFixed(1)} unit="°C aparente" color="#FFAA00" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z" /><line x1="12" y1="11" x2="12" y2="21" /></svg>} />
+            <StatPill label="P. Rocío" value={(weather.punto_rocio_c ?? weather.temp_min_c).toFixed(1)} unit="°C" color="#22D3EE" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3" /><path d="M2 13h2l3.3 6.6a1 1 0 0 0 1.8 0L13 13h2" /><path d="M16.5 4L19 7l2.5 4" /><path d="M19 7v8a2 2 0 0 1-2 2" /></svg>} />
+            <StatPill label="Presión" value={(weather.presion_msl_hpa ?? 1013).toFixed(0)} unit="hPa" color="#A78BFA" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20" /><path d="M4 6l8-4 8 4" /><path d="M4 18l8 4 8-4" /><circle cx="12" cy="6" r="1" /><circle cx="12" cy="18" r="1" /></svg>} />
+            <StatPill label="Ráfagas" value={(weather.rafagas_kmh ?? weather.velocidad_viento_kmh).toFixed(1)} unit="km/h" color="#FBBF24" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2" /><path d="M9.6 4.6A2 2 0 1 1 11 8H2" /><path d="M12.6 19.4A2 2 0 1 0 14 16H2" /></svg>} />
+            <StatPill label="Nubosidad" value={(weather.nubosidad_pct ?? 0).toFixed(0)} unit="%" color="#94A3B8" icon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.5 19a4.5 4.5 0 1 0-1.4-8.8 6 6 0 1 0-10.6 4.6" /><path d="M12.9 19.4l1.1 1.6M7.9 16l-1 1.5" /></svg>} />
+          </div>
+
           {/* Pronóstico 3 días */}
           <div className="mt-4">
             <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-slate-500 inline-flex items-center gap-1.5"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>Pronóstico 3 días</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {(weather.pronostico.length > 0 ? weather.pronostico : [
-                { dia: "hoy", lluvia_mm: weather.lluvia_manana_mm, temp_max_c: weather.temp_max_c, estado: weather.estado },
-                { dia: "manana", lluvia_mm: weather.lluvia_manana_mm, temp_max_c: weather.temp_max_c, estado: weather.estado },
-                { dia: "pasado", lluvia_mm: 0, temp_max_c: weather.temp_max_c, estado: weather.estado },
+                { dia: "hoy", lluvia_mm: weather.lluvia_manana_mm, temp_max_c: weather.temp_max_c, estado: weather.estado, prob_lluvia_pct: undefined },
+                { dia: "manana", lluvia_mm: weather.lluvia_manana_mm, temp_max_c: weather.temp_max_c, estado: weather.estado, prob_lluvia_pct: undefined },
+                { dia: "pasado", lluvia_mm: 0, temp_max_c: weather.temp_max_c, estado: weather.estado, prob_lluvia_pct: undefined },
               ].slice(0, 3)).map((p, i) => (
                 <motion.div
                   key={p.dia}
@@ -210,7 +224,11 @@ export default function WeatherStation() {
                     </p>
                   )}
                   <p className="font-display text-2xl font-bold neon-text">{Math.round(p.temp_max_c)}°C</p>
-                  <div className="my-2 h-1 rounded-full bg-white/5">
+                  <div className="mt-1 flex items-center justify-center gap-1 font-mono text-[10px] text-slate-500">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#00F3FF" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><path d="M22 6l-10 7L2 6" /></svg>
+                    <span>{p.prob_lluvia_pct != null ? `${Math.round(p.prob_lluvia_pct)}%` : "—"} lluvia</span>
+                  </div>
+                  <div className="mt-1 h-1 rounded-full bg-white/5">
                     <div className="h-full rounded-full" style={{ width: `${Math.min(100, p.lluvia_mm * 8)}%`, backgroundColor: "#00F3FF" }} />
                   </div>
                   <p className="font-mono text-[10px] text-slate-500 inline-flex items-center gap-1"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="20" y1="16.58" x2="20" y2="16.58" /><line x1="12" y1="16.58" x2="12" y2="16.58" /><line x1="4" y1="16.58" x2="4" y2="16.58" /><path d="M17 7h-1.78A2.5 2.5 0 0 0 13 5.5A2.5 2.5 0 0 0 10.5 8H9a4 4 0 0 0-4 4v6h16v-6a4 4 0 0 0-4-4z" /></svg>{p.lluvia_mm.toFixed(1)} mm</p>

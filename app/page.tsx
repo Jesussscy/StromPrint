@@ -265,7 +265,6 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
     const z = leerParamURL("zona");
     return z ? Number(z) : null;
   });
-  const [heatmapVisible, setHeatmapVisible] = useState(true);
   const playbackRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const urlHoraRef = useRef(false);
 
@@ -430,7 +429,6 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
             <CesiumMap
               nivelAguaCm={activePunto?.nivel_agua_cm ?? 0}
               nivelMaximoCm={prediccion?.nivel_maximo_cm ?? 100}
-              heatmapVisible={heatmapVisible}
               focusZonaId={zonaEnfocada}
               onSelectZona={onSelectZona}
               horaLocal={Math.floor(currentHour) % 24}
@@ -439,18 +437,6 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
               meteorologia={prediccion?.meteorologia_resumen ?? null}
             />
           </LazyMount>
-
-          {/* Toggle capa de calor */}
-          <button
-            onClick={() => setHeatmapVisible((v) => !v)}
-            aria-pressed={heatmapVisible}
-            className={`absolute top-14 right-3 z-10 rounded-lg px-3 py-2 text-[10px] font-mono uppercase tracking-wider transition flex items-center gap-1.5 ${
-              heatmapVisible ? "glass-glow text-cyan" : "glass text-slate-500"
-            }`}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3c.5 2.5-1 4-2.5 5C7.5 9.5 6 11 6 14a6 6 0 0 0 12 0c0-2-1-4-2-5" /></svg>
-            Calor
-          </button>
 
           <motion.button
             whileHover={{ scale: 1.05 }}

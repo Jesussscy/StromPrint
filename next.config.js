@@ -32,7 +32,7 @@ const nextConfig = {
           {
             key: "Content-Security-Policy",
             value:
-              "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://server.arcgisonline.com https://*.cartocdn.com; connect-src 'self' https://api.open-meteo.com https://server.arcgisonline.com https://elevation3d.arcgis.com; font-src 'self' data:; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+              "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://server.arcgisonline.com https://*.cartocdn.com https://basemaps.cartocdn.com; connect-src 'self' https://api.open-meteo.com https://server.arcgisonline.com https://elevation3d.arcgis.com https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.cartocdn.com https://basemaps.cartocdn.com; font-src 'self' data:; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
           },
         ],
       },

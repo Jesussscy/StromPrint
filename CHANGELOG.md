@@ -115,6 +115,17 @@ Plan «1000 mejoras del visor» (8 tandas M1–M8) sobre el panel en vivo:
 - Card de zona seleccionada adaptada a móvil (ancho completo con scroll interno) y cierre
   sincronizado con el estado del Dashboard.
 
+### M10 · Precisión meteorológica extrema
+- Condiciones actuales con el bloque `current` de Open-Meteo (temperatura y lluvia del
+  instante exacto) en lugar de escoger la hora más cercana del pronóstico horario.
+- Estado meteorológico clasificado con `weather_code` WMO (distingue llovizna, chubasco,
+  tormenta, niebla), con precedencia sobre la heurística de mm/h + nubosidad.
+- Humedad del suelo real de Open-Meteo (`soil_moisture`) con fallback a la heurística.
+- Racha de días lluviosos y humedad del suelo alimentados por lluvia real de los últimos
+  7 días (`past_days`) en lugar de solo pronóstico futuro.
+- Nuevas métricas expuestas en `/api/v1/weather` y en la estación meteorológica: sensación
+  térmica, punto de rocío, presión a nivel del mar, ráfagas y probabilidad de lluvia por día.
+
 ## [2.7.0] — Predictor en español
 - Predicción pública `/api/v1/predecir` con narrativa y recomendaciones en español.
 - Panel en vivo con tendencia, factor dominante y fuente de datos respaldada en cache.

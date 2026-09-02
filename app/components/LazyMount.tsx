@@ -6,19 +6,26 @@ interface LazyMountProps {
   children: ReactNode;
   placeholder?: ReactNode;
   rootMargin?: string;
+  fallbackMs?: number;
 }
 
 /**
  * LazyMount
- * Monta `children` recién cuando el contenedor se acerca al viewport
+ * Monta `children` cuando el contenedor se acerca al viewport
  * (IntersectionObserver). Sirve para diferir el render y el bundle de
- * componentes pesados (p. ej. el visor 3D de Cesium) sin perder el espacio
- * reservado: mientras no se ve, se muestra `placeholder`.
+ * componentes pesados (p. ej. el visor 3D de Cesium).
+ *
+ * Fiabilidad: el nodo observado es un div con caja real (`relative h-full`),
+ * así el observador siempre recibe un rect con área > 0. Además hay un fallback
+ * temporal (fallbackMs) que monta `children` aunque el observador no dispare,
+ * evitando que el visor quede "hueco" en navegadores/móviles con soporte
+ * parcial de IntersectionObserver.
  */
 export default function LazyMount({
   children,
   placeholder = null,
   rootMargin = "800px",
+  fallbackMs = 8000,
 }: LazyMountProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
@@ -32,7 +39,7 @@ export default function LazyMount({
     }
     const obs = new IntersectionObserver(
       (entries) => {
-        if (entries.some((e) => e.isIntersecting)) {
+        if (entries.some((e) => e.isIntersecting && e.intersectionRatio > 0)) {
           setVisible(true);
           obs.disconnect();
         }
@@ -40,8 +47,19 @@ export default function LazyMount({
       { rootMargin, threshold: 0 }
     );
     obs.observe(node);
-    return () => obs.disconnect();
-  }, [rootMargin]);
 
-  return <div ref={ref} className="contents">{visible ? children : placeholder}</div>;
+    // Red de seguridad: aunque el observador nunca reporte intersección, el
+    // contenido se monta igualmente después del tiempo de espera.
+    const fallback = window.setTimeout(() => {
+      setVisible(true);
+      obs.disconnect();
+    }, fallbackMs);
+
+    return () => {
+      obs.disconnect();
+      window.clearTimeout(fallback);
+    };
+  }, [rootMargin, fallbackMs]);
+
+  return <div ref={ref} className="relative h-full">{visible ? children : placeholder}</div>;
 }

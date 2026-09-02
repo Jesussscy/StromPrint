@@ -14,72 +14,12 @@ import {
   type NivelRiesgo,
 } from "@/app/lib/zonasManga";
 import { riscoColorEstilo, clasificarNivel as clasificarNivelCentral } from "@/app/lib/riesgo";
-import { pinTexture, waterTexture, heatmapTexture } from "@/app/lib/cesiumTextures";
-
-// Zonas territoriales (columnas de inundación base que animan con el agua).
-interface ZonaTerritorio {
-  id: string;
-  nombre: string;
-  coordenadas: [number, number][]; // [lat, lng]
-  altura_maxima: number; // cm
-  nivel_riesgo: "normal" | "alerta" | "emergencia" | "critico";
-}
-
-const TERRITORIO_MANGA: ZonaTerritorio[] = [
-  {
-    id: "manga-centro",
-    nombre: "Centro de Manga",
-    coordenadas: [
-      [10.398, -75.518],
-      [10.399, -75.517],
-      [10.3985, -75.516],
-      [10.3975, -75.517],
-    ],
-    altura_maxima: 75,
-    nivel_riesgo: "emergencia",
-  },
-  {
-    id: "manga-este",
-    nombre: "Manga Este",
-    coordenadas: [
-      [10.3995, -75.5155],
-      [10.4005, -75.5145],
-      [10.4, -75.5135],
-      [10.399, -75.5145],
-    ],
-    altura_maxima: 45,
-    nivel_riesgo: "alerta",
-  },
-  {
-    id: "manga-oeste",
-    nombre: "Manga Oeste",
-    coordenadas: [
-      [10.397, -75.519],
-      [10.398, -75.518],
-      [10.3975, -75.517],
-      [10.3965, -75.518],
-    ],
-    altura_maxima: 120,
-    nivel_riesgo: "critico",
-  },
-  {
-    id: "manga-norte",
-    nombre: "Manga Norte",
-    coordenadas: [
-      [10.4005, -75.516],
-      [10.4015, -75.515],
-      [10.401, -75.514],
-      [10.4, -75.515],
-    ],
-    altura_maxima: 20,
-    nivel_riesgo: "normal",
-  },
-];
+import { pinTexture } from "@/app/lib/cesiumTextures";
+import HeatmapView from "@/app/components/HeatmapView";
 
 interface CesiumMapProps {
   nivelAguaCm?: number;
   nivelMaximoCm?: number;
-  heatmapVisible?: boolean;
   focusZonaId?: number | null;
   onSelectZona?: (zona: ZonaManga | null) => void;
   horaLocal?: number;
@@ -90,13 +30,13 @@ interface CesiumMapProps {
 
 // Rectangulo geografico del barrio Manga, Cartagena (lat/lng bounds)
 const MANGA_BOUNDS = {
-  west: -75.525,
-  south: 10.393,
-  east: -75.508,
-  north: 10.408,
+  west: -75.5238,
+  south: 10.3922,
+  east: -75.5085,
+  north: 10.4098,
 };
 
-const MANGA_CENTER = { lat: (10.393 + 10.408) / 2, lng: (-75.525 + -75.508) / 2 }; // 10.4005, -75.5165
+const MANGA_CENTER = { lat: 10.401, lng: -75.51615 };
 
 // Margen (en grados) alrededor de Manga: el usuario puede moverse y orbitar
 // dentro de esta zona sin molestias, pero si el centro de la vista sale de
@@ -131,15 +71,10 @@ function dentroDeMangaConMargen(longitudeDeg: number, latitudeDeg: number): bool
 // visibles en 3D. Se calcula de forma ADAPTATIVA según el nivel máximo del
 // escenario para que el agua siempre suba a una altura visible y dramática,
 // ya sea con datos reales (máx ~30-40 cm) o ficticios (máx ~230 cm).
-const PICO_ALTURA_M = 55; // altura (m) que alcanza el agua en el pico del escenario
-const GANANCIA_MIN = 0.9; // factor mínimo de escala
-const GANANCIA_MAX = 2.4; // factor máximo de escala
-const BASE_ALTURA = 1.2; // altura mínima (m) para ver siempre las zonas en seco
 
 export default function CesiumMap({
   nivelAguaCm = 0,
   nivelMaximoCm = 100,
-  heatmapVisible = true,
   focusZonaId = null,
   onSelectZona,
   horaLocal = 12,
@@ -156,27 +91,29 @@ export default function CesiumMap({
   const [selectedZona, setSelectedZona] = useState<ZonaManga | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const heatmapRef = useRef<boolean>(heatmapVisible);
   const horaLocalRef = useRef<number>(horaLocal);
   const stormRef = useRef<boolean>(stormMode);
   const fpsCountRef = useRef(0);
   const [fps, setFps] = useState(0);
+  const [vista, setVista] = useState<"3d" | "heatmap">("3d");
 
-  useEffect(() => { heatmapRef.current = heatmapVisible; }, [heatmapVisible]);
   useEffect(() => { horaLocalRef.current = horaLocal; }, [horaLocal]);
   useEffect(() => { stormRef.current = stormMode; }, [stormMode]);
 
-  // Control de capas y base mapas (mapa interno; el toggle "Calor" lo maneja
-  // el panel padre vía prop heatmapVisible).
+  // Control de capas y base mapas (mapa interno).
   const [baseMapa, setBaseMapa] = useState<"sate" | "oscuro" | "hibrido">("sate");
-  const [capas, setCapas] = useState({ zonas: true, agua: true, etiquetas: true });
+  const [capas, setCapas] = useState({ zonas: true, etiquetas: true });
   const [panelCapas, setPanelCapas] = useState(false);
+  // Registro de proveedores ya probados para el failover automático de capas
+  // base: si un proveedor falla repetidamente (p.ej. un proxy/ISP inyecta un
+  // banner "API KEY REQUIRED" en los tiles), saltamos a uno más robusto y el
+  // visor nunca se queda en blanco ni muestra basura.
+  const proveedoresFallidosRef = useRef<Set<string>>(new Set());
   const brújulaRef = useRef<HTMLSpanElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const selectedZonaRef = useRef<ZonaManga | null>(null);
   const onSelectZonaRef = useRef(onSelectZona);
   const nivelMaximoRef = useRef(nivelMaximoCm);
-  const anilloActivoRef = useRef(false);
   const midiendoRef = useRef(false);
   const rutaRef = useRef<{ lng: number; lat: number }[]>([]);
   const rutaLineaRef = useRef<any>(null);
@@ -247,6 +184,30 @@ export default function CesiumMap({
           requestRenderMode: true,
           maximumRenderTimeChange: Infinity,
         });
+
+        // Vigila la capa base inicial: si los tiles fracasan repetidamente
+        // (p.ej. una red/ISP inyecta HTML "API KEY REQUIRED" en lugar de
+        // imágenes), fuerza el failover a OpenStreetMap para no mostrar basura.
+        (() => {
+          const capaInicial = viewer.imageryLayers.get(0);
+          const provider = capaInicial?.imageryProvider;
+          if (provider?.errorEvent?.addEventListener) {
+            let fallos = 0;
+            provider.errorEvent.addEventListener(() => {
+              fallos += 1;
+              console.warn(
+                `[StormPrint] Capa base inicial: fallo de tile (${fallos}x).`
+              );
+              if (fallos >= 3 && !proveedoresFallidosRef.current.has("sate")) {
+                proveedoresFallidosRef.current.add("sate");
+                console.warn(
+                  "[StormPrint] Failover: capa base inicial falló → OpenStreetMap."
+                );
+                cambiarBaseCapa("osm");
+              }
+            });
+          }
+        })();
 
         // Iluminación + atmósfera para un look 3D rico
         viewer.scene.globe.enableLighting = true;
@@ -339,80 +300,6 @@ export default function CesiumMap({
           }
         });
 
-        // ── Borde / delimitación de Manga ─────────────────────────────
-        const bordePositions = [
-          Cesium.Cartesian3.fromDegrees(MANGA_BOUNDS.west, MANGA_BOUNDS.south, 0),
-          Cesium.Cartesian3.fromDegrees(MANGA_BOUNDS.east, MANGA_BOUNDS.south, 0),
-          Cesium.Cartesian3.fromDegrees(MANGA_BOUNDS.east, MANGA_BOUNDS.north, 0),
-          Cesium.Cartesian3.fromDegrees(MANGA_BOUNDS.west, MANGA_BOUNDS.north, 0),
-        ];
-        viewer.entities.add({
-          polygon: {
-            hierarchy: new Cesium.PolygonHierarchy(bordePositions),
-            height: 0,
-            extrudedHeight: 0.12,
-            material: Cesium.Color.fromCssColorString("#00E5FF").withAlpha(0.05),
-            outline: true,
-            outlineColor: Cesium.Color.fromCssColorString("#00E5FF").withAlpha(0.55),
-            outlineWidth: 2,
-          },
-        });
-
-        // ── Polígonos territoriales (columnas de inundación base) ─────
-        // Las propiedades de altura/material se crean UNA vez y se mutan con
-        // .setValue() en el animador para no alocar objetos en cada frame.
-        const entidadesZona: Record<string, any> = {};
-        const propsTerritorio: Record<string, { prop: any; mat: any; alturaMaxima: number }> = {};
-        TERRITORIO_MANGA.forEach((zona) => {
-          const positions = zona.coordenadas.map(([lat, lng]) =>
-            Cesium.Cartesian3.fromDegrees(lng, lat, 0)
-          );
-          const color = cesiumRiskColor(Cesium, zona.nivel_riesgo);
-          const prop = new Cesium.ConstantProperty(BASE_ALTURA);
-          const mat = new Cesium.ColorMaterialProperty(color.withAlpha(0.35));
-          propsTerritorio[zona.id] = { prop, mat, alturaMaxima: zona.altura_maxima };
-
-          const entity = viewer.entities.add({
-            name: zona.nombre,
-            polygon: {
-              hierarchy: new Cesium.PolygonHierarchy(positions),
-              height: 0,
-              extrudedHeight: prop,
-              material: mat,
-              outline: true,
-              outlineColor: color.withAlpha(0.7),
-              outlineWidth: 2,
-            },
-            properties: {
-              zonaId: zona.id,
-              nombre: zona.nombre,
-              alturaMaxima: zona.altura_maxima,
-              nivelRiesgo: zona.nivel_riesgo,
-              tipo: "territorio",
-            },
-          });
-          entidadesZona[zona.id] = entity;
-        });
-
-        // ── Superficie global de agua (sube/baja con el nivel) ───────
-        // Material como imagen procedural: ondas/ripples que se redibujan a
-        // baja cadencia; color mutado por frame (lerp hacia el color de riesgo).
-        const aguaExtruded = new Cesium.ConstantProperty(0.05);
-        const aguaMaterial = new Cesium.ImageMaterialProperty({
-          image: waterTexture(0, 0.5),
-          repeat: new Cesium.Cartesian2(3, 3),
-          color: Cesium.Color.fromCssColorString("#00A8E8").withAlpha(0.8),
-        });
-        const superficieAgua = viewer.entities.add({
-          polygon: {
-            hierarchy: new Cesium.PolygonHierarchy(bordePositions),
-            height: 0,
-            extrudedHeight: aguaExtruded,
-            material: aguaMaterial,
-            classificationType: Cesium.ClassificationType.BOTH,
-          },
-        });
-
         // ── Texturas en caché ─────────────────────────────────────────
         // Pines por nivel de riesgo
         const pinTex: Record<NivelRiesgo, any> = {} as any;
@@ -485,43 +372,6 @@ export default function CesiumMap({
           influenciasLayer[zona.id] = influencia;
         });
 
-        // ── Capa de calor interpolada (campo de riesgo real) ─────────
-        // Grilla de contribuciones gaussianas de las 20 zonas proyectada como
-        // textura sobre el territorio. Reemplaza los halos individuales y se
-        // re-genera solo cuando el nivel salta un múltiplo de 5 cm.
-        const calorMaterial = new Cesium.ImageMaterialProperty({
-          image: heatmapTexture(ZONAS_MANGA, nivelAguaCm, nivelMaximoCm, MANGA_BOUNDS, 96),
-          color: Cesium.Color.WHITE.withAlpha(heatmapRef.current ? 0.95 : 0.0),
-        });
-        const superficieCalor = viewer.entities.add({
-          rectangle: {
-            coordinates: Cesium.Rectangle.fromDegrees(
-              MANGA_BOUNDS.west,
-              MANGA_BOUNDS.south,
-              MANGA_BOUNDS.east,
-              MANGA_BOUNDS.north
-            ),
-            material: calorMaterial,
-            height: 0.4,
-          },
-          properties: { tipo: "calor" },
-        });
-
-        // ── Anillo de selección activa (pulso sobre la zona elegida) ──
-        const anilloSeleccion = viewer.entities.add({
-          position: new Cesium.ConstantPositionProperty(
-            Cesium.Cartesian3.fromDegrees(MANGA_CENTER.lng, MANGA_CENTER.lat, 25)
-          ),
-          point: {
-            pixelSize: new Cesium.ConstantProperty(14),
-            color: Cesium.Color.fromCssColorString("#00E5FF").withAlpha(0.9),
-            outlineColor: Cesium.Color.WHITE.withAlpha(0.95),
-            outlineWidth: 2,
-            disableDepthTestDistance: Number.POSITIVE_INFINITY,
-            show: false,
-          },
-        });
-
         // ── Manejo de clic en zonas críticas ─────────────────────────
         const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
         handler.setInputAction((movement: any) => {
@@ -585,18 +435,10 @@ export default function CesiumMap({
         }
 
         viewerRef.current = { viewer, destroy: () => viewer.destroy() };
-        (viewerRef.current as any).entidadesZona = entidadesZona;
-        (viewerRef.current as any).superficieAgua = superficieAgua;
         (viewerRef.current as any).zonasLayer = zonasLayer;
         (viewerRef.current as any).influenciasLayer = influenciasLayer;
         (viewerRef.current as any).pinTex = pinTex;
-        (viewerRef.current as any).superficieCalor = superficieCalor;
-        (viewerRef.current as any).calorMaterial = calorMaterial;
-        (viewerRef.current as any).propsTerritorio = propsTerritorio;
-        (viewerRef.current as any).aguaExtruded = aguaExtruded;
-        (viewerRef.current as any).aguaMaterial = aguaMaterial;
         (viewerRef.current as any).estadoZona = estadoZona;
-        (viewerRef.current as any).anilloSeleccion = anilloSeleccion;
         (viewerRef.current as any).volverAMangaFn = volverAManga;
         screenSpaceHandlerRef.current = handler;
         hoverHandlerRef.current = hoverHandler;
@@ -640,17 +482,6 @@ export default function CesiumMap({
   const aguaActualRef = useRef(nivelAguaCm);
   const rafRef = useRef<number | null>(null);
 
-  // Ganancia adaptativa: el pico del escenario (nivelMaximoCm) siempre se
-  // representa con ~PICO_ALTURA_M metros de columna de agua, para que la
-  // inundación se aprecie con claridad sin importar la magnitud real.
-  const gananciaRef = useRef<number>(1);
-
-  useEffect(() => {
-    const max = Math.max(nivelMaximoCm, 4);
-    const ganancia = Math.min(GANANCIA_MAX, Math.max(GANANCIA_MIN, PICO_ALTURA_M / max));
-    gananciaRef.current = ganancia;
-  }, [nivelMaximoCm]);
-
   useEffect(() => {
     objetivoAguaRef.current = nivelAguaCm;
     if (!viewerRef.current || !cesiumRef.current) return;
@@ -658,34 +489,11 @@ export default function CesiumMap({
 
     const Cesium = cesiumRef.current;
     const viewer = viewerRef.current.viewer;
-    const superficieAgua = (viewerRef.current as any).superficieAgua;
     const zonasLayer = (viewerRef.current as any).zonasLayer;
     const influenciasLayer = (viewerRef.current as any).influenciasLayer;
     const pinTex = (viewerRef.current as any).pinTex;
-    const superficieCalor = (viewerRef.current as any).superficieCalor;
-    const calorMaterial = (viewerRef.current as any).calorMaterial;
-    const anilloSeleccion = (viewerRef.current as any).anilloSeleccion;
-    const propsTerritorio = (viewerRef.current as any).propsTerritorio;
-    const aguaExtruded = (viewerRef.current as any).aguaExtruded;
-    const aguaMaterial = (viewerRef.current as any).aguaMaterial;
     const estadoZona = (viewerRef.current as any).estadoZona;
-    if (!superficieAgua || !propsTerritorio || !aguaExtruded || !estadoZona) return;
-
-    // Reutilizados por el paso de agua: color de tinte con lerp y cadencia de
-    // regeneración de los ripples (textura procedural, ~600 ms).
-    const aguaScratch = Cesium.Color.fromCssColorString("#00A8E8").withAlpha(0.85);
-    let tinteAgua: { r: number; g: number; b: number } | null = null;
-    let faseRipple = 0;
-    let ultimoRipple = 0;
-
-    // Estado de la capa de calor: regeneración perezosa (por bucket de 5 cm)
-    // y alpha según la visibilidad del toggle "Calor".
-    let ultimoBucket = -1;
-    let lastCalorOn = heatmapRef.current;
-    let calorAlpha = heatmapRef.current ? 0.95 : 0;
-
-    // prefers-reduced-motion: agua estática (sin ripples ni pulso del anillo).
-    const rm = prefiereReducirMovimiento();
+    if (!estadoZona) return;
 
     const step = () => {
       rafRef.current = null;
@@ -697,55 +505,9 @@ export default function CesiumMap({
       aguaActualRef.current += vel;
 
       const nivel = aguaActualRef.current;
-      const colorNivel = Cesium.Color.fromCssColorString(nivelColorCached(nivel));
-
-      // Columnas territoriales: propiedades reutilizadas, sin alocar por frame.
-      Object.values(propsTerritorio).forEach(({ prop, mat, alturaMaxima }: any) => {
-        const inundado = alturaMaxima != null && nivel >= alturaMaxima;
-        prop.setValue(Math.max(BASE_ALTURA, nivel * gananciaRef.current));
-        mat.color.setValue(
-          inundado
-            ? Cesium.Color.clone(colorNivel).withAlpha(0.55)
-            : Cesium.Color.fromCssColorString("#00E5FF").withAlpha(0.26)
-        );
-      });
-
-      // Superficie global de agua: altura + lerp de tinte hacia el color de riesgo,
-      // y redibujo periódico de la textura de ripples (baja cadencia).
-      const aguaMetros = Math.max(0.05, nivel * gananciaRef.current);
-      aguaExtruded.setValue(aguaMetros);
-
-      const hex = nivelColorCached(nivel);
-      const tr = parseInt(hex.slice(1, 3), 16);
-      const tg = parseInt(hex.slice(3, 5), 16);
-      const tb = parseInt(hex.slice(5, 7), 16);
-      if (!tinteAgua) {
-        tinteAgua = { r: tr, g: tg, b: tb };
-      } else {
-        tinteAgua.r += (tr - tinteAgua.r) * 0.08;
-        tinteAgua.g += (tg - tinteAgua.g) * 0.08;
-        tinteAgua.b += (tb - tinteAgua.b) * 0.08;
-      }
-      aguaScratch.red = tinteAgua.r / 255;
-      aguaScratch.green = tinteAgua.g / 255;
-      aguaScratch.blue = tinteAgua.b / 255;
-      aguaScratch.alpha = 0.85;
-      aguaMaterial.color.setValue(aguaScratch);
-
-      const ahora = performance.now();
-      // Tormenta: los ripples se regeneran más rápido (agua más brava). Con
-      // prefers-reduced-motion el agua queda estática (textura única).
-      const cadenciaRipple = stormRef.current ? 380 : 600;
-      if (!rm && ahora - ultimoRipple > cadenciaRipple) {
-        ultimoRipple = ahora;
-        faseRipple += stormRef.current ? 1.6 : 0.9;
-        // "Heat shimmer": la opacidad/contraste del agua sube con el nivel.
-        aguaMaterial.image.setValue(waterTexture(faseRipple, Math.min(1, nivel / 100)));
-      }
 
       // Zonas críticas en vivo: solo se retocan los billboards/círculos cuando
       // cambia el riesgo (imagen y tamaño), evitando re-subidas de textura.
-      const heatOn = heatmapRef.current;
       ZONAS_MANGA.forEach((zona) => {
         const nivelZona = nivelDinamicoZona(zona, nivel, nivelMaximoCm);
         const riesgoVivoZ = riesgoVivo(zona, nivel, nivelMaximoCm);
@@ -780,41 +542,10 @@ export default function CesiumMap({
         }
       });
 
-      // Capa de calor interpolada: se regenera solo cuando el nivel salta un
-      // múltiplo de 5 cm o cambia la visibilidad, nunca en cada frame.
-      if (superficieCalor && calorMaterial) {
-        const bucket = Math.round(nivel / 5) * 5;
-        if (bucket !== ultimoBucket || lastCalorOn !== heatOn) {
-          ultimoBucket = bucket;
-          lastCalorOn = heatOn;
-          calorMaterial.image.setValue(
-            heatmapTexture(ZONAS_MANGA, nivel, nivelMaximoCm, MANGA_BOUNDS, 96)
-          );
-        }
-        const alphaCalor = heatOn ? 0.95 : 0;
-        if (calorAlpha !== alphaCalor) {
-          calorAlpha = alphaCalor;
-          calorMaterial.color.setValue(Cesium.Color.WHITE.withAlpha(alphaCalor));
-        }
-      }
-
-      // Anillo de selección: pulso de escala y color por riesgo mientras esté activo.
-      if (anilloSeleccion && anilloActivoRef.current) {
-        const ries = selectedZonaRef.current
-          ? riesgoVivo(selectedZonaRef.current, nivel, nivelMaximoCm)
-          : "NORMAL";
-        if (!rm) anilloSeleccion.point.pixelSize.setValue(14 + Math.sin(performance.now() / 380) * 5);
-        anilloSeleccion.point.color.setValue(
-          Cesium.Color.fromCssColorString(RIESGO_META[ries].color).withAlpha(0.9)
-        );
-      }
-
       // Con requestRenderMode, un render por tick solo si el agua se movió.
       viewer.scene.requestRender();
 
-      const sigue =
-        Math.abs(objetivoAguaRef.current - aguaActualRef.current) > 0.05 ||
-        (anilloActivoRef.current && !rm);
+      const sigue = Math.abs(objetivoAguaRef.current - aguaActualRef.current) > 0.05;
       if (sigue) {
         // Tab oculta: el padding se vuelve inútil y quema CPU, así que se
         // samplea a 1 Hz hasta volver a la pestaña.
@@ -833,7 +564,7 @@ export default function CesiumMap({
         window.clearTimeout(rafRef.current);
         rafRef.current = null;
       }
-      if (Math.abs(objetivoAguaRef.current - aguaActualRef.current) > 0.05 || anilloActivoRef.current) {
+      if (Math.abs(objetivoAguaRef.current - aguaActualRef.current) > 0.05) {
         rafRef.current = requestAnimationFrame(step);
       }
     };
@@ -850,7 +581,7 @@ export default function CesiumMap({
       rafRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nivelAguaCm, heatmapVisible, cargando, selectedZona]);
+  }, [nivelAguaCm, cargando, selectedZona]);
 
   // ── Volar a una zona seleccionada desde el panel ───────────────────────
   useEffect(() => {
@@ -1134,36 +865,48 @@ function recentrar() {
     });
   }
 
-  // ── Anillo de selección: sigue a la zona elegida y pulsa ────────────────
+  // ── Sincroniza la zona seleccionada con la referencia usada en el hover. ─
   useEffect(() => {
     selectedZonaRef.current = selectedZona;
-    const V: any = viewerRef.current;
-    const Cesium: any = cesiumRef.current;
-    if (!V || !Cesium) {
-      anilloActivoRef.current = false;
-      return;
-    }
-    const anillo = V.anilloSeleccion;
-    if (!anillo) return;
-    if (!selectedZona) {
-      anillo.show = false;
-      anilloActivoRef.current = false;
-      return;
-    }
-    const [lat, lng] = selectedZona.coordenadas;
-    anillo.position.setValue(Cesium.Cartesian3.fromDegrees(lng, lat, 25));
-    anillo.show = true;
-    anilloActivoRef.current = true;
   }, [selectedZona]);
 
-  // ── Capas base: satelital / oscuro / híbrido con fallback automático ──
-  // Se prueban en orden y se queda con la primera que responde; si ninguna
-  // entra, cae a OpenStreetMap para no dejar el visor sin imagery.
-  async function cambiarBase(base: "sate" | "oscuro" | "hibrido") {
+  // Vigila los errores de una capa de imagery. Si un proveedor falla varias
+  // veces seguidas (p.ej. un proxy/ISP devuelve un HTML "API KEY REQUIRED" en
+  // lugar de tiles de imagen), fuerza el failover a OpenStreetMap y lo marca
+  // como fallido para no volver a intentarlo en la misma sesión.
+  const vigilarCapas = (
+    viewer: any,
+    cesium: any,
+    capas: any[],
+    nombre: string
+  ) => {
+    let fallos = 0;
+    capas.forEach((c: any) => {
+      const errorEvent = c?.imageryProvider?.errorEvent;
+      if (!errorEvent || !errorEvent.addEventListener) return;
+      errorEvent.addEventListener(() => {
+        fallos += 1;
+        // console.warn permite confirmar en consola si la red/ISP interviene.
+        console.warn(`[StormPrint] Capa "${nombre}": fallo de tile (${fallos}x).`);
+        if (fallos >= 3 && !proveedoresFallidosRef.current.has(nombre)) {
+          proveedoresFallidosRef.current.add(nombre);
+          console.warn(
+            `[StormPrint] Failover: "${nombre}" falló repetidamente → OpenStreetMap.`
+          );
+          cambiarBaseCapa("osm");
+        }
+      });
+    });
+  };
+
+  // Aplica una capa base de imagery al visor de forma resiliente.
+  const cambiarBaseCapa = async (
+    base: "sate" | "oscuro" | "hibrido" | "osm"
+  ) => {
     const Cesium: any = cesiumRef.current;
-    const Viewer: any = viewerRef.current;
-    if (!Cesium || !Viewer) return;
-    const viewer = Viewer.viewer;
+    const V: any = viewerRef.current;
+    if (!Cesium || !V) return;
+    const viewer = V.viewer;
 
     const intentar = async (factory: () => Promise<unknown>) => {
       try {
@@ -1173,48 +916,70 @@ function recentrar() {
       }
     };
 
-    const capasNuevas: any[] = [];
+    const urlSate =
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
+    const urlOscuro = "https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png";
+    const urlOsm = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+
+    // OSM es el respaldo terminal: difícil de inyectar y sin auth.
+    const hacerOsm = () =>
+      Cesium.ImageryLayer.fromProviderAsync(
+        new Cesium.UrlTemplateImageryProvider({
+          url: urlOsm,
+          maximumLevel: 19,
+          credit: "© OpenStreetMap contributors",
+        })
+      );
+
+    let capasFuturas: Promise<any>[] = [];
     if (base === "sate" || base === "hibrido") {
-      const sate = await intentar(() =>
-        Cesium.ImageryLayer.fromProviderAsync(
-          new Cesium.UrlTemplateImageryProvider({
-            url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-            maximumLevel: 19,
-          })
+      capasFuturas.push(
+        intentar(() =>
+          Cesium.ImageryLayer.fromProviderAsync(
+            new Cesium.UrlTemplateImageryProvider({
+              url: urlSate,
+              maximumLevel: 19,
+            })
+          )
         )
       );
-      if (sate) capasNuevas.push(sate);
     }
     if (base === "oscuro" || base === "hibrido") {
-      const osc = await intentar(() =>
-        Cesium.ImageryLayer.fromProviderAsync(
-          new Cesium.UrlTemplateImageryProvider({
-            url: "https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
-            maximumLevel: 19,
-          })
-        )
-      ) as any;
-      if (osc) {
-        if (base === "hibrido") osc.alpha = 0.55;
-        capasNuevas.push(osc);
-      }
-    }
-    if (capasNuevas.length === 0) {
-      const osm = await intentar(() =>
-        Cesium.ImageryLayer.fromProviderAsync(
-          new Cesium.UrlTemplateImageryProvider({
-            url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-            maximumLevel: 19,
-          })
+      capasFuturas.push(
+        intentar(() =>
+          Cesium.ImageryLayer.fromProviderAsync(
+            new Cesium.UrlTemplateImageryProvider({
+              url: urlOscuro,
+              maximumLevel: 19,
+            })
+          )
         )
       );
+    }
+    if (base === "osm") capasFuturas = [intentar(hacerOsm)];
+
+    const capasNuevas = (await Promise.all(capasFuturas)).filter(Boolean);
+    if (capasNuevas.length === 0) {
+      const osm = await intentar(hacerOsm);
       if (osm) capasNuevas.push(osm);
     }
+    if (capasNuevas.length === 0) return;
 
     const layers = viewer.imageryLayers;
     layers.removeAll();
-    capasNuevas.forEach((l) => layers.add(l));
+    capasNuevas.forEach((l, i) => {
+      // El tema "híbrido" funde el satelital con la vista oscura a media opacidad.
+      if (base === "hibrido" && i > 0 && !!l) l.alpha = 0.55;
+      layers.add(l);
+    });
+    vigilarCapas(viewer, Cesium, capasNuevas, base);
     viewer.scene.requestRender();
+  };
+
+  // ── Capas base: satelital / oscuro / híbrido con fallback automático ──
+  // Delega en cambiarBaseCapa (failover resiliente a tiles inválidos/HTML).
+  async function cambiarBase(base: "sate" | "oscuro" | "hibrido") {
+    await cambiarBaseCapa(base);
   }
 
   // Aplica la base elegida apenas el visor está listo y cuando cambia.
@@ -1236,8 +1001,7 @@ function recentrar() {
     Object.values(V.influenciasLayer ?? {}).forEach((e: any) => {
       e.show = capas.zonas;
     });
-    if (V.superficieAgua) V.superficieAgua.show = capas.agua;
-  }, [capas.zonas, capas.agua, capas.etiquetas, cargando]);
+  }, [capas.zonas, capas.etiquetas, cargando]);
 
   // ── Atajos de teclado (solo cuando el foco no está en un input) ────────
   useEffect(() => {
@@ -1249,7 +1013,6 @@ function recentrar() {
       else if (k === "3") recentrar();
       else if (k === "c") setPanelCapas((p) => !p);
       else if (k === "z") setCapas((c) => ({ ...c, zonas: !c.zonas }));
-      else if (k === "a") setCapas((c) => ({ ...c, agua: !c.agua }));
       else if (k === "l") setCapas((c) => ({ ...c, etiquetas: !c.etiquetas }));
       else if (k === "m") toggleMedicion();
       else if (k === "escape") {
@@ -1287,7 +1050,46 @@ function recentrar() {
       aria-label={`Mapa 3D de Manga, Cartagena. Nivel ${nivelAguaCm.toFixed(1)} cm · ${clasificarNivel(nivelAguaCm)} · ${zonasAlerta} zonas en alerta. Atajos: R re-centrar, C capas, flechas recorren zonas.`}
       tabIndex={0}
     >
-      <div ref={containerRef} className="absolute inset-0 rounded-2xl overflow-hidden" />
+      <div
+        ref={containerRef}
+        className={`absolute inset-0 rounded-2xl overflow-hidden ${vista === "heatmap" ? "hidden" : ""}`}
+      />
+
+      {/* Vista Heatmap 2D (mapa de calor) */}
+      {vista === "heatmap" && (
+        <div className="absolute inset-0 rounded-2xl overflow-hidden z-[5]">
+          <HeatmapView
+            bounds={MANGA_BOUNDS}
+            nivelAguaCm={nivelAguaCm}
+            nivelMaximoCm={nivelMaximoCm}
+            visible={vista === "heatmap"}
+          />
+        </div>
+      )}
+
+      {/* Selector de vista: 3D (principal) o Heatmap */}
+      {!cargando && !error && (
+        <div className="absolute top-3 left-3 z-10 flex gap-1 glass rounded-lg p-1">
+          <button
+            onClick={() => setVista("3d")}
+            aria-pressed={vista === "3d"}
+            className={`rounded-md px-2.5 py-1.5 text-[10px] font-mono uppercase tracking-wider transition ${
+              vista === "3d" ? "bg-cyan/20 text-cyan" : "text-slate-400 hover:text-white"
+            }`}
+          >
+            3D
+          </button>
+          <button
+            onClick={() => setVista("heatmap")}
+            aria-pressed={vista === "heatmap"}
+            className={`rounded-md px-2.5 py-1.5 text-[10px] font-mono uppercase tracking-wider transition ${
+              vista === "heatmap" ? "bg-cyan/20 text-cyan" : "text-slate-400 hover:text-white"
+            }`}
+          >
+            Heatmap
+          </button>
+        </div>
+      )}
 
       {/* Tooltip de hover (en vivo, sigue el cursor) */}
       <div
@@ -1323,7 +1125,7 @@ function recentrar() {
       )}
 
       {/* Botón re-centrar en Manga */}
-      {!cargando && !error && (
+      {!cargando && !error && vista === "3d" && (
         <button
           onClick={recentrar}
           className="absolute top-3 right-3 z-10 glass rounded-lg px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-cyan hover:bg-cyan/10 transition flex items-center gap-1.5"
@@ -1334,7 +1136,7 @@ function recentrar() {
       )}
 
       {/* Botón de capas (abre el panel de control del mapa) */}
-      {!cargando && !error && (
+      {!cargando && !error && vista === "3d" && (
         <button
           onClick={() => setPanelCapas((p) => !p)}
           aria-pressed={panelCapas}
@@ -1346,7 +1148,7 @@ function recentrar() {
       )}
 
       {/* Panel de capas: base mapas, capas internas y vistas */}
-      {panelCapas && !cargando && !error && (
+      {panelCapas && !cargando && !error && vista === "3d" && (
         <div className="absolute top-28 right-3 z-20 glass rounded-xl p-3 text-xs text-white w-48">
           <div className="flex items-center justify-between mb-2">
             <p className="font-display font-bold text-cyan">Capas</p>
@@ -1386,7 +1188,6 @@ function recentrar() {
           {(
             [
               ["zonas", "Zonas"],
-              ["agua", "Agua"],
               ["etiquetas", "Etiquetas"],
               ["sol", "Sol (hora real)"],
             ] as const
@@ -1699,19 +1500,6 @@ function centroDeVista(Cesium: any, viewer: any) {
     lat: Cesium.Math.toDegrees(carto.latitude),
     lng: Cesium.Math.toDegrees(carto.longitude),
   };
-}
-
-function cesiumRiskColor(Cesium: any, nivel: string) {
-  switch (nivel) {
-    case "critico":
-      return Cesium.Color.fromCssColorString("#B000FF");
-    case "emergencia":
-      return Cesium.Color.fromCssColorString("#FF0055");
-    case "alerta":
-      return Cesium.Color.fromCssColorString("#FFD600");
-    default:
-      return Cesium.Color.fromCssColorString("#00E5FF");
-  }
 }
 
 function riesgoColorHex(nivel: string) {

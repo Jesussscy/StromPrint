@@ -527,6 +527,7 @@ async def predecir(
                 hourly_data=forecast["hourly"],
                 horas_pronostico=payload.horas_pronostico,
                 nivel_marea_cm=nivel_msl,
+                past_daily=forecast.get("past_daily"),
             )
             meteo_summary = get_weather_summary(
                 hourly_data=forecast["hourly"],

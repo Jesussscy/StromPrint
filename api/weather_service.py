@@ -35,6 +35,31 @@ HOURLY_VARS = [
     "cloud_cover",
     "wind_speed_10m",
     "wind_direction_10m",
+    "wind_gusts_10m",
+    "pressure_msl",
+    "dew_point_2m",
+    "apparent_temperature",
+    "weather_code",
+    "soil_moisture_0_1cm",
+    "soil_moisture_1_3cm",
+]
+
+# Condiciones actuales (bloque current de Open-Meteo): lectura del momento
+# exacto, mas fiel que elegir la hora mas cercana del bloque horario.
+CURRENT_VARS = [
+    "temperature_2m",
+    "relative_humidity_2m",
+    "precipitation",
+    "rain",
+    "cloud_cover",
+    "wind_speed_10m",
+    "wind_direction_10m",
+    "wind_gusts_10m",
+    "pressure_msl",
+    "dew_point_2m",
+    "apparent_temperature",
+    "weather_code",
+    "is_day",
 ]
 
 # Variables diarias
@@ -45,7 +70,12 @@ DAILY_VARS = [
     "cloud_cover_mean",
     "temperature_2m_max",
     "temperature_2m_min",
+    "precipitation_probability_max",
 ]
+
+# Dias pasados a incluir: permite usar lluvia real reciente para la racha
+# consecutiva y la humedad del suelo (en vez de solo forecast futuro).
+PAST_DAYS = 7
 
 # ---------------------------------------------------------------------------
 # Estado meteorologico
@@ -74,17 +104,52 @@ NUBOSIDAD_NUBLADO_PCT = 70.0
 NUBOSIDAD_PARCIAL_PCT = 40.0
 
 
+# Mapeo del codigo meteorologico WMO (weather_code de Open-Meteo) a estado.
+# Se usa con precedencia sobre la heuristica de mm/h + nubosidad por ser la
+# clasificacion oficial y mas exacta (distingue llovizna, chubasco, tormenta...).
+def _estado_por_weather_code(code: Optional[float]) -> Optional[str]:
+    if code is None:
+        return None
+    c = int(code)
+    if c == 0 or c == 1:
+        return ESTADO_SOLEADO
+    if c == 2:
+        return ESTADO_PARCIALMENTE_NUBLADO
+    if c == 3:
+        return ESTADO_NUBLADO
+    if c == 45 or c == 48:  # niebla
+        return ESTADO_NUBLADO
+    if 51 <= c <= 57:  # llovizna
+        return ESTADO_LLUVIOSO
+    if 61 <= c <= 67:  # lluvia
+        return ESTADO_LLUVIOSO
+    if 71 <= c <= 77:  # nieve (irrelevante en Cartagena, tratada como lluvia)
+        return ESTADO_LLUVIOSO
+    if 80 <= c <= 82:  # chubascos
+        return ESTADO_LLUVIOSO
+    if 85 <= c <= 86:  # chubascos de nieve
+        return ESTADO_LLUVIOSO
+    if 95 <= c <= 99:  # tormenta electrica
+        return ESTADO_TORMENTA
+    return None
+
+
 def determinar_estado(
     precipitacion_actual_mmh: float = 0.0,
     nubosidad_pct: Optional[float] = None,
+    weather_code: Optional[float] = None,
 ) -> str:
-    """Clasifica el estado meteorologico segun lluvia actual y nubosidad.
+    """Clasifica el estado meteorologico.
 
     Precedencia:
-      1. Lluvia fuerte (tormenta) / moderada (lluvioso)
-      2. Nubosidad (nublado / parcialmente nublado)
-      3. Sin lluvia ni nubes -> soleado
+      1. weather_code WMO (si se aporta) -> clasificacion oficial exacta
+      2. Lluvia fuerte (tormenta) / moderada (lluvioso)
+      3. Nubosidad (nublado / parcialmente nublado)
+      4. Sin lluvia ni nubes -> soleado
     """
+    por_codigo = _estado_por_weather_code(weather_code)
+    if por_codigo is not None:
+        return por_codigo
     lluvia = float(precipitacion_actual_mmh or 0.0)
     if lluvia > LLUVIA_TORMENTA_MMH:
         return ESTADO_TORMENTA
@@ -165,9 +230,11 @@ async def fetch_weather_forecast(
     params = {
         "latitude": lat,
         "longitude": lon,
+        "current": ",".join(CURRENT_VARS),
         "hourly": ",".join(HOURLY_VARS),
         "daily": ",".join(DAILY_VARS),
         "timezone": "America/Bogota",
+        "past_days": PAST_DAYS,
         "forecast_days": min(forecast_days, 7),
     }
 
@@ -190,6 +257,7 @@ def _process_forecast(raw: Dict[str, Any]) -> Dict[str, Any]:
     """Procesa la respuesta cruda de Open-Meteo en formato util."""
     hourly = raw.get("hourly", {})
     daily = raw.get("daily", {})
+    current = raw.get("current", {})
 
     # Convertir listas horarias a lista de dicts
     times = hourly.get("time", [])
@@ -204,6 +272,13 @@ def _process_forecast(raw: Dict[str, Any]) -> Dict[str, Any]:
             "cloud_cover": hourly.get("cloud_cover", [0.0])[i] or 0.0,
             "wind_speed_10m": hourly.get("wind_speed_10m", [0.0])[i] or 0.0,
             "wind_direction_10m": hourly.get("wind_direction_10m", [0.0])[i] or 0.0,
+            "wind_gusts_10m": hourly.get("wind_gusts_10m", [0.0])[i] or 0.0,
+            "pressure_msl": hourly.get("pressure_msl", [1013.0])[i] or 1013.0,
+            "dew_point_2m": hourly.get("dew_point_2m", [23.0])[i] or 23.0,
+            "apparent_temperature": hourly.get("apparent_temperature", [28.0])[i] or 28.0,
+            "weather_code": hourly.get("weather_code", [0])[i] or 0,
+            "soil_moisture_0_1cm": hourly.get("soil_moisture_0_1cm", [0.0])[i] or 0.0,
+            "soil_moisture_1_3cm": hourly.get("soil_moisture_1_3cm", [0.0])[i] or 0.0,
         })
 
     # Convertir listas diarias a lista de dicts
@@ -218,11 +293,57 @@ def _process_forecast(raw: Dict[str, Any]) -> Dict[str, Any]:
             "cloud_cover_mean": daily.get("cloud_cover_mean", [0.0])[i] or 0.0,
             "temperature_2m_max": daily.get("temperature_2m_max", [30.0])[i] or 30.0,
             "temperature_2m_min": daily.get("temperature_2m_min", [24.0])[i] or 24.0,
+            "precipitation_probability_max": daily.get("precipitation_probability_max", [0.0])[i] or 0.0,
         })
 
+    # Bloque "current": condiciones actuales exactas (temp, lluvia, etc.)
+    current_record: Dict[str, Any] = {}
+    current_time = current.get("time")
+    if current_time:
+        current_record = {
+            "time": current_time,
+            "precipitation": current.get("precipitation", 0.0) or 0.0,
+            "rain": current.get("rain", 0.0) or 0.0,
+            "temperature_2m": current.get("temperature_2m", 25.0) or 25.0,
+            "relative_humidity_2m": current.get("relative_humidity_2m", 80.0) or 80.0,
+            "cloud_cover": current.get("cloud_cover", 0.0) or 0.0,
+            "wind_speed_10m": current.get("wind_speed_10m", 0.0) or 0.0,
+            "wind_direction_10m": current.get("wind_direction_10m", 0.0) or 0.0,
+            "wind_gusts_10m": current.get("wind_gusts_10m", 0.0) or 0.0,
+            "pressure_msl": current.get("pressure_msl", 1013.0) or 1013.0,
+            "dew_point_2m": current.get("dew_point_2m", 23.0) or 23.0,
+            "apparent_temperature": current.get("apparent_temperature", 28.0) or 28.0,
+            "weather_code": current.get("weather_code", 0) or 0,
+            "is_day": current.get("is_day", 1) or 1,
+            "soil_moisture_0_1cm": current.get("soil_moisture_0_1cm", 0.0) or 0.0,
+            "soil_moisture_1_3cm": current.get("soil_moisture_1_3cm", 0.0) or 0.0,
+        }
+
+    # Separar pasado (dias previos reales) de presente/futuro para no romper las
+    # funciones existentes que asumen hourly[0] = inicio de hoy (extract_simulation_params,
+    # get_weather_summary, tiene_lluvia_en_horizonte). El pasado real se expone
+    # aparte y alimenta la racha de lluvia y la humedad del suelo.
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    past_records = [r for r in hourly_records if str(r.get("time", ""))[:10] < today_str]
+    forecast_records = [r for r in hourly_records if str(r.get("time", ""))[:10] >= today_str]
+    past_daily = _aggregate_daily(past_records)
+
+    # Diario: conservar solo hoy/futuro para que 'pronostico' y 'lluvia_manana'
+    # apunten a dias hacia adelante (no a dias pasados de past_days).
+    forecast_daily = [d for d in daily_records if str(d.get("date", "")) >= today_str]
+
+    # Utiles en 'forecast' para no alterar la semantica previa: si por algun
+    # motivo no hubiera division temporal, dejamos todo en forecast.
+    if not forecast_records:
+        forecast_records = hourly_records
+    if not forecast_daily:
+        forecast_daily = daily_records
+
     return {
-        "hourly": hourly_records,
-        "daily": daily_records,
+        "hourly": forecast_records,
+        "daily": forecast_daily,
+        "current": current_record,
+        "past_daily": past_daily,
         "metadata": {
             "latitude": raw.get("latitude", MANGA_LAT),
             "longitude": raw.get("longitude", MANGA_LON),
@@ -237,6 +358,8 @@ def _empty_forecast() -> Dict[str, Any]:
     return {
         "hourly": [],
         "daily": [],
+        "current": {},
+        "past_daily": [],
         "metadata": {
             "latitude": MANGA_LAT,
             "longitude": MANGA_LON,
@@ -278,6 +401,7 @@ def extract_simulation_params(
     hourly_data: List[Dict],
     horas_pronostico: int = 72,
     nivel_marea_cm: float = 8.0,
+    past_daily: Optional[List[Dict]] = None,
 ) -> Dict[str, Any]:
     """
     Extrae los parametros de simulacion a partir de los datos horarios
@@ -324,8 +448,23 @@ def extract_simulation_params(
     # Datos diarios para humedad del suelo
     from .weather_service import compute_consecutive_rainy_days, estimate_soil_humidity
 
-    # Reconstruir daily data del hourly
+    # Reconstruir daily data del hourly (futuro/presente)
     daily_from_hourly = _aggregate_daily(forecast_hours)
+    # Preferir los dias pasados reales (Open-Meteo past_days) para la racha y
+    # la humedad del suelo; si no hay pasado, cae al forecast.
+    daily_base = past_daily or daily_from_hourly
+
+    # Humedad del suelo REAL de Open-Meteo (fraccion 0-1) si esta disponible;
+    # si no, cae a la heuristica estimada por dias lluviosos consecutivos reales.
+    hum_suelo = estimate_soil_humidity(daily_from_hourly)
+    for h in forecast_hours:
+        capa_0 = h.get("soil_moisture_0_1cm")
+        capa_1 = h.get("soil_moisture_1_3cm")
+        capa = (capa_0 or 0.0) if capa_0 not in (None, 0.0) else capa_1
+        if capa in (None, 0.0):
+            continue
+        hum_suelo = float(capa)
+        break
 
     return {
         "storm_peak_hour": float(peak_idx),
@@ -334,8 +473,8 @@ def extract_simulation_params(
         "mean_sea_level": nivel_marea_cm,
         "wind_direction_deg": round(avg_wind_dir, 1),
         "wind_speed_kmh": round(avg_wind_speed, 1),
-        "soil_humidity": round(estimate_soil_humidity(daily_from_hourly), 3),
-        "consecutive_rainy_days": compute_consecutive_rainy_days(daily_from_hourly),
+        "soil_humidity": round(hum_suelo, 3),
+        "consecutive_rainy_days": compute_consecutive_rainy_days(daily_base),
     }
 
 
@@ -598,25 +737,50 @@ class WeatherService:
             hourly_data=hourly,
             horas_pronostico=72,
             nivel_marea_cm=self.default_cm,
+            past_daily=forecast.get("past_daily"),
         )
 
         daily = forecast.get("daily", [])
+        current = forecast.get("current") or {}
         today = daily[0] if daily else {}
         now = datetime.now()
 
-        actual = _closest_hour_record(hourly)
+        # Lectura "ahora" EXACTA: bloque current de Open-Meteo (momento real).
+        # Si el bloque current no viene, se cae a la hora mas cercana del hourly.
+        actual = current if current else _closest_hour_record(hourly)
         dias_lluviosos = summary.get("dias_lluviosos", 0)
-        humedad_suelo = min(100.0, round((parametros.get("soil_humidity", 0.3) * 100), 1))
 
-        precip_actual = round(actual.get("rain", 0.0), 2)
+        humedad_suelo_real = (
+            float(actual.get("soil_moisture_0_1cm") or 0.0)
+            or float(actual.get("soil_moisture_1_3cm") or 0.0)
+            or 0.0
+        )
+        if humedad_suelo_real <= 0.0:
+            humedad_suelo_real = round(parametros.get("soil_humidity", 0.3) * 100, 1)
+        else:
+            humedad_suelo_real = round(min(1.0, humedad_suelo_real) * 100, 1)
+
+        precip_actual = round(actual.get("rain", 0.0) or 0.0, 2)
         nubosidad = actual.get("cloud_cover", 0.0) or 0.0
-        estado = determinar_estado(precipitacion_actual_mmh=precip_actual, nubosidad_pct=nubosidad)
+        weather_code = actual.get("weather_code")
+        estado = determinar_estado(
+            precipitacion_actual_mmh=precip_actual,
+            nubosidad_pct=nubosidad,
+            weather_code=weather_code,
+        )
 
-        # Lectura "ahora" suavizada: promedio de la ventana centrada en la hora
-        # mas cercana al instante actual (temperatura/humedad mas fiel).
-        temp_actual = _actual_promediado(hourly, "temperature_2m", 28.0, ventana=3)
-        hum_actual = _actual_promediado(hourly, "relative_humidity_2m", 80.0, ventana=3)
-        viento_actual = _actual_promediado(hourly, "wind_speed_10m", 0.0, ventana=2)
+        # Con el bloque current ya no hace falta promediar la ventana: el dato
+        # "ahora" es el del instante exacto. Se conserva como respaldo por si el
+        # bloque current estuviera vacio.
+        temp_actual = float(actual.get("temperature_2m") or 0.0) or (
+            _actual_promediado(hourly, "temperature_2m", 28.0, ventana=3)
+        )
+        hum_actual = float(actual.get("relative_humidity_2m") or 0.0) or (
+            _actual_promediado(hourly, "relative_humidity_2m", 80.0, ventana=3)
+        )
+        viento_actual = float(actual.get("wind_speed_10m") or 0.0) or (
+            _actual_promediado(hourly, "wind_speed_10m", 0.0, ventana=2)
+        )
 
         return {
             "source": "open-meteo",
@@ -630,11 +794,16 @@ class WeatherService:
             "nubosidad_pct": round(float(nubosidad), 1),
             "estado": estado,
             "estado_label": ESTADO_LABEL.get(estado, estado),
+            "weather_code": int(weather_code) if weather_code is not None else None,
             "precipitacion_actual_mm_h": precip_actual,
             "velocidad_viento_kmh": round(viento_actual, 1),
-            "direccion_viento_deg": round(actual.get("wind_direction_10m", 0.0), 1),
+            "direccion_viento_deg": round(float(actual.get("wind_direction_10m") or 0.0), 1),
+            "rafagas_kmh": round(float(actual.get("wind_gusts_10m") or 0.0), 1),
+            "presion_msl_hpa": round(float(actual.get("pressure_msl") or 0.0), 1),
+            "punto_rocio_c": round(float(actual.get("dew_point_2m") or 0.0), 1),
+            "sensacion_termica_c": round(float(actual.get("apparent_temperature") or temp_actual), 1),
             "dias_lluviosos_consecutivos": dias_lluviosos,
-            "humedad_suelo_pct": humedad_suelo,
+            "humedad_suelo_pct": humedad_suelo_real,
             "lluvia_total_mm": summary.get("lluvia_total_mm", 0.0),
             "temp_max_c": summary.get("temp_max_c", 30.0),
             "temp_min_c": summary.get("temp_min_c", 24.0),
@@ -648,7 +817,7 @@ class WeatherService:
                     "dia": d.get("date"),
                     "lluvia_mm": d.get("rain_sum", 0.0),
                     "temp_max_c": d.get("temperature_2m_max", 30.0),
-                    # Diario no trae lluvia horaria; usamos el acumulado para clasificar
+                    "prob_lluvia_pct": round(float(d.get("precipitation_probability_max") or 0.0), 0),
                     "estado": (ESTADO_LLUVIOSO
                                if (d.get("rain_sum", 0.0) or 0.0) > 2.0
                                else (ESTADO_NUBLADO if (d.get("cloud_cover_mean", 0.0) or 0.0) > 70 else ESTADO_SOLEADO)),
@@ -793,6 +962,7 @@ class WeatherService:
                 "dia": dia,
                 "lluvia_mm": round(lluvia, 2),
                 "temp_max_c": round(temp_max, 1),
+                "prob_lluvia_pct": round(100.0 if lluvia > 2.0 else 0.0, 0),
                 "estado": ESTADO_LLUVIOSO if lluvia > 2.0 else (ESTADO_NUBLADO if nubosidad > 70 else ESTADO_SOLEADO),
             })
 
@@ -808,9 +978,14 @@ class WeatherService:
             "nubosidad_pct": round(float(nubosidad), 1),
             "estado": estado,
             "estado_label": ESTADO_LABEL.get(estado, estado),
+            "weather_code": None,
             "precipitacion_actual_mm_h": round(float(precipitacion_actual), 2),
             "velocidad_viento_kmh": round(float(viento), 1),
             "direccion_viento_deg": round(float(viento_dir), 1),
+            "rafagas_kmh": round(float(viento_max), 1),
+            "presion_msl_hpa": 1013.0,
+            "punto_rocio_c": round(float(temp_min), 1),
+            "sensacion_termica_c": round(float(temperatura), 1),
             "dias_lluviosos_consecutivos": dias_lluviosos,
             "humedad_suelo_pct": round(float(humedad_suelo), 1),
             "lluvia_total_mm": round(float(lluvia_total), 2),

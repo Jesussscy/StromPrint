@@ -116,6 +116,7 @@ export interface DiaPronostico {
   dia: string;
   lluvia_mm: number;
   temp_max_c: number;
+  prob_lluvia_pct?: number;
   estado?: EstadoMeteo;
 }
 
@@ -131,9 +132,14 @@ export interface WeatherResponse {
   nubosidad_pct: number;
   estado: EstadoMeteo;
   estado_label: string;
+  weather_code?: number | null;
   precipitacion_actual_mm_h: number;
   velocidad_viento_kmh: number;
   direccion_viento_deg: number;
+  rafagas_kmh?: number;
+  presion_msl_hpa?: number;
+  punto_rocio_c?: number;
+  sensacion_termica_c?: number;
   dias_lluviosos_consecutivos: number;
   humedad_suelo_pct: number;
   lluvia_total_mm: number;
@@ -147,10 +153,11 @@ export interface WeatherResponse {
   parametros_simulacion?: Record<string, unknown>;
 }
 
-export function fetchWeather(): Promise<{ weather: WeatherResponse }> {
-  return stormprintFetch<{ weather: WeatherResponse }>("/api/v1/weather", {
-    method: "GET",
-  });
+export function fetchWeather(force = false): Promise<{ weather: WeatherResponse }> {
+  return stormprintFetch<{ weather: WeatherResponse }>(
+    `/api/v1/weather${force ? "?force_refresh=true" : ""}`,
+    { method: "GET" }
+  );
 }
 
 export interface PrediccionGuardada {

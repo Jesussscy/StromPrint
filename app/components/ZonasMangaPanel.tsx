@@ -207,29 +207,49 @@ export default function ZonasMangaPanel({
               </button>
               <button
                 onClick={() => onSelect(seleccionada ? null : zona)}
-                className="flex-1 min-w-0 flex items-center gap-2.5 rounded-xl px-2 py-2"
+                className="flex-1 min-w-0 flex flex-col gap-1 rounded-xl px-2 py-2"
               >
-                <span
-                  className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
-                  style={{ background: colorDeRiesgo(riesgo), boxShadow: riesgo === "CRITICO" ? "0 0 8px #B000FF" : undefined }}
-                />
-                <span className="flex-1 min-w-0">
-                  <span className="text-[12px] font-semibold text-white truncate flex items-center gap-1.5">
-                    <span className="font-mono text-[10px] text-slate-500">{String(zona.id).padStart(2, "0")}.</span>
-                    {zona.nombre}
+                <div className="flex items-center gap-2">
+                  <span
+                    className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
+                    style={{ background: colorDeRiesgo(riesgo), boxShadow: riesgo === "CRITICO" ? "0 0 8px #B000FF" : undefined }}
+                  />
+                  <span className="flex-1 min-w-0">
+                    <span className="text-[12px] font-semibold text-white truncate flex items-center gap-1.5">
+                      <span className="font-mono text-[10px] text-slate-500">{String(zona.id).padStart(2, "0")}.</span>
+                      {zona.nombre}
+                    </span>
+                    <span className="text-[10px] text-slate-500 truncate block">
+                      {zona.ubicacion} · {zona.tipo_amenaza}
+                    </span>
                   </span>
-                  <span className="text-[10px] text-slate-500 truncate block">
-                    {zona.ubicacion} · {zona.tipo_amenaza}
+                  <span className="text-right shrink-0">
+                    <span className="text-[11px] font-bold font-tabular" style={{ color: colorDeRiesgo(riesgo) }}>
+                      {nivel.toFixed(1)} cm
+                    </span>
+                    <span className="block text-[9px] font-mono uppercase tracking-wider" style={{ color: colorDeRiesgo(riesgo) }}>
+                      {RIESGO_META[riesgo].label}
+                    </span>
                   </span>
-                </span>
-                <span className="text-right shrink-0">
-                  <span className="text-[11px] font-bold font-tabular" style={{ color: colorDeRiesgo(riesgo) }}>
-                    {nivel.toFixed(1)} cm
-                  </span>
-                  <span className="block text-[9px] font-mono uppercase tracking-wider" style={{ color: colorDeRiesgo(riesgo) }}>
-                    {RIESGO_META[riesgo].label}
-                  </span>
-                </span>
+                </div>
+                {/* Progress bar */}
+                <div className="ml-5 mt-0.5">
+                  <div className="relative h-1.5 rounded-full bg-black/30 overflow-hidden">
+                    <div
+                      className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
+                      style={{
+                        width: `${Math.min(100, (nivel / Math.max(zona.altura_critica, 1)) * 100)}%`,
+                        backgroundColor: colorDeRiesgo(riesgo),
+                        boxShadow: nivel >= zona.altura_critica ? `0 0 6px ${colorDeRiesgo(riesgo)}` : undefined,
+                      }}
+                    />
+                    {/* Critical threshold marker */}
+                    <span
+                      className="absolute top-[-2px] bottom-[-2px] w-px bg-white/30"
+                      style={{ left: "100%" }}
+                    />
+                  </div>
+                </div>
               </button>
             </div>
           );

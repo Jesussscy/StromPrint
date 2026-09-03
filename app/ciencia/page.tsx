@@ -5,20 +5,14 @@ import { motion, useScroll, useSpring } from "framer-motion";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import InteractiveEquation from "./InteractiveEquation";
-import ValidationChart from "./ValidationChart";
-import AnalyticalChart from "./AnalyticalChart";
-import ParametrosVariables from "./ParametrosVariables";
-import ConvolucionVisual from "./ConvolucionVisual";
-import AnalyticalWave3D from "./AnalyticalWave3D";
+import { PanelSimulador } from "./Simulador3D";
 import DataFlowDiagram from "@/app/components/DataFlowDiagram";
 import Navbar from "@/app/components/Navbar";
 import NotificationBanner from "@/app/components/NotificationBanner";
 import MobileBottomNav, {
   type MobileNavItem,
   IconPanel,
-  IconChart,
   IconWeather,
-  IconBell,
   IconHistory,
   IconScience,
 } from "@/app/components/MobileBottomNav";
@@ -34,10 +28,9 @@ const FADE = {
 
 const SECCIONES = [
   { id: "modelo", num: "01", label: "Modelo Físico" },
-  { id: "analitica", num: "02", label: "Solución Analítica" },
-  { id: "flujo", num: "03", label: "Flujo de Datos" },
-  { id: "validacion", num: "04", label: "Validación" },
-  { id: "hardware", num: "05", label: "Hardware y Software" },
+  { id: "flujo", num: "02", label: "Flujo de Datos" },
+  { id: "hardware", num: "03", label: "Hardware y Software" },
+  { id: "simulador", num: "04", label: "Simulador 3D" },
 ];
 
 // Barra de navegación inferior móvil específica de la página /ciencia:
@@ -45,10 +38,9 @@ const SECCIONES = [
 const NAV_CIENCIA: MobileNavItem[] = [
   { href: "/", label: "Panel", action: "route", icon: <IconPanel /> },
   { href: "#modelo", label: "Modelo", action: "scroll", icon: <IconScience /> },
-  { href: "#analitica", label: "Analítica", action: "scroll", icon: <IconChart /> },
   { href: "#flujo", label: "Flujo", action: "scroll", icon: <IconWeather /> },
-  { href: "#validacion", label: "Validación", action: "scroll", icon: <IconBell /> },
   { href: "#hardware", label: "Hardware", action: "scroll", icon: <IconHistory /> },
+  { href: "#simulador", label: "Simulador 3D", action: "scroll", icon: <IconScience /> },
 ];
 
 export default function CienciaPage() {
@@ -198,56 +190,11 @@ export default function CienciaPage() {
           <InteractiveEquation />
         </motion.section>
 
-        {/* 2. Solución Analítica */}
-        <motion.section {...FADE} id="analitica" className="scroll-mt-24">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg glass-glow">
-              <span className="font-display text-sm font-bold text-cyan">02</span>
-            </div>
-            <h2 className="font-display text-2xl font-bold text-white">Solución Analítica por Tramos</h2>
-          </div>
-          <p className="text-slate-400 leading-relaxed mb-6">
-            StormPrint resuelve el modelo mediante una solución <strong className="text-white">analítica por tramos</strong>.
-            Dividimos el tiempo en intervalos donde <code className="font-mono text-cyan">c(t)</code> y{" "}
-            <code className="font-mono text-cyan">k(t)</code> son constantes y, en cada tramo, la ecuación
-            característica <code className="font-mono">m·r² + c·r + k = 0</code> da una solución cerrada
-            (suma de exponenciales, senos amortiguados o el caso crítico). El pulso de lluvia, al no tener
-            primitiva elemental, se resuelve con la{" "}
-            <strong className="text-white">integral de convolución de Duhamel</strong>:
-          </p>
-
-          <div className="glass-strong rounded-2xl p-6 mb-6 text-center">
-            <KaTeXBlock
-              math="m \cdot H''(t) + c \cdot H'(t) + k \cdot H(t) = F_{\text{lluvia}}(t) + F_{\text{marea}}(t)"
-              displayMode
-            />
-            <KaTeXBlock
-              math="H_p(t) = \int_0^t F(\tau)\, g(t-\tau)\, d\tau \qquad g(\tau)= \text{respuesta al impulso}"
-              displayMode
-            />
-          </div>
-
-          <p className="text-slate-400 leading-relaxed mb-6">
-            Aquí tienes la curva resultante en vivo. Ajustá el número de tramos para ver cómo se refina
-            la solución. Los parámetros físicos del sistema se muestran a la derecha:
-          </p>
-          <AnalyticalChart />
-
-          {/* Parámetros c(t)/k(t) + explicación de la convolución + vista 3D */}
-          <div className="mt-6 grid gap-6 lg:grid-cols-2">
-            <ParametrosVariables />
-            <ConvolucionVisual />
-          </div>
-          <div className="mt-6">
-            <AnalyticalWave3D />
-          </div>
-        </motion.section>
-
-        {/* 3. Flujo de Datos */}
+        {/* 2. Flujo de Datos */}
         <motion.section {...FADE} id="flujo" className="scroll-mt-24">
           <div className="flex items-center gap-3 mb-6">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg glass-glow">
-              <span className="font-display text-sm font-bold text-cyan">03</span>
+              <span className="font-display text-sm font-bold text-cyan">02</span>
             </div>
             <h2 className="font-display text-2xl font-bold text-white">Flujo de Datos en Tiempo Real</h2>
           </div>
@@ -259,28 +206,11 @@ export default function CienciaPage() {
           </div>
         </motion.section>
 
-        {/* 4. Validación */}
-        <motion.section {...FADE} id="validacion" className="scroll-mt-24">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg glass-glow">
-              <span className="font-display text-sm font-bold text-cyan">04</span>
-            </div>
-            <h2 className="font-display text-2xl font-bold text-white">Validación del Modelo</h2>
-          </div>
-          <p className="text-slate-400 leading-relaxed mb-2">
-            Validamos el motor en dos frentes: internamente comparamos la <strong className="text-white">solución analítica por tramos</strong>{" "}
-            contra una <strong className="text-white">referencia numérica por pasos</strong> (solve_ivp) en el mismo escenario de
-            tormenta — la curva y los errores de abajo se calculan en vivo sobre esa corrida — y en campo, la
-            estación DAVIS registra eventos reales para afinar el modelo.
-          </p>
-          <ValidationChart />
-        </motion.section>
-
-        {/* 5. Hardware y Software */}
+        {/* 3. Hardware y Software */}
         <motion.section {...FADE} id="hardware" className="scroll-mt-24">
           <div className="flex items-center gap-3 mb-6">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg glass-glow">
-              <span className="font-display text-sm font-bold text-cyan">05</span>
+              <span className="font-display text-sm font-bold text-cyan">03</span>
             </div>
             <h2 className="font-display text-2xl font-bold text-white">Hardware y Software</h2>
           </div>
@@ -339,6 +269,34 @@ export default function CienciaPage() {
               </div>
             </div>
           </div>
+        </motion.section>
+
+        {/* 4. Simulador 3D */}
+        <motion.section {...FADE} id="simulador" className="scroll-mt-24">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg glass-glow">
+              <span className="font-display text-sm font-bold text-[#00FF87]">04</span>
+            </div>
+            <h2 className="font-display text-2xl font-bold text-white">Simulador 3D de Flujo en XYZ</h2>
+          </div>
+          <p className="text-slate-400 leading-relaxed mb-6">
+            El modelo se extiende a <strong className="text-white">tres ejes independientes</strong>:{" "}
+            <span className="font-mono text-[#FF3370]">X</span> (flujo Este-Oeste en metros),{" "}
+            <span className="font-mono text-[#00FF87]">Y</span> (flujo Norte-Sur en metros) y{" "}
+            <span className="font-mono text-cyan">Z</span> (nivel de agua en cm). Cada eje resuelve su propia
+            EDO de segundo orden, con{" "}
+            <span className="font-mono text-cyan">Z</span> como fuente que arrastra el transporte horizontal{" "}
+            <span className="font-mono text-[#FF3370]">X</span>/<span className="font-mono text-[#00FF87]">Y</span>{" "}
+            por gradiente, más el empuje del viento. Ajustá los parámetros y la posición inicial, reproducí
+            la tormenta y exportá el registro de coordenadas:
+          </p>
+          <div className="glass-strong rounded-2xl p-6 mb-6 text-center">
+            <KaTeXBlock
+              math="Z''+c(t)\,Z'+k(t)\,Z = F_{\text{lluvia}}+F_{\text{marea}}+F_{\text{viento}},\qquad X''+c\,X'+k\,X = g\,Z + F_{\text{viento}}"
+              displayMode
+            />
+          </div>
+          <PanelSimulador />
         </motion.section>
 
         {/* Navigation */}

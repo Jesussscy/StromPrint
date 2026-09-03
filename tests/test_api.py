@@ -51,14 +51,6 @@ def test_weather_requiere_api_key(client):
     assert client.get("/api/v1/weather").status_code == 401
 
 
-def test_comparacion_requiere_api_key(client):
-    r = client.post(
-        "/api/v1/comparacion",
-        json={"duration_hours": 24, "storm_peak_hour": 10, "storm_intensity": 30},
-    )
-    assert r.status_code == 401
-
-
 def test_predict_requiere_api_key(client):
     r = client.post("/api/v1/predict", json={"duration_hours": 24, "storm_intensity": 30})
     assert r.status_code == 401

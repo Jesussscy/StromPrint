@@ -43,7 +43,6 @@ from .physics_engine import (
     compute_advanced_metrics,
     run_simulation,
 )
-from .physics_engine_analytical import PhysicsEngineAnalytical
 from .notification_service import notification_service
 from .security import (
     RATE_LIMIT_PREDICT,
@@ -277,16 +276,6 @@ class InfraResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Pydantic schemas — Comparacion academica (numerico analitico)
-# ---------------------------------------------------------------------------
-class ComparacionRequest(BaseModel):
-    duration_hours: float = Field(default=72.0, ge=1.0, le=336.0)
-    storm_peak_hour: float = Field(default=12.0, ge=0.0, le=336.0)
-    storm_intensity: float = Field(default=42.0, ge=0.0, le=200.0)
-    subtramos: int = Field(default=1, ge=1, le=48)
-
-
-# ---------------------------------------------------------------------------
 # Routes — Healthcheck
 # ---------------------------------------------------------------------------
 @app.get("/api/v1/health")
@@ -448,38 +437,6 @@ async def notify_status(request: Request):
         "total_suscripciones": len(notification_service.subscriptions),
     }
 
-
-
-# ---------------------------------------------------------------------------
-# Routes — Comparacion academica (solucion analitica vs numerica)
-# ---------------------------------------------------------------------------
-@app.post("/api/v1/comparacion")
-@limiter.limit(RATE_LIMIT_PREDECIR)
-async def comparacion(
-    request: Request,
-    payload: ComparacionRequest,
-    _api_key: str = Depends(verify_api_key),
-):
-    try:
-        params = PhysicalParameters(
-            damping=0.45,
-            stiffness=0.65,
-        )
-        engine = PhysicsEngineAnalytical(params=params)
-        resultado = engine.comparar_con_numerico(
-            duration_hours=float(payload.duration_hours),
-            resolution_hours=1.0,
-            storm_peak_hour=float(payload.storm_peak_hour),
-            storm_intensity=float(payload.storm_intensity),
-            subtramos=payload.subtramos,
-        )
-        resultado["ecuacion"] = ECUACION_DISPLAY
-        return resultado
-    except ValueError as exc:
-        return JSONResponse(status_code=422, content={"error": "validation_error", "message": str(exc)})
-    except Exception as exc:
-        logger.exception("Unhandled error in /comparacion")
-        return JSONResponse(status_code=500, content=sanitize_exception_response(exc))
 
 
 # ---------------------------------------------------------------------------

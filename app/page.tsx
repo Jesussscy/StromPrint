@@ -8,7 +8,6 @@ import TopographicMesh from "@/app/components/TopographicMesh";
 import ParticleCanvas from "@/app/components/ParticleCanvas";
 import CursorTracker from "@/app/components/CursorTracker";
 import TimelineSlider from "@/app/components/TimelineSlider";
-import MetricsPanel from "@/app/components/MetricsPanel";
 import WeatherBadge from "@/app/components/WeatherBadge";
 import ForecastDayCard from "@/app/components/ForecastDayCard";
 import ForecastChart from "@/app/components/ForecastChart";
@@ -22,17 +21,18 @@ import NotificationBanner from "@/app/components/NotificationBanner";
 // solo cuando el cliente lo monta, con ssr:false para no renderizar en el
 // servidor. En móvil además se carga apenas entra en viewport (loading lazy).
 import ZonasMangaPanel from "@/app/components/ZonasMangaPanel";
-import WaterLevelBars from "@/app/components/WaterLevelBars";
 import WeatherStation from "@/app/components/WeatherStation";
 import HistoryPanel from "@/app/components/HistoryPanel";
 import ScenarioComparator from "@/app/components/ScenarioComparator";
-import PeakAlert from "@/app/components/PeakAlert";
 import MobileBottomNav from "@/app/components/MobileBottomNav";
 import LazyMount from "@/app/components/LazyMount";
+import MonitoringMetricsRow from "@/app/components/MonitoringMetricsRow";
+import ProjectionChart from "@/app/components/ProjectionChart";
+import NeighborhoodStatusBar from "@/app/components/NeighborhoodStatusBar";
+import Footer from "@/app/components/Footer";
 import {
   predecir,
   computeDaySummaries,
-  riskColor,
   type PrediccionResponse,
 } from "@/app/lib/api";
 
@@ -265,6 +265,7 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
     const z = leerParamURL("zona");
     return z ? Number(z) : null;
   });
+  const [controlesAbiertos, setControlesAbiertos] = useState(false);
   const playbackRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const urlHoraRef = useRef(false);
 
@@ -274,13 +275,11 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
 
   const onTogglePlay = useCallback(() => setIsPlaying((p) => !p), []);
 
-  // Scrub del timeline: sincroniza además la URL (?hora=NN) para compartir.
   const handleScrub = useCallback((h: number) => {
     setCurrentHour(h);
     if (typeof window !== "undefined") history.replaceState(null, "", `?hora=${h}`);
   }, []);
 
-  // Hora compartida vía URL o vía clic en el gráfico (evento global).
   useEffect(() => {
     if (typeof window === "undefined") return;
     const onHora = (e: Event) => {
@@ -296,7 +295,6 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
     return () => window.removeEventListener("stormprint:hora", onHora);
   }, []);
 
-  // Al cargar la predicción, respetar la hora del deep-link una sola vez.
   useEffect(() => {
     if (prediccion && !urlHoraRef.current) {
       urlHoraRef.current = true;
@@ -321,8 +319,6 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
       });
       setPrediccion(result);
       setCurrentHour(0);
-      // La simulación NO avanza sola: queda en pausa en la hora 0 para que el
-      // usuario controle cuándo iniciar la reproducción (Play o Simular).
       setIsPlaying(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al cargar predicción.");
@@ -356,142 +352,148 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
 
   const daySummaries = useMemo(() => prediccion ? computeDaySummaries(prediccion.puntos) : [], [prediccion]);
 
-  // Estado del punto de pico (para el color del resumen móvil)
-  const nivelPicoTone = useMemo(() => {
-    if (!prediccion || prediccion.puntos.length === 0) return "#00E5FF";
-    const pico = prediccion.puntos.reduce((m, p) => (p.nivel_agua_cm > m.nivel_agua_cm ? p : m));
-    return riskColor(pico.estado);
-  }, [prediccion]);
-
   return (
-    <div className="mx-auto max-w-7xl">
-      {/* Controls */}
-      <div className="glass-strong rounded-2xl mb-4 p-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-          <div className="flex items-center gap-3">
+    <div className="mx-auto max-w-7xl space-y-4">
+
+      {/* ═══ FILA 1: HEADER + MÉTRICAS PRINCIPALES ═══ */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-risk-normal animate-pulse-slow" />
             <p className="font-mono text-[10px] uppercase tracking-[0.15em] text-slate-400">
               MONITOREO · BARRIO MANGA
             </p>
           </div>
-          <WeatherBadge
-            meteorologia={prediccion?.meteorologia_resumen ?? null}
-            isLoading={isLoading}
-            estado={prediccion?.estado_meteorologico ?? (usarMeteo ? "sin_datos" : "soleado")}
-            confianza={prediccion?.confianza_meteo}
-          />
-        </div>
-        <p className="text-xs text-slate-500 mb-4">
-          Simulación del nivel de acumulación de agua H(t) con datos meteorológicos en tiempo real.
-        </p>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-3">
-          <Slider label="Lluvia" value={lluvia} onChange={setLluvia} min={0} max={50} step={0.1} unit="mm/h" color="#00F3FF" disabled={usarMeteo} />
-          <Slider label="Marea" value={marea} onChange={setMarea} min={0} max={100} step={0.5} unit="cm" color="#B000FF" disabled={usarMeteo} />
-          <Slider label="Drenaje" value={drenaje} onChange={setDrenaje} min={0} max={100} step={1} unit="%" color="#00E5FF" disabled={usarMeteo} />
-        </div>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <label className="flex items-center gap-2 cursor-pointer min-h-[32px]">
-            <input type="checkbox" checked={usarMeteo} onChange={(e) => setUsarMeteo(e.target.checked)} className="accent-cyan h-4 w-4" />
-            <span className="text-xs text-slate-500">Usar datos meteorológicos reales</span>
-          </label>
-          {usarMeteo ? (
-            <span className="flex items-center gap-2 font-mono text-[11px] text-slate-500">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
-              Simulación bloqueada · meteo en vivo
-            </span>
-          ) : (
-            <button onClick={loadPrediction} disabled={isLoading} className="glass-glow rounded-lg px-4 py-2.5 font-mono text-[11px] uppercase tracking-wider text-cyan hover:bg-cyan/10 active:bg-cyan/10 transition min-h-[40px]">
-              {isLoading ? "Calculando..." : "Simular"}
+          <div className="flex items-center gap-2">
+            <WeatherBadge
+              meteorologia={prediccion?.meteorologia_resumen ?? null}
+              isLoading={isLoading}
+              estado={prediccion?.estado_meteorologico ?? (usarMeteo ? "sin_datos" : "soleado")}
+              confianza={prediccion?.confianza_meteo}
+            />
+            <button
+              onClick={() => setControlesAbiertos(!controlesAbiertos)}
+              className="glass rounded-lg px-3 py-2 font-mono text-[10px] uppercase tracking-wider text-slate-400 hover:text-cyan transition flex items-center gap-1.5"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
+              Controles
             </button>
-          )}
+          </div>
         </div>
+        <MonitoringMetricsRow punto={activePunto} prediccion={prediccion} isLoading={isLoading} />
       </div>
 
-      {/* Main Grid: Map + Zonas + Metrics */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.7fr_1fr]">
-        <div className="glass-strong rounded-2xl h-[420px] p-1 md:h-[640px] lg:h-[640px] overflow-hidden relative hud-scanlines">
-          {/* Visor 3D de Cesium exclusivo para el panel en vivo. LazyMount
-              difiere la descarga del bundle de Cesium hasta que el panel se
-              acerca al viewport (scroll), y el skeleton mantiene la altura. */}
-          <LazyMount
-            placeholder={
-              <div className="absolute inset-0 flex items-center justify-center bg-ocean">
-                <div className="flex flex-col items-center gap-3">
-                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-cyan/40 border-t-cyan" />
-                  <span className="font-mono text-[10px] uppercase tracking-widest text-cyan/70">
-                    Visor 3D listo al hacer scroll…
-                  </span>
-                </div>
-              </div>
-            }
-          >
-            <CesiumMap
-              nivelAguaCm={activePunto?.nivel_agua_cm ?? 0}
-              nivelMaximoCm={prediccion?.nivel_maximo_cm ?? 100}
-              focusZonaId={zonaEnfocada}
-              onSelectZona={onSelectZona}
-              horaLocal={Math.floor(currentHour) % 24}
-              stormMode={stormMode}
-              puntoMeteo={activePunto}
-              meteorologia={prediccion?.meteorologia_resumen ?? null}
-            />
-          </LazyMount>
-
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={onToggleStorm}
-            className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] rounded-xl px-6 py-3 font-mono text-[11px] uppercase tracking-wider transition-all duration-300 ${
-              stormMode
-                ? "glass-glow text-risk-emergency border-risk-emergency/30"
-                : "glass-glow text-cyan"
-            }`}
-          >
-            {stormMode ? (
-              <span className="flex items-center gap-2">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2" width="20" height="20" rx="2" /></svg>
-                Detener tormenta
+      {/* ═══ CONTROLES (colapsables) ═══ */}
+      {controlesAbiertos && (
+        <div className="glass-strong rounded-2xl p-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-3">
+            <Slider label="Lluvia" value={lluvia} onChange={setLluvia} min={0} max={50} step={0.1} unit="mm/h" color="#00F3FF" disabled={usarMeteo} />
+            <Slider label="Marea" value={marea} onChange={setMarea} min={0} max={100} step={0.5} unit="cm" color="#B000FF" disabled={usarMeteo} />
+            <Slider label="Drenaje" value={drenaje} onChange={setDrenaje} min={0} max={100} step={1} unit="%" color="#00E5FF" disabled={usarMeteo} />
+          </div>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <label className="flex items-center gap-2 cursor-pointer min-h-[32px]">
+              <input type="checkbox" checked={usarMeteo} onChange={(e) => setUsarMeteo(e.target.checked)} className="accent-cyan h-4 w-4" />
+              <span className="text-xs text-slate-500">Usar datos meteorológicos reales</span>
+            </label>
+            {usarMeteo ? (
+              <span className="flex items-center gap-2 font-mono text-[11px] text-slate-500">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                Simulación bloqueada · meteo en vivo
               </span>
             ) : (
-              <span className="flex items-center gap-2">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21" /></svg>
-                Simular tormenta
-              </span>
+              <button onClick={loadPrediction} disabled={isLoading} className="glass-glow rounded-lg px-4 py-2.5 font-mono text-[11px] uppercase tracking-wider text-cyan hover:bg-cyan/10 active:bg-cyan/10 transition min-h-[40px]">
+                {isLoading ? "Calculando..." : "Simular"}
+              </button>
             )}
-          </motion.button>
+          </div>
         </div>
+      )}
 
-        <div className="flex flex-col gap-4 min-w-0">
-          <ZonasMangaPanel
+      {/* ═══ FILA 2: MAPA 3D (ANCHO COMPLETO) ═══ */}
+      <div className="glass-strong rounded-2xl h-[420px] p-1 md:h-[560px] lg:h-[600px] overflow-hidden relative hud-scanlines">
+        <LazyMount
+          placeholder={
+            <div className="absolute inset-0 flex items-center justify-center bg-ocean">
+              <div className="flex flex-col items-center gap-3">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-cyan/40 border-t-cyan" />
+                <span className="font-mono text-[10px] uppercase tracking-widest text-cyan/70">
+                  Visor 3D listo al hacer scroll…
+                </span>
+              </div>
+            </div>
+          }
+        >
+          <CesiumMap
             nivelAguaCm={activePunto?.nivel_agua_cm ?? 0}
             nivelMaximoCm={prediccion?.nivel_maximo_cm ?? 100}
-            selectedId={zonaEnfocada}
-            onSelect={onSelectZona}
+            focusZonaId={zonaEnfocada}
+            onSelectZona={onSelectZona}
+            horaLocal={Math.floor(currentHour) % 24}
+            stormMode={stormMode}
+            puntoMeteo={activePunto}
+            meteorologia={prediccion?.meteorologia_resumen ?? null}
           />
-          <MetricsPanel punto={activePunto} prediccion={prediccion} isLoading={isLoading} error={error} onRetry={loadPrediction} />
+        </LazyMount>
+
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={onToggleStorm}
+          className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] rounded-xl px-6 py-3 font-mono text-[11px] uppercase tracking-wider transition-all duration-300 ${
+            stormMode
+              ? "glass-glow text-risk-emergency border-risk-emergency/30"
+              : "glass-glow text-cyan"
+          }`}
+        >
+          {stormMode ? (
+            <span className="flex items-center gap-2">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2" width="20" height="20" rx="2" /></svg>
+              Detener tormenta
+            </span>
+          ) : (
+            <span className="flex items-center gap-2">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21" /></svg>
+              Simular tormenta
+            </span>
+          )}
+        </motion.button>
+      </div>
+
+      {/* ═══ FILA 3: ZONAS DE RIESGO ═══ */}
+      <ZonasMangaPanel
+        nivelAguaCm={activePunto?.nivel_agua_cm ?? 0}
+        nivelMaximoCm={prediccion?.nivel_maximo_cm ?? 100}
+        selectedId={zonaEnfocada}
+        onSelect={onSelectZona}
+      />
+
+      {/* ═══ FILA 4: GRÁFICO DE PROYECCIÓN ═══ */}
+      <ProjectionChart puntos={prediccion?.puntos ?? []} currentHour={currentHour} />
+
+      {/* ═══ FILA 5: ESTADO DEL BARRIO ═══ */}
+      <NeighborhoodStatusBar prediccion={prediccion} punto={activePunto} />
+
+      {/* ═══ NARRATIVA DEL MODELO ═══ */}
+      {prediccion && (
+        <div className="glass rounded-2xl p-4">
+          <p className="font-mono text-[10px] uppercase tracking-widest text-slate-500 mb-2">
+            Análisis del Modelo
+          </p>
+          <p className="text-sm text-slate-300 leading-relaxed">{prediccion.narrativa}</p>
+          <div className="mt-3 pt-3 border-t border-white/5">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-slate-500 mb-1">Recomendación</p>
+            <p className="text-sm font-medium" style={{ color: "#00E5FF" }}>{prediccion.recomendacion}</p>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Aviso proactivo del pico previsto */}
-      <div className="mt-4">
-        <PeakAlert prediccion={prediccion} />
-      </div>
+      {/* ═══ TIMELINE ═══ */}
+      <TimelineSlider puntos={prediccion?.puntos ?? []} currentHour={currentHour} onScrub={handleScrub} isPlaying={isPlaying} onTogglePlay={onTogglePlay} />
 
-      {/* Barras de nivel de agua en tiempo real */}
-      <div className="mt-4">
-        <WaterLevelBars
-          nivelAguaCm={activePunto?.nivel_agua_cm ?? 0}
-          punto={activePunto}
-          zonasCriticas={
-            (prediccion?.puntos ?? []).filter((p) => p.nivel_agua_cm >= 100).length > 0 ? 3 : 0
-          }
-        />
-      </div>
-
-      {/* Forecast Cards */}
+      {/* ═══ PRONÓSTICO POR DÍA ═══ */}
       {daySummaries.length > 0 && (
-        <div className="mt-4">
+        <div>
           <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.15em] text-slate-500">
             Pronóstico por día
           </p>
@@ -503,34 +505,23 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
         </div>
       )}
 
-      {/* Timeline */}
-      <div className="mt-4">
-        <TimelineSlider puntos={prediccion?.puntos ?? []} currentHour={currentHour} onScrub={handleScrub} isPlaying={isPlaying} onTogglePlay={onTogglePlay} />
-      </div>
-
-      {/* 7-Day Summary Dashboard */}
+      {/* ═══ RESUMEN 7 DÍAS ═══ */}
       {prediccion && prediccion.puntos.length > 0 && (
-        <div className="mt-6">
-          <SummaryDashboard puntos={prediccion.puntos} daySummaries={daySummaries} />
-        </div>
+        <SummaryDashboard puntos={prediccion.puntos} daySummaries={daySummaries} />
       )}
 
-      {/* Resumen de un vistazo — solo móvil: métricas clave en carrusel
-          horizontal con scroll-snap para lectura rápida sin desplazarse. */}
-      <div className="mt-6 lg:hidden snap-scroll-x" aria-label="Resumen en vivo">
-        {[
-          { label: "Nivel actual", value: activePunto ? `${activePunto.nivel_agua_cm.toFixed(0)} cm` : "—", tone: activePunto ? riskColor(activePunto.estado) : "#00E5FF" },
-          { label: "Pico máximo", value: prediccion ? `${prediccion.nivel_maximo_cm.toFixed(0)} cm` : "—", tone: nivelPicoTone },
-          { label: "Pronóstico", value: prediccion ? `${prediccion.horas_pronostico} h` : "—", tone: "#FFFFFF" },
-          { label: "Marea (config)", value: `${marea} cm`, tone: "#B000FF" },
-          { label: "Drenaje (config)", value: `${drenaje}%`, tone: "#00E5FF" },
-        ].map((s) => (
-          <div key={s.label} className="glass-strong rounded-2xl p-4">
-            <p className="font-mono text-[9px] uppercase tracking-widest text-slate-500">{s.label}</p>
-            <p className="mt-1 font-display text-xl font-bold font-tabular" style={{ color: s.tone }}>{s.value}</p>
-          </div>
-        ))}
-      </div>
+      {/* ═══ ERRORES ═══ */}
+      {error && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          <span>{error}</span>
+          <button
+            onClick={loadPrediction}
+            className="glass-glow shrink-0 rounded-lg px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-cyan hover:bg-cyan/10 transition min-h-[44px] min-w-[44px]"
+          >
+            Reintentar
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -714,28 +705,6 @@ function CTASection() {
   );
 }
 
-function FooterSection() {
-  return (
-    <footer className="border-t border-cyan/10 py-10 px-6 pb-24 md:pb-10">
-      <div className="mx-auto max-w-7xl flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
-            <circle cx="16" cy="16" r="15" stroke="#00F3FF" strokeWidth="1.5" opacity="0.4" />
-            <path d="M16 8C16 8 10 15 10 19a6 6 0 0 0 12 0c0-4-6-11-6-11z" fill="#00F3FF" opacity="0.6" />
-          </svg>
-          <span className="font-display text-xs font-bold tracking-wider text-white">STORM//PRINT</span>
-        </div>
-        <div className="flex flex-wrap gap-6 text-[10px] font-mono text-slate-600">
-          <span>Barrio Manga, Cartagena</span>
-          <span>10.4°N, 75.5°W</span>
-          <span>Open-Meteo (CC BY 4.0)</span>
-        </div>
-        <p className="text-[10px] text-slate-600">© 2026 StormPrint</p>
-      </div>
-    </footer>
-  );
-}
-
 /* ——— PÁGINA PRINCIPAL ———————————————————————————————————————————————————— */
 
 export default function LandingPage() {
@@ -834,7 +803,7 @@ export default function LandingPage() {
 
       <TechnologySection />
       <CTASection />
-      <FooterSection />
+      <Footer />
       </main>
       <CommandCenter />
       <MobileBottomNav />

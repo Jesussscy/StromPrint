@@ -122,7 +122,7 @@ export default function MobileBottomNav({ items = NAV_MAIN }: MobileBottomNavPro
                 <span className={`transition-colors duration-200 ${isActive ? "text-cyan drop-shadow-[0_0_6px_rgba(0,229,255,0.5)]" : "text-slate-500"}`}>
                   {item.icon}
                 </span>
-                <span className="font-mono text-[9px] uppercase tracking-wider">{item.label}</span>
+                <span className="font-mono text-[10px] uppercase tracking-wider">{item.label}</span>
               </Link>
             );
           }
@@ -139,7 +139,7 @@ export default function MobileBottomNav({ items = NAV_MAIN }: MobileBottomNavPro
               <span className={`transition-colors duration-200 ${isActive ? "text-cyan drop-shadow-[0_0_6px_rgba(0,229,255,0.5)]" : "text-slate-500"}`}>
                 {item.icon}
               </span>
-              <span className="font-mono text-[9px] uppercase tracking-wider">{item.label}</span>
+              <span className="font-mono text-[10px] uppercase tracking-wider">{item.label}</span>
             </a>
           );
         })}

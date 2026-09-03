@@ -118,14 +118,83 @@ function ForecastChart({ puntos, onSeleccionarPunto }: ForecastChartProps) {
   }, [chartData, xScale]);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
-    e.preventDefault();
+    if (zoom > 1) e.preventDefault();
     const delta = e.deltaY > 0 ? -0.3 : 0.3;
     setZoom((z) => {
       const newZ = Math.max(1, Math.min(8, z + delta));
       if (newZ <= 1) setPanOffset(0);
       return newZ;
     });
+  }, [zoom]);
+
+  // Touch handlers for mobile
+  const touchStart = useRef<{ x: number; y: number; dist: number } | null>(null);
+  const lastTap = useRef(0);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      touchStart.current = { x: touch.clientX, y: touch.clientY, dist: Math.sqrt(dx*dx + dy*dy) };
+    } else {
+      touchStart.current = { x: touch.clientX, y: touch.clientY, dist: 0 };
+    }
   }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!svgRef.current || !chartData) return;
+    const touch = e.touches[0];
+
+    // Pinch to zoom
+    if (e.touches.length === 2 && touchStart.current && touchStart.current.dist > 0) {
+      e.preventDefault();
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const newDist = Math.sqrt(dx*dx + dy*dy);
+      const scale = newDist / touchStart.current.dist;
+      setZoom((z) => {
+        const newZ = Math.max(1, Math.min(8, z * scale));
+        if (newZ <= 1) setPanOffset(0);
+        return newZ;
+      });
+      touchStart.current.dist = newDist;
+      return;
+    }
+
+    // Single touch: show crosshair tooltip
+    if (e.touches.length === 1) {
+      const rect = svgRef.current.getBoundingClientRect();
+      const svgX = ((touch.clientX - rect.left) / rect.width) * W;
+      setMousePos({ x: touch.clientX - rect.left, y: touch.clientY - rect.top });
+
+      const visibleHours = chartData.maxH / zoom;
+      const hoverH = panOffset + ((svgX - PAD_L) / PW) * visibleHours;
+      let nearest = puntos[0];
+      let minDist = Infinity;
+      for (const p of puntos) {
+        const dist = Math.abs(p.tiempo_hora - hoverH);
+        if (dist < minDist) { minDist = dist; nearest = p; }
+      }
+      if (minDist < 2) setHoveredPoint(nearest);
+      else setHoveredPoint(null);
+    }
+  }, [chartData, zoom, panOffset, puntos]);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    // Double-tap to zoom
+    const now = Date.now();
+    if (now - lastTap.current < 300 && zoom < 8) {
+      setZoom((z) => Math.min(8, z * 1.5));
+    }
+    lastTap.current = now;
+    touchStart.current = null;
+    // Keep tooltip visible briefly
+    setTimeout(() => {
+      setHoveredPoint(null);
+      setMousePos(null);
+    }, 2000);
+  }, [zoom]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (zoom <= 1) return;
@@ -224,14 +293,16 @@ function ForecastChart({ puntos, onSeleccionarPunto }: ForecastChartProps) {
           <div className="flex items-center gap-1 ml-2">
             <button
               onClick={() => setZoom((z) => Math.max(1, z - 0.5))}
-              className="h-6 w-6 rounded glass flex items-center justify-center text-slate-400 hover:text-cyan transition text-xs"
+              className="h-11 w-11 rounded glass flex items-center justify-center text-slate-400 hover:text-cyan transition text-sm font-bold"
+              aria-label="Zoom out"
             >
               −
             </button>
-            <span className="font-mono text-[9px] text-slate-500 w-10 text-center">{zoom.toFixed(1)}—</span>
+            <span className="font-mono text-[9px] text-slate-500 w-10 text-center">{zoom.toFixed(1)}×</span>
             <button
               onClick={() => setZoom((z) => Math.min(8, z + 0.5))}
-              className="h-6 w-6 rounded glass flex items-center justify-center text-slate-400 hover:text-cyan transition text-xs"
+              className="h-11 w-11 rounded glass flex items-center justify-center text-slate-400 hover:text-cyan transition text-sm font-bold"
+              aria-label="Zoom in"
             >
               +
             </button>
@@ -273,8 +344,14 @@ function ForecastChart({ puntos, onSeleccionarPunto }: ForecastChartProps) {
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseLeave}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
           onClick={handleClick}
           style={{ userSelect: "none" }}
+          role="img"
+          aria-roledescription="Gráfico interactivo de pronóstico"
+          aria-label="Gráfico de pronóstico de 7 días mostrando nivel de agua, lluvia y marea con líneas de umbral de riesgo"
         >
           <defs>
             <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">

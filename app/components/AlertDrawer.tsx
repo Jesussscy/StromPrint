@@ -267,6 +267,20 @@ export default function AlertDrawer({ nivelAguaCm, nivelMaximo, tendenciaCmH, on
                 background: "rgba(8, 12, 20, 0.96)",
                 borderLeft: "1px solid rgba(0, 243, 255, 0.2)",
               }}
+              onTouchStart={(e) => {
+                const touch = e.touches[0];
+                (e.currentTarget as any)._swipeStart = { x: touch.clientX, y: touch.clientY };
+              }}
+              onTouchMove={(e) => {
+                const start = (e.currentTarget as any)._swipeStart;
+                if (!start) return;
+                const dx = e.touches[0].clientX - start.x;
+                const dy = Math.abs(e.touches[0].clientY - start.y);
+                if (dx < -50 && dy < 100) {
+                  cerrar();
+                  (e.currentTarget as any)._swipeStart = null;
+                }
+              }}
             >
               <div className="p-5">
                 {/* Cabecera */}

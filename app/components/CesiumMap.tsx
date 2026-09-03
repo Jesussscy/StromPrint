@@ -209,23 +209,27 @@ export default function CesiumMap({
           }
         })();
 
-        // Iluminación + atmósfera para un look 3D rico
-        viewer.scene.globe.enableLighting = true;
-        viewer.scene.highDynamicRange = true;
+        // Iluminacion + atmosfera para un look 3D rico
+        // On mobile, disable expensive effects for better frame rates
+        const isTouchDevice = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
+        viewer.scene.globe.enableLighting = !isTouchDevice;
+        viewer.scene.highDynamicRange = !isTouchDevice;
         viewer.scene.globe.depthTestAgainstTerrain = false;
 
-        // Resolución recomendada del navegador (limita el DPR efectivo en
-        // móviles y displays de alta densidad sin sacrificar nitidez).
+        // Resolucion recomendada del navegador (limita el DPR efectivo en
+        // moviles y displays de alta densidad sin sacrificar nitidez).
         viewer.useBrowserRecommendedResolution = true;
 
-        // Atmósfera + niebla: profundidad visual sutil acorde al tema
-        // Cyber-Hydro (espacio más oscuro, glacé terroso en el horizonte).
-        viewer.scene.fog.enabled = true;
+        // Atmosfera + niebla: profundidad visual sutil acorde al tema
+        // Cyber-Hydro (espacio mas oscuro, glacé terroso en el horizonte).
+        viewer.scene.fog.enabled = !isTouchDevice;
         viewer.scene.fog.density = 0.00035;
-        viewer.scene.skyAtmosphere.hueShift = -0.08;
-        viewer.scene.skyAtmosphere.saturationShift = -0.15;
-        viewer.scene.skyAtmosphere.brightnessShift = -0.2;
-        viewer.scene.globe.showGroundAtmosphere = true;
+        if (!isTouchDevice) {
+          viewer.scene.skyAtmosphere.hueShift = -0.08;
+          viewer.scene.skyAtmosphere.saturationShift = -0.15;
+          viewer.scene.skyAtmosphere.brightnessShift = -0.2;
+        }
+        viewer.scene.globe.showGroundAtmosphere = !isTouchDevice;
 
         // Brújula HUD: refleja el heading de la cámara (puntero arriba = norte).
         const actualizarBrújula = () => {
@@ -263,14 +267,19 @@ export default function CesiumMap({
         viewer.scene.screenSpaceCameraController.minimumZoomDistance = 250;
         viewer.scene.screenSpaceCameraController.maximumZoomDistance = 4500;
 
-        // ── Recalcular el canvas cuando cambia el tamaño (movil/orientacion) ──
+        // ── Recalcular el canvas cuando cambia el tamano (movil/orientacion) ──
+        // Debounced to avoid excessive re-renders during virtual keyboard show/hide on mobile
+        let resizeTimeout: ReturnType<typeof setTimeout> | null = null;
         handleResize = () => {
-          try {
-            viewer.resize();
-            viewer.scene.requestRender();
-          } catch (_e) {
-            /* noop */
-          }
+          if (resizeTimeout) clearTimeout(resizeTimeout);
+          resizeTimeout = setTimeout(() => {
+            try {
+              viewer.resize();
+              viewer.scene.requestRender();
+            } catch (_e) {
+              /* noop */
+            }
+          }, 150);
         };
         window.addEventListener("resize", handleResize);
         handleResize();

@@ -20,6 +20,11 @@ import httpx
 
 logger = logging.getLogger("stormprint.weather")
 
+# Short-lived in-memory forecast cache to avoid duplicate Open-Meteo calls
+_forecast_inflight: Optional[Dict[str, Any]] = None
+_forecast_cache_ts: Optional[float] = None
+_forecast_cache_key: str = ""
+
 # Coordenadas de Barrio Manga, Cartagena de Indias
 MANGA_LAT = 10.4000
 MANGA_LON = -75.5167
@@ -221,12 +226,29 @@ async def fetch_weather_forecast(
 ) -> Dict[str, Any]:
     """
     Consulta la API de Open-Meteo para obtener pronostico meteorologico.
+    Uses a short-lived in-memory cache to avoid duplicate calls within the
+    same request cycle (e.g. /predecir calling get_weather + fetch_weather_forecast).
 
     Retorna un dict con:
       - hourly: lista de datos horarios
       - daily: lista de datos diarios
       - metadata: lat, lon, timezone, elevation
     """
+    import time as _time
+    global _forecast_inflight, _forecast_cache_ts, _forecast_cache_key
+
+    now = _time.monotonic()
+    cache_key = f"{lat}:{lon}:{forecast_days}"
+
+    # Return cached result if fresh (< 60s old)
+    if _forecast_cache_ts and (now - _forecast_cache_ts) < 60 and _forecast_cache_key == cache_key:
+        return _forecast_inflight
+
+    # Deduplicate in-flight requests
+    if _forecast_inflight is not None and _forecast_cache_key == cache_key:
+        return _forecast_inflight
+
+    _forecast_cache_key = cache_key
     params = {
         "latitude": lat,
         "longitude": lon,
@@ -250,7 +272,10 @@ async def fetch_weather_forecast(
             logger.error("Open-Meteo request error: %s", exc)
             return _empty_forecast()
 
-    return _process_forecast(data)
+    result = _process_forecast(data)
+    _forecast_inflight = result
+    _forecast_cache_ts = __import__("time").monotonic()
+    return result
 
 
 def _process_forecast(raw: Dict[str, Any]) -> Dict[str, Any]:

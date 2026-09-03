@@ -7,12 +7,15 @@ for the Manga (Cartagena) territory.
 
 import datetime
 import json
+import logging
 import os
 from typing import AsyncGenerator, List, Optional
 
 from sqlalchemy import Float, Integer, String, DateTime, select, delete, text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+logger = logging.getLogger("stormprint.database")
 
 # ---------------------------------------------------------------------------
 # Engine configuration
@@ -94,29 +97,33 @@ class PredictionRecord(Base):
 
 
 # ---------------------------------------------------------------------------
-# DB lifecycle
+# DB lifecycle — run once per cold start, not per request
 # ---------------------------------------------------------------------------
+_db_initialized = False
+
+
 async def init_db() -> None:
+    global _db_initialized
+    if _db_initialized:
+        return
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        # Migración ligera: añade la columna data_source a tablas predictions existentes
+        # Migracion ligera: anyade la columna data_source a tablas predictions existentes
         try:
             await conn.execute(text("ALTER TABLE predictions ADD COLUMN data_source VARCHAR(24)"))
-        except Exception:
-            # La columna ya existe (o la BD es read-only) — ignoramos.
-            pass
+        except Exception as e:
+            if "duplicate column" not in str(e).lower():
+                logger.warning("Migration add data_source failed: %s", e)
+    _db_initialized = True
 
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
-    # Asegura que las tablas existan en cada peticion (idempotente, create_all
-    # no borra nada) sin depender del lifespan de FastAPI, que en el runtime
-    # serverless de Vercel no siempre se ejecuta antes de cada request.
-    try:
-        await init_db()
-    except Exception:
-        # Si falla la creacion (BD en read-only, etc.), continuamos y
-        # dejamos que el endpoint maneje el error con un 500 limpio.
-        pass
+    if not _db_initialized:
+        try:
+            await init_db()
+        except Exception as e:
+            logger.exception("Failed to initialize database: %s", e)
+            # Continue anyway — endpoints will handle the error with a 500
     async with AsyncSessionLocal() as session:
         yield session
 
@@ -146,12 +153,18 @@ async def fetch_recent_records(session: AsyncSession, limit: int = 168) -> List[
     return [r.to_dict() for r in reversed(rows)]
 
 
+SQLITE_MAX_VARIABLES = 900  # SQLite default limit is 999, leave margin
+
+
 async def clear_old_records(session: AsyncSession, keep_last: int = 5000) -> None:
     stmt = select(FloodRecord.id).order_by(FloodRecord.id.desc()).offset(keep_last)
     result = await session.execute(stmt)
     ids_to_delete = [row[0] for row in result.all()]
     if ids_to_delete:
-        await session.execute(delete(FloodRecord).where(FloodRecord.id.in_(ids_to_delete)))
+        # Chunk deletes to stay within SQLite variable limit
+        for i in range(0, len(ids_to_delete), SQLITE_MAX_VARIABLES):
+            chunk = ids_to_delete[i : i + SQLITE_MAX_VARIABLES]
+            await session.execute(delete(FloodRecord).where(FloodRecord.id.in_(chunk)))
         await session.commit()
 
 
@@ -195,5 +208,8 @@ async def clear_old_predictions(session: AsyncSession, keep_last: int = 200) -> 
     result = await session.execute(stmt)
     ids_to_delete = [row[0] for row in result.all()]
     if ids_to_delete:
-        await session.execute(delete(PredictionRecord).where(PredictionRecord.id.in_(ids_to_delete)))
+        # Chunk deletes to stay within SQLite variable limit
+        for i in range(0, len(ids_to_delete), SQLITE_MAX_VARIABLES):
+            chunk = ids_to_delete[i : i + SQLITE_MAX_VARIABLES]
+            await session.execute(delete(PredictionRecord).where(PredictionRecord.id.in_(chunk)))
         await session.commit()

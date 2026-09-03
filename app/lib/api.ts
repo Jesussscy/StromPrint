@@ -175,11 +175,11 @@ export interface PrediccionGuardada {
 
 // --- Fetch helpers ---
 
-// La key viaja al cliente (es publica y protege endpoint de datos abiertos).
-// El default coincide con el default del backend (api/security.py) para que el
-// sistema funcione sin configurar env vars; si se quiere una key real se setea
-// NEXT_PUBLIC_STORMPRINT_API_KEY (frontend) y STORMPRINT_API_KEY (backend).
-const API_KEY = process.env.NEXT_PUBLIC_STORMPRINT_API_KEY ?? "sp_live_manga_default_change_me";
+// SECURITY NOTE: The API key is shipped to the browser for endpoints that require
+// it (weather, predict, history). In production, set NEXT_PUBLIC_STORMPRINT_API_KEY
+// to a unique key. The default dev key is blocked in production by the backend.
+// Public endpoints (health, predecir, predicciones) do NOT require auth.
+const API_KEY = process.env.NEXT_PUBLIC_STORMPRINT_API_KEY ?? "";
 
 // Dedup de peticiones en vuelo: si dos llamadas piden exactamente lo mismo al
 // mismo tiempo (p. ej. en el montaje de la página y del panel en vivo), se

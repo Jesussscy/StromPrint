@@ -30,8 +30,9 @@ export default function RainParticles({ intensity, active }: RainParticlesProps)
     resize();
     window.addEventListener("resize", resize);
 
+    const isMobile = window.matchMedia("(max-width: 768px)").matches;
     const drops: { x: number; y: number; speed: number; length: number; opacity: number }[] = [];
-    const maxDrops = Math.floor(150 * intensity);
+    const maxDrops = Math.floor((isMobile ? 60 : 150) * intensity);
 
     for (let i = 0; i < maxDrops; i++) {
       drops.push({

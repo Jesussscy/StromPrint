@@ -43,6 +43,16 @@ export const metadata: Metadata = {
       "Simulación predictiva en tiempo real para el Barrio Manga, Cartagena de Indias.",
     type: "website",
     locale: "es_CO",
+    siteName: "STORM//PRINT",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "STORM//PRINT — Monitoreo de Inundaciones",
+    description:
+      "Sistema predictivo de inundaciones para Barrio Manga, Cartagena de Indias.",
+  },
+  other: {
+    "manifest": "/manifest.json",
   },
 };
 

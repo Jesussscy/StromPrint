@@ -1,0 +1,39 @@
+{
+  "name": "STORM//PRINT — Flood Risk Simulation",
+  "short_name": "StormPrint",
+  "description": "Cyber-physical flood-risk simulation platform for Barrio Manga, Cartagena, Colombia",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#050A0F",
+  "background_color": "#050A0F",
+  "categories": ["weather", "utilities", "education"],
+  "lang": "es",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Panel en Vivo",
+      "short_name": "Panel",
+      "url": "/#panel-vivo",
+      "description": "Live flood monitoring dashboard"
+    },
+    {
+      "name": "Alertas",
+      "url": "/alertas",
+      "description": "Alert center"
+    },
+    {
+      "name": "Ciencia",
+      "url": "/ciencia",
+      "description": "3D simulator and physics"
+    }
+  ]
+}

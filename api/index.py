@@ -15,6 +15,7 @@ import json
 import logging
 import os
 import time
+import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import Literal, Optional
@@ -40,7 +41,6 @@ from .database import (
 )
 from .physics_engine import (
     PhysicalParameters,
-    compute_advanced_metrics,
     run_simulation,
 )
 from .notification_service import notification_service
@@ -69,11 +69,19 @@ from .weather_service import (
     weather_service,
 )
 
-logging.basicConfig(level=logging.WARNING)
+logging.basicConfig(
+    level=logging.WARNING,
+    format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
+    datefmt="%Y-%m-%dT%H:%M:%S",
+)
 logger = logging.getLogger("stormprint")
 
 APP_VERSION = "3.0.0"
 _START_TIMESTAMP = time.monotonic()
+
+# Simple in-memory cache for read-only endpoints
+_response_cache: dict[str, tuple[float, dict]] = {}
+_CACHE_TTL = 30  # seconds
 
 ECUACION_DISPLAY = (
     "m\u00b7H''(t) + c(t)\u00b7H'(t) + k(t)\u00b7H(t) "
@@ -141,18 +149,22 @@ app.add_middleware(SecurityHeadersMiddleware)
 
 @app.middleware("http")
 async def log_request_duration(request: Request, call_next):
-    """Log de duracion por request para detectar endpoints lentos."""
+    """Log de duracion por request para detectar endpoints lentos, con correlation ID."""
+    correlation_id = str(uuid.uuid4())[:8]
+    request.state.correlation_id = correlation_id
     start = time.monotonic()
     response = await call_next(request)
     elapsed_ms = (time.monotonic() - start) * 1000.0
     if elapsed_ms >= 1500:
         logger.warning(
-            "Slow request: %s %s -> %d (%.0f ms)",
+            "[%s] Slow request: %s %s -> %d (%.0f ms)",
+            correlation_id,
             request.method,
             request.url.path,
             response.status_code,
             elapsed_ms,
         )
+    response.headers["X-Correlation-ID"] = correlation_id
     return response
 
 
@@ -281,7 +293,12 @@ class InfraResponse(BaseModel):
 @app.get("/api/v1/health")
 @limiter.limit("30/minute")
 async def health(request: Request, session: AsyncSession = Depends(get_session)):
-    """Healthcheck ampliado: base de datos, antiguedad de caches y uptime."""
+    """Healthcheck ampliado: base de datos, antiguedad de caches y uptime.
+    Uses a short-lived in-memory cache to reduce redundant DB queries."""
+    # Return cached response if fresh
+    cached = _response_cache.get("health")
+    if cached and (time.monotonic() - cached[0]) < _CACHE_TTL:
+        return cached[1]
     db_status = "ok"
     try:
         await session.execute(text("SELECT 1"))
@@ -297,14 +314,14 @@ async def health(request: Request, session: AsyncSession = Depends(get_session))
             if not os.path.exists(cache_file):
                 return None
             return round(max(0.0, now - os.path.getmtime(cache_file)))
-        except OSError:
+        except (OSError, ValueError, OverflowError):
             return None
 
     fuentes["open_meteo_cache_age_s"] = _cache_age(weather_service.CACHE_FILE)
     fuentes["mareas_cache_age_s"] = _cache_age(tide_service.CACHE_FILE)
 
     status = "degraded" if db_status == "error" else "operational"
-    return InfraResponse(
+    result = InfraResponse(
         status=status,
         timestamp=datetime.now(timezone.utc).isoformat(),
         uptime_seconds=round(time.monotonic() - _START_TIMESTAMP, 1),
@@ -312,6 +329,8 @@ async def health(request: Request, session: AsyncSession = Depends(get_session))
         fuentes=fuentes,
         suscripciones=len(notification_service.subscriptions),
     ).model_dump()
+    _response_cache["health"] = (time.monotonic(), result)
+    return result
 
 
 # ---------------------------------------------------------------------------

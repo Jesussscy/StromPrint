@@ -493,12 +493,26 @@ a, button {
   left: 0;
 }
 
-/* Reduce animations on mobile for performance */
+/* Reduce animations on mobile for performance and battery */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* Disable continuous animations on mobile to save battery */
+@media (max-width: 768px) {
+  .float-card {
+    animation: none;
+  }
+  .glitch-title::before,
+  .glitch-title::after {
+    animation: none;
+  }
+  .title-shimmer {
+    animation-duration: 12s;
   }
 }
 
@@ -539,10 +553,23 @@ a, button {
   }
 }
 
-/* Target de toque mínimo de 44x44px para controles interactivos */
+/* Target de toque minimo de 44x44px para controles interactivos */
 @media (pointer: coarse) {
   a, button, [role="button"], .slider-cyber {
     min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Hover effects only on devices that support hover (desktop) */
+@media (hover: hover) and (pointer: fine) {
+  .glow-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(0, 229, 255, 0.35);
+    box-shadow: 0 12px 44px rgba(0, 0, 0, 0.55), 0 0 30px rgba(0, 229, 255, 0.12);
+  }
+  .glow-card:hover::after {
+    opacity: 1;
   }
 }
 
@@ -619,16 +646,11 @@ a, button {
   100% { background-position: -200% 0; }
 }
 
-/* Glow sweep on hover for cards */
+/* Glow sweep on hover for cards — hover effects only on desktop */
 .glow-card {
   position: relative;
   overflow: hidden;
   transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
-}
-.glow-card:hover {
-  transform: translateY(-3px);
-  border-color: rgba(0, 229, 255, 0.35);
-  box-shadow: 0 12px 44px rgba(0, 0, 0, 0.55), 0 0 30px rgba(0, 229, 255, 0.12);
 }
 .glow-card::after {
   content: "";
@@ -639,9 +661,6 @@ a, button {
     rgba(0, 240, 255, 0.12), transparent 45%);
   opacity: 0;
   transition: opacity 0.3s ease;
-}
-.glow-card:hover::after {
-  opacity: 1;
 }
 
 /* Subtle HUD scanline overlay for live panels */

@@ -21,7 +21,17 @@ from starlette.types import ASGIApp
 # API Key configuration
 # ---------------------------------------------------------------------------
 _API_KEY_SALT = os.environ.get("STORMPRINT_KEY_SALT", "storm-print-manga-static-salt-v1")
-_RAW_API_KEY = os.environ.get("STORMPRINT_API_KEY", "sp_live_manga_default_change_me")
+_RAW_API_KEY = os.environ.get("STORMPRINT_API_KEY", "")
+
+IS_PRODUCTION = os.environ.get("VERCEL_ENV", os.environ.get("ENV", "production")) != "development"
+
+if IS_PRODUCTION and not _RAW_API_KEY:
+    raise RuntimeError(
+        "CRITICAL: STORMPRINT_API_KEY environment variable must be set in production. "
+        "Generate a secure key with: python -c \"import secrets; print(secrets.token_urlsafe(48))\""
+    )
+elif not _RAW_API_KEY:
+    _RAW_API_KEY = "sp_dev_only_not_for_production"
 
 
 def _hash_key(raw_key: str) -> str:
@@ -130,10 +140,17 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 # CORS
 # ---------------------------------------------------------------------------
 def get_allowed_origins() -> list:
-    raw = os.environ.get(
-        "STORMPRINT_ALLOWED_ORIGINS",
-        "https://stormprint.vercel.app,http://localhost:3000",
-    )
+    IS_PROD = os.environ.get("VERCEL_ENV", os.environ.get("ENV", "production")) != "development"
+    if IS_PROD:
+        raw = os.environ.get(
+            "STORMPRINT_ALLOWED_ORIGINS",
+            "https://stormprint.vercel.app",
+        )
+    else:
+        raw = os.environ.get(
+            "STORMPRINT_ALLOWED_ORIGINS",
+            "https://stormprint.vercel.app,http://localhost:3000,http://localhost:3001",
+        )
     return [origin.strip() for origin in raw.split(",") if origin.strip()]
 
 
@@ -154,9 +171,6 @@ def is_public_route(path: str) -> bool:
 # ---------------------------------------------------------------------------
 # Generic, sanitized error responses
 # ---------------------------------------------------------------------------
-IS_PRODUCTION = os.environ.get("VERCEL_ENV", os.environ.get("ENV", "production")) != "development"
-
-
 def sanitize_exception_response(exc: Exception) -> dict:
     if IS_PRODUCTION:
         return {"error": "internal_server_error", "message": "An unexpected error occurred."}

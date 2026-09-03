@@ -49,7 +49,7 @@ class NotificationService:
     MAX_HISTORY = 100
     RISK_COOLDOWN_SECONDS = 1800  # 30 min: no repetir el mismo nivel de riesgo
 
-    EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+    EMAIL_RE = re.compile(r"^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$")
 
     def __init__(self):
         self.smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")

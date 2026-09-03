@@ -147,7 +147,7 @@ export default function ZonasMangaPanel({
         <div className="flex gap-1.5 mt-3 overflow-x-auto pb-1 -mx-1 px-1 no-scrollbar">
           <button
             onClick={() => setFiltro("TODOS")}
-            className={`shrink-0 rounded-md px-2.5 py-1.5 text-[10px] font-mono uppercase tracking-wider transition min-h-[32px] ${filtro === "TODOS" ? "bg-cyan/20 text-cyan" : "text-slate-400 hover:text-cyan active:text-cyan"}`}
+            className={`shrink-0 rounded-md px-2.5 py-1.5 text-[10px] font-mono uppercase tracking-wider transition min-h-[44px] min-w-[44px] ${filtro === "TODOS" ? "bg-cyan/20 text-cyan" : "text-slate-400 hover:text-cyan active:text-cyan"}`}
           >
             Todos
           </button>
@@ -155,7 +155,7 @@ export default function ZonasMangaPanel({
             <button
               key={n}
               onClick={() => setFiltro(filtro === n ? "TODOS" : n)}
-              className={`shrink-0 relative rounded-md px-2.5 py-1.5 text-[10px] font-mono uppercase tracking-wider transition min-h-[32px] ${filtro === n ? "bg-white/5" : "text-slate-400 hover:text-white active:text-white"}`}
+              className={`shrink-0 relative rounded-md px-2.5 py-1.5 text-[10px] font-mono uppercase tracking-wider transition min-h-[44px] min-w-[44px] ${filtro === n ? "bg-white/5" : "text-slate-400 hover:text-white active:text-white"}`}
               style={filtro === n ? { color: RIESGO_META[n].color } : undefined}
             >
               <span className="inline-block w-2 h-2 rounded-full mr-1 align-middle" style={{ background: RIESGO_META[n].color }} />
@@ -201,7 +201,7 @@ export default function ZonasMangaPanel({
                 aria-pressed={esFavorita}
                 aria-label={esFavorita ? `Quitar ${zona.nombre} de zonas favoritas` : `Marcar ${zona.nombre} como zona favorita`}
                 title={esFavorita ? "Favorita (guardada en este navegador)" : "Marcar como favorita (se guarda en este navegador)"}
-                className="shrink-0 self-center rounded-lg p-2 text-slate-500 hover:text-slate-200 transition min-w-[36px] min-h-[36px]"
+                className="shrink-0 self-center rounded-lg p-2 text-slate-500 hover:text-slate-200 transition min-w-[44px] min-h-[44px] flex items-center justify-center"
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill={esFavorita ? "#FFD600" : "none"} stroke={esFavorita ? "#FFD600" : "currentColor"} strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
               </button>

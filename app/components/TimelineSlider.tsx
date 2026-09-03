@@ -80,7 +80,7 @@ export default memo(function TimelineSlider({ puntos, currentHour, onScrub, isPl
       </div>
 
       {riskHeatmap.length > 0 && (
-        <div className="mb-2 flex h-1.5 w-full overflow-hidden rounded-full">
+        <div className="mb-2 flex h-1.5 w-full overflow-hidden rounded-full" aria-hidden="true">
           {riskHeatmap.map((point, i) => (
             <div key={i} className="h-full flex-1" style={{ backgroundColor: point.color, opacity: 0.6 }} />
           ))}

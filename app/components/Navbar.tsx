@@ -77,6 +77,7 @@ export default function Navbar({
         alignItems: "center",
         justifyContent: "space-between",
         padding: "0 16px",
+        paddingTop: "env(safe-area-inset-top, 0px)",
         background: "var(--bg-nav, rgba(2,12,24,0.95))",
         backdropFilter: "blur(12px)",
         borderBottom: "1px solid var(--border, rgba(255,255,255,0.06))",

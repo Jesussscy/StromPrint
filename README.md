@@ -17,14 +17,17 @@ StormPrint/
 │   ├── tide_service.py     Marea Open-Meteo Marine con fallback analítico
 │   └── notification_service.py  Alertas multi-canal + suscripciones por email
 ├── app/                    Next.js 14 App Router (React 18 + TS)
-│   ├── layout.tsx          
+│   ├── layout.tsx
+│   ├── template.tsx        Transición de página entre pestañas (framer-motion)
 │   ├── page.tsx            Dashboard
 │   ├── alertas/page.tsx    Centro de Alertas + suscripción
 │   ├── ciencia/page.tsx    Validación analítica vs numérica
 │   ├── middleware.ts       Bloqueo Edge de archivos sensibles (404)
 │   ├── globals.css         Tema Cyber-Hydro Glassmorphism
 │   ├── lib/api.ts          Cliente HTTP tipado con timeout y dedupe
-│   └── components/         Navbar, Panel, CesiumMap (visor 3D), Skeletons…
+│   └── components/         Navbar, Footer, MobileBottomNav, Panel, CesiumMap
+│                           (visor 3D), HeatmapView, WeatherStation, ForecastDayCard,
+│                           SummaryDashboard, ZonasMangaPanel, Simulador3D, …
 ├── tests/                  Suite pytest (umbrales, motor, notificaciones, API)
 ├── vercel.json
 ├── requirements.txt
@@ -147,3 +150,22 @@ El visor 3D principal es `CesiumMap.tsx` (Cesium, lazy-load en el Panel en vivo)
 globo con imagery ArcGIS World Imagery + elevación ArcGIS, 20 zonas críticas de
 Manga con pins y círculos de influencia, columnas territoriales animadas por
 `H(t)`, capa de calor y HUD de nivel.
+
+### Capas base y hosts permitidos (importante en Vercel)
+
+El mapa usa tiles cargados en tiempo de ejecución (fetch/XHR), por lo que la
+**CSP debe permitir los hosts de imagery y terreno**. Si se bloquean, el globo
+queda en blanco (no se ve ni el mapa normal ni el de calor, que se dibuja sobre
+él). La CSP se define **dos veces**: en `next.config.js` (desarrollo/`next start`)
+y en `vercel.json` (producción en Vercel, que sobreescribe la de Next). Hay que
+mantenerlas sincronizadas:
+
+- `img-src`: `https://server.arcgisonline.com`, `https://*.tile.openstreetmap.org`,
+  `https://tile.openstreetmap.org` (subdominio raíz, sin comodín), `https://*.cartocdn.com`.
+- `connect-src` (tiles vía fetch): los mismos hosts de arriba + `https://elevation3d.arcgis.com`
+  para el terreno 3D de ArcGIS y `https://api.open-meteo.com` para el clima.
+- `worker-src`: `'self' blob:` (workers de Cesium servidos desde `/cesium/Workers`).
+
+Los assets estáticos de Cesium se sirven desde `public/cesium` bajo `CESIUM_BASE_URL=/cesium`
+(Assets, ThirdParty, Widgets y Workers). Si un proveedor de tiles falla repetidamente,
+`CesiumMap` hace *failover* automático a OpenStreetMap para que el visor nunca quede en blanco.

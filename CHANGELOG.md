@@ -2,6 +2,37 @@
 
 Todas las versiones notables de StormPrint.
 
+## [3.0.1] — Pulido de interfaz y fix del mapa en Vercel
+
+### Interacción móvil y navegación
+- `Navbar` reescrito con `next/navigation` (`useRouter`/`usePathname`): enlaces a rutas
+  completas (`/ciencia`, `/alertas`), anclas (`/#panel-vivo`) con desplazamiento suave y
+  sincronización de pestaña activa por ruta.
+- `MobileBottomNav` con `usePathname`/`useRouter`, sincronización activa por ruta y scroll
+  de anclas entre páginas; feedback táctil (`active:scale-95`, `touch-manipulation`).
+- `app/template.tsx`: transición de página (fade + slide) en todas las pestañas con framer-motion.
+- Footer simplificado a 3 columnas (Marca, Navegación, Estado) sin pestañas legales/políticas.
+- Objetivos táctiles de 44px (botones, checkboxes, slider) y estilos táctiles en todo el Dashboard.
+
+### Apartado de alertas
+- Hero con insignia «Monitoreo continuo 24/7» animada y patrón de puntos.
+- Métricas con iconos (campana, actividad, mapa, reloj) por tarjeta.
+- Historial: cabecera con escudo + botón «Exportar CSV» con icono de descarga, filtros con
+  feedback de color táctil y búsqueda con lupa.
+- Tarjetas de alerta con mejor jerarquía: badge de nivel, hora, barra de nivel de agua animada
+  e indicadores email/webhook con iconos.
+
+### Pronóstico meteorológico («mañana será lluvioso/soleado»)
+- `WeatherStation` rediseñado: iconografía meteorológica grande, frase narrativa natural por día
+  («mañana será lluvioso con máxima de 28°C y 85% de probabilidad de lluvia»), probabilidad de
+  lluvia y acumulado en mm, barra de lluvia animada y aviso contextual de marea/pleamar.
+
+### Fix: mapa en blanco en Vercel
+- La CSP de `vercel.json` no permitía los hosts de tiles de imagery (OpenStreetMap y Carto),
+  por lo que el globo de Cesium quedaba en blanco (ni mapa normal ni capa de calor, que se
+  dibuja sobre él). Se sincronizó la CSP con `next.config.js` añadiendo a `img-src` y
+  `connect-src` los dominios de tiles y terreno. Detalle en «Modelo 3D» del README.
+
 ## [3.0.0] — Crisis Climática del Caribe
 
 Se completó el plan de mejora «StormPrint 3.0» (10 lotes). Resumen por lote:

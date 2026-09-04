@@ -1069,9 +1069,11 @@ function recentrar() {
         <div className="absolute inset-0 rounded-2xl overflow-hidden z-[5]">
           <HeatmapView
             bounds={MANGA_BOUNDS}
+            zonas={ZONAS_MANGA}
             nivelAguaCm={nivelAguaCm}
             nivelMaximoCm={nivelMaximoCm}
             visible={vista === "heatmap"}
+            onSelectZona={setSelectedZona}
           />
         </div>
       )}

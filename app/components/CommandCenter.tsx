@@ -129,7 +129,7 @@ export default function CommandCenter() {
                 onClick={() => setMessages([
                   { role: "bot", text: "Hola, soy el asistente de STORM//PRINT. Seleccioná una pregunta:" },
                 ])}
-                className="text-slate-500 hover:text-cyan transition font-mono text-[10px] uppercase px-2 py-1 rounded-lg hover:bg-white/5"
+                className="text-slate-500 hover:text-cyan transition font-mono text-[10px] uppercase px-2 py-1 rounded-lg hover:bg-white/5 min-h-[44px] min-w-[44px] flex items-center justify-center"
               >
                 Limpiar
               </button>
@@ -160,7 +160,7 @@ export default function CommandCenter() {
                     <button
                       key={q.id}
                       onClick={() => handleQuestion(q)}
-                      className="glass rounded-lg px-2.5 py-2.5 text-left text-[11px] text-slate-300 hover:text-cyan hover:border-cyan/25 active:bg-cyan/10 transition-all flex items-center gap-1.5 min-h-[40px]"
+                      className="glass rounded-lg px-2.5 py-2.5 text-left text-[11px] text-slate-300 hover:text-cyan hover:border-cyan/25 active:bg-cyan/10 transition-all flex items-center gap-1.5 min-h-[44px]"
                     >
                       <span className="text-cyan shrink-0">{q.icon}</span>
                       <span className="truncate">{q.label}</span>

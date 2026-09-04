@@ -386,8 +386,8 @@ export function PanelSimulador() {
               <thead className="sticky top-0 z-10">
                 <tr className="text-[10px] uppercase tracking-wider text-slate-500 border-b border-white/10" style={{ background: "#0b1622" }}>
                   <th className="py-2 pr-3 font-mono">t (h)</th>
-                  <th className="py-2 pr-3 font-mono">X (m)</th>
-                  <th className="py-2 pr-3 font-mono">Y (m)</th>
+                  <th className="py-2 pr-3 font-mono hidden md:table-cell">X (m)</th>
+                  <th className="py-2 pr-3 font-mono hidden md:table-cell">Y (m)</th>
                   <th className="py-2 pr-3 font-mono">Z (cm)</th>
                   <th className="py-2 pr-3 font-mono">Fuerzas (fL·fM·fV)</th>
                   <th className="py-2 pr-3 font-mono">Riesgo</th>

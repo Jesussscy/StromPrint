@@ -279,7 +279,7 @@ function ForecastChart({ puntos, onSeleccionarPunto }: ForecastChartProps) {
               <button
                 key={mode}
                 onClick={() => setViewMode(mode)}
-                className={`shrink-0 rounded-lg px-2.5 py-1.5 font-mono text-[9px] uppercase tracking-wider transition-all ${
+                className={`shrink-0 rounded-lg px-2.5 py-1.5 font-mono text-[9px] uppercase tracking-wider transition-all min-h-[44px] flex items-center ${
                   viewMode === mode
                     ? "bg-cyan/15 text-cyan border border-cyan/30"
                     : "text-slate-500 hover:text-slate-300 border border-transparent"

@@ -76,7 +76,7 @@ export default function InteractiveEquation() {
                 backgroundColor: esActivo ? `${v.color}18` : "transparent",
                 boxShadow: esActivo ? `0 0 18px ${v.color}45` : "none",
               }}
-              className="flex items-center gap-2 rounded-lg border px-3 py-2 transition-all duration-200 cursor-pointer"
+              className="flex items-center gap-2 rounded-lg border px-3 py-2 transition-all duration-200 cursor-pointer min-h-[44px]"
               aria-pressed={esActivo}
               title={v.description}
             >

@@ -107,7 +107,7 @@ export default function Navbar({
         left: 0,
         right: 0,
         zIndex: 50,
-        height: 56,
+        height: "calc(56px + env(safe-area-inset-top, 0px))",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
@@ -124,9 +124,9 @@ export default function Navbar({
 
       {/* Desktop tabs */}
       <div
+        className="hidden md:flex"
         style={{
           position: "relative",
-          display: "flex",
           alignItems: "center",
           gap: 4,
         }}
@@ -149,6 +149,8 @@ export default function Navbar({
               letterSpacing: "0.06em",
               fontFamily: "monospace",
               textTransform: "uppercase" as const,
+              minHeight: 44,
+              minWidth: 44,
               color:
                 active === tab.id
                   ? "var(--text-active, #fff)"
@@ -221,7 +223,7 @@ export default function Navbar({
       </div>
 
       {/* Placeholder right area */}
-      <div style={{ width: 80 }} />
+      <div className="hidden md:block" style={{ width: 80 }} />
 
       {/* Keyframes injected once */}
       <style jsx global>{`

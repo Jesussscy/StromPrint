@@ -1090,7 +1090,7 @@ function recentrar() {
           <button
             onClick={() => setVista("3d")}
             aria-pressed={vista === "3d"}
-            className={`rounded-md px-2.5 py-1.5 text-[10px] font-mono uppercase tracking-wider transition ${
+            className={`rounded-md px-2.5 py-1.5 text-[10px] font-mono uppercase tracking-wider transition min-h-[44px] min-w-[44px] flex items-center justify-center ${
               vista === "3d" ? "bg-cyan/20 text-cyan" : "text-slate-400 hover:text-white"
             }`}
           >
@@ -1099,7 +1099,7 @@ function recentrar() {
           <button
             onClick={() => setVista("heatmap")}
             aria-pressed={vista === "heatmap"}
-            className={`rounded-md px-2.5 py-1.5 text-[10px] font-mono uppercase tracking-wider transition ${
+            className={`rounded-md px-2.5 py-1.5 text-[10px] font-mono uppercase tracking-wider transition min-h-[44px] min-w-[44px] flex items-center justify-center ${
               vista === "heatmap" ? "bg-cyan/20 text-cyan" : "text-slate-400 hover:text-white"
             }`}
           >
@@ -1155,7 +1155,7 @@ function recentrar() {
       {!cargando && !error && vista === "3d" && (
         <button
           onClick={recentrar}
-          className="absolute top-3 right-3 z-10 glass rounded-lg px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-cyan hover:bg-cyan/10 transition flex items-center gap-1.5"
+          className="absolute top-3 right-3 z-10 glass rounded-lg px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-cyan hover:bg-cyan/10 transition flex items-center gap-1.5 min-h-[44px] min-w-[44px] justify-center"
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
           Manga
@@ -1167,7 +1167,7 @@ function recentrar() {
         <button
           onClick={() => setPanelCapas((p) => !p)}
           aria-pressed={panelCapas}
-          className="absolute top-14 right-3 z-10 glass rounded-lg px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-cyan hover:bg-cyan/10 transition flex items-center gap-1.5"
+          className="absolute top-14 right-3 z-10 glass rounded-lg px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-cyan hover:bg-cyan/10 transition flex items-center gap-1.5 min-h-[44px] min-w-[44px] justify-center"
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5z" /><path d="m2 17 10 5 10-5" /><path d="m2 12 10 5 10-5" /></svg>
           Capas

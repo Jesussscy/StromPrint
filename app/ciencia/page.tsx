@@ -78,8 +78,8 @@ export default function CienciaPage() {
 
       {/* Barra de progreso de scroll */}
       <motion.div
-        style={{ scaleX: progress }}
-        className="fixed top-[53px] left-0 right-0 z-[60] h-[3px] origin-left bg-gradient-to-r from-cyan via-[#00FF87] to-[#B000FF]"
+        style={{ scaleX: progress, top: "calc(56px + env(safe-area-inset-top, 0px))" }}
+        className="fixed left-0 right-0 z-[60] h-[3px] origin-left bg-gradient-to-r from-cyan via-[#00FF87] to-[#B000FF]"
       />
 
       {/* Navegación de secciones (fija, escritorio) */}
@@ -161,7 +161,7 @@ export default function CienciaPage() {
       <div className="mx-auto max-w-4xl px-6 md:px-12 py-16 space-y-20">
 
         {/* Navegación horizontal móvil */}
-        <div className="lg:hidden -mx-6 px-6 sticky top-[53px] z-40 bg-ocean/80 backdrop-blur-md border-b border-white/5 -mt-6 -mb-4 py-3 overflow-x-auto whitespace-nowrap flex gap-2">
+        <div className="lg:hidden -mx-6 px-6 sticky z-40 bg-ocean/80 backdrop-blur-md border-b border-white/5 -mt-6 -mb-4 py-3 overflow-x-auto whitespace-nowrap flex gap-2" style={{ top: "calc(56px + env(safe-area-inset-top, 0px))" }}>
           {SECCIONES.map((s, i) => (
             <a
               key={s.id}

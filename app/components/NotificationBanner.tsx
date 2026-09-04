@@ -110,7 +110,7 @@ export const NotificationBanner = () => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
 
   return (
-    <div className="fixed top-16 right-3 left-3 sm:left-auto sm:right-4 z-[2000] sm:max-w-sm space-y-2" role="region" aria-label="Notificaciones del sistema">
+    <div className="fixed right-3 left-3 sm:left-auto sm:right-4 z-[2000] sm:max-w-sm space-y-2" style={{ top: "calc(72px + env(safe-area-inset-top, 0px))" }} role="region" aria-label="Notificaciones del sistema">
       <AnimatePresence>
         {notifications.slice(0, 3).map((notif, index) => (
           <motion.div

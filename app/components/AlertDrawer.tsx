@@ -183,6 +183,18 @@ export default function AlertDrawer({ nivelAguaCm, nivelMaximo, tendenciaCmH, on
 
   useEffect(() => {
     if (!isOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    const prevTouch = document.body.style.touchAction;
+    document.body.style.overflow = "hidden";
+    document.body.style.touchAction = "none";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.body.style.touchAction = prevTouch;
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
     lastFocusedRef.current = document.activeElement as HTMLElement | null;
     const node = drawerRef.current;
     const focusables = node
@@ -265,24 +277,17 @@ export default function AlertDrawer({ nivelAguaCm, nivelMaximo, tendenciaCmH, on
               role="dialog"
               aria-modal="true"
               aria-label="Centro de Alertas"
-              className="fixed right-0 top-0 bottom-0 z-[100] w-[380px] max-w-[94vw] overflow-y-auto backdrop-blur-xl"
+              className="fixed right-0 top-0 bottom-0 z-[100] w-[380px] max-w-[94vw] overflow-y-auto safe-area-bottom backdrop-blur-xl"
               style={{
                 background: "rgba(8, 12, 20, 0.96)",
                 borderLeft: "1px solid rgba(0, 243, 255, 0.2)",
               }}
-              onTouchStart={(e) => {
-                const touch = e.touches[0];
-                (e.currentTarget as any)._swipeStart = { x: touch.clientX, y: touch.clientY };
-              }}
-              onTouchMove={(e) => {
-                const start = (e.currentTarget as any)._swipeStart;
-                if (!start) return;
-                const dx = e.touches[0].clientX - start.x;
-                const dy = Math.abs(e.touches[0].clientY - start.y);
-                if (dx < -50 && dy < 100) {
-                  cerrar();
-                  (e.currentTarget as any)._swipeStart = null;
-                }
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={{ left: 0.1, right: 0.6 }}
+              dragMomentum={false}
+              onDragEnd={(_event, info) => {
+                if (info.offset.x > 80 || info.velocity.x > 500) cerrar();
               }}
             >
               <div className="p-5">

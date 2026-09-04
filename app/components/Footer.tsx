@@ -77,7 +77,7 @@ export default function Footer() {
       {/* Separador decorativo superior — se ilumina al hacer hover */}
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan/30 to-transparent transition-all duration-300 group-hover:via-cyan/70 group-hover:shadow-[0_0_12px_rgba(0,210,255,0.4)]" />
 
-      <div className="mx-auto max-w-6xl px-6 pt-14 pb-10">
+      <div className="mx-auto max-w-6xl px-6 pt-14 pb-24 sm:pb-10">
         {/* Grid de 3 columnas */}
         <div className="grid gap-10 md:grid-cols-3">
 

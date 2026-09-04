@@ -381,10 +381,10 @@ export function PanelSimulador() {
         {verGrafico ? (
           <GraficoSerie serie={serie} />
         ) : (
-          <div className="overflow-x-auto">
+          <div className="max-h-[300px] overflow-y-auto overflow-x-auto rounded-lg">
             <table className="w-full text-left">
-              <thead>
-                <tr className="text-[10px] uppercase tracking-wider text-slate-500 border-b border-white/10">
+              <thead className="sticky top-0 z-10">
+                <tr className="text-[10px] uppercase tracking-wider text-slate-500 border-b border-white/10" style={{ background: "#0b1622" }}>
                   <th className="py-2 pr-3 font-mono">t (h)</th>
                   <th className="py-2 pr-3 font-mono">X (m)</th>
                   <th className="py-2 pr-3 font-mono">Y (m)</th>

@@ -102,7 +102,7 @@ export default function Navbar({
   return (
     <nav
       style={{
-        position: "fixed",
+        position: "sticky",
         top: 0,
         left: 0,
         right: 0,

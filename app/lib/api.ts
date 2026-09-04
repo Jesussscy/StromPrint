@@ -299,19 +299,6 @@ export function riskLabel(estado: string): string {
   return etiquetaNivel(estado);
 }
 
-export function riskIcon(estado: string): string {
-  switch (estado) {
-    case "Critico":
-      return "\u26A0";
-    case "Emergencia":
-      return "\uD83D\uDEA8";
-    case "Alerta":
-      return "\u26A0\uFE0F";
-    default:
-      return "\u2705";
-  }
-}
-
 export function fuenteLabel(fuente?: string): string {
   switch (fuente) {
     case "open-meteo":

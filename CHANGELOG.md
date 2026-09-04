@@ -2,7 +2,39 @@
 
 Todas las versiones notables de StormPrint.
 
-## [3.0.1] — Pulido de interfaz y fix del mapa en Vercel
+## [3.9.0] — Estabilidad de producción y pulido de interfaz
+
+### Estabilidad crítica de producción (Vercel)
+- **Fix de arranque del frontend (Cesium)**: `cesium` -> `@cesium/engine` -> `@spz-loader/core`
+  traía la WASM de Gaussian splatting embebida como template literal con escapes octales
+  (`\00`), lo que provocaba `SyntaxError: Octal escape sequences are not allowed in
+  template strings` y rompía **todas** las páginas con mapa 3D (`/` y `/ciencia`). Se fuerza
+  `@spz-loader/core` a `0.3.0` (embebe en base64, a prueba de codegen de SWC) vía
+  `overrides` en `package.json`. Verificado: los 29 chunks de producción analizan sin error.
+- `security.py`: la falta de `STORMPRINT_API_KEY` ya no tumba la API al importar; los
+  endpoints protegidos responden 503 claro («API no configurada») y `/health`, `/predecir`
+  y `/predicciones` siguen vivos.
+- CORS robusto: `get_allowed_origins()` acepta automáticamente `VERCEL_URL` además de
+  `STORMPRINT_ALLOWED_ORIGINS`, evitando que un dominio/alias distinto quede bloqueado.
+- `database.py`: soporte opcional de `DATABASE_URL` (Postgres/Neon/Turso con `+asyncpg`)
+  para historial y predicciones **persistentes**, con fallback a SQLite (efímero) si no se
+  configura. Migraciones agnósticas de dialecto y timestamp UTC sin deprecation.
+- Persistencia de caches y notificaciones **atómica** (`api/storage.py`: temp + rename) para
+  evitar corrupción de JSON con invocaciones serverless concurrentes.
+- `api.ts`: eliminada función muerta `riskIcon` (devolvía emojis).
+
+### Robustez y UX de errores (frontend)
+- `page.tsx`: la predicción inicial ya no queda en «Cargando…» para siempre — banner de error
+  con botón «Reintentar» si el backend falla.
+- `CesiumMap.tsx`: el `import("cesium")` está dentro del try/catch y el fallo muestra un estado
+  de error con botón de reinicio automático (ya no se cuelga en «Cargando modelo 3D…»).
+- `Footer.tsx`: el fallo del healthcheck marca el sistema como «Degradado» en lugar de
+  «Verificando…» para siempre; año del copyright estable fijado en montaje.
+
+### Correcciones de hidratación (SSR vs cliente)
+- `FreshnessBadge.tsx` y `AlertDrawer.tsx`: `Date.now()` ya no se usa en el inicializador de
+  estado (se inicializa en `useEffect`), eliminando errores de hidratación.
+- `Footer.tsx`: `currentYear` calculado en montaje, no en render.
 
 ### Interacción móvil y navegación
 - `Navbar` reescrito con `next/navigation` (`useRouter`/`usePathname`): enlaces a rutas

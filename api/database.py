@@ -1,8 +1,17 @@
 """
 StormPrint :: database.py
-Async SQLite persistence layer via SQLAlchemy 2.x + aiosqlite.
-Stores FloodRecord (simulation timesteps) and PredictionRecord (forecast runs)
-for the Manga (Cartagena) territory.
+Persistence layer via SQLAlchemy 2.x async, con soporte opcional de PostgreSQL.
+
+Almacena FloodRecord (pasos de simulacion) y PredictionRecord (corridas de
+pronostico) para el territorio Manga (Cartagena).
+
+Estrategia de conexion (degradacion sin crash):
+  1. Si se define DATABASE_URL (p. ej. Postgres/Neon/Turso con `+asyncpg`),
+     se usa esa base externa DURADERA.
+  2. Si no, se usa SQLite. En Vercel va a /tmp (efimera entre invocaciones);
+     en local, a un archivo stormprint.db del proyecto.
+De este modo, sin configurar nada la app sigue funcionando (historico efimero),
+y al configurar DATABASE_URL el historial y las predicciones persisten.
 """
 
 import datetime
@@ -18,16 +27,46 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 logger = logging.getLogger("stormprint.database")
 
 # ---------------------------------------------------------------------------
-# Engine configuration
+# Engine configuration (with optional external DATABASE_URL)
 # ---------------------------------------------------------------------------
 _IS_VERCEL = bool(os.environ.get("VERCEL"))
-_DB_PATH = "/tmp/stormprint.db" if _IS_VERCEL else os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "stormprint.db"
-)
-DATABASE_URL = f"sqlite+aiosqlite:///{_DB_PATH}"
 
-engine = create_async_engine(DATABASE_URL, echo=False, future=True)
+_EXTERNAL_DB_URL = os.environ.get("DATABASE_URL", "").strip()
+
+if _EXTERNAL_DB_URL:
+    # Normalizacion: si el usuario da una URL postgres sin driver async,
+    # la completamos con asyncpg para que funcione debajo de SQLAlchemy async.
+    if _EXTERNAL_DB_URL.startswith("postgres://"):
+        _EXTERNAL_DB_URL = "postgresql+asyncpg://" + _EXTERNAL_DB_URL[len("postgres://"):]
+    elif _EXTERNAL_DB_URL.startswith("postgresql://"):
+        _EXTERNAL_DB_URL = "postgresql+asyncpg://" + _EXTERNAL_DB_URL[len("postgresql://"):]
+    DATABASE_URL = _EXTERNAL_DB_URL
+    DB_IS_EXTERNAL = True
+    logger.info("Usando base de datos externa (persistente): %s", DATABASE_URL.split("@")[-1])
+else:
+    _DB_PATH = "/tmp/stormprint.db" if _IS_VERCEL else os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "stormprint.db"
+    )
+    DATABASE_URL = f"sqlite+aiosqlite:///{_DB_PATH}"
+    DB_IS_EXTERNAL = False
+    logger.info("Usando SQLite (%s). Configura DATABASE_URL para persistencia en Vercel.", DATABASE_URL)
+
+engine = create_async_engine(
+    DATABASE_URL,
+    echo=False,
+    future=True,
+    pool_pre_ping=True,
+)
 AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
+
+
+def _utcnow() -> datetime.datetime:
+    """Fecha/hora UTC (evita la deprecacion de datetime.utcnow).
+
+    Se guarda como naive-UTC para compatibilidad con columnas DateTime sin
+    zona horaria en SQLite y PostgreSQL.
+    """
+    return datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
 
 
 class Base(DeclarativeBase):
@@ -42,7 +81,7 @@ class FloodRecord(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     timestamp: Mapped[datetime.datetime] = mapped_column(
-        DateTime, default=datetime.datetime.utcnow, index=True
+        DateTime, default=_utcnow, index=True
     )
     hour: Mapped[float] = mapped_column(Float, nullable=False)
     water_level_cm: Mapped[float] = mapped_column(Float, nullable=False)
@@ -70,7 +109,7 @@ class PredictionRecord(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     timestamp: Mapped[datetime.datetime] = mapped_column(
-        DateTime, default=datetime.datetime.utcnow, index=True
+        DateTime, default=_utcnow, index=True
     )
     horas_pronostico: Mapped[int] = mapped_column(Integer, nullable=False)
     puntos_json: Mapped[str] = mapped_column(String, nullable=False)
@@ -102,6 +141,27 @@ class PredictionRecord(Base):
 _db_initialized = False
 
 
+async def _migrate_data_source(conn) -> None:
+    """Anade la columna `data_source` a `predictions` si no existe, de forma
+    agnostica del dialecto (SQLite y PostgreSQL)."""
+    dialect = conn.dialect.name
+    try:
+        if dialect == "sqlite":
+            cols = await conn.execute(text("PRAGMA table_info(predictions)"))
+            names = {row[1] for row in cols.all()}
+            if "data_source" not in names:
+                await conn.execute(text("ALTER TABLE predictions ADD COLUMN data_source VARCHAR(24)"))
+        else:
+            cols = await conn.execute(text(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_name='predictions' AND column_name='data_source'"
+            ))
+            if cols.first() is None:
+                await conn.execute(text("ALTER TABLE predictions ADD COLUMN data_source VARCHAR(24)"))
+    except Exception as e:
+        logger.warning("Migration add data_source failed: %s", e)
+
+
 async def init_db() -> None:
     global _db_initialized
     if _db_initialized:
@@ -109,11 +169,7 @@ async def init_db() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
         # Migracion ligera: anyade la columna data_source a tablas predictions existentes
-        try:
-            await conn.execute(text("ALTER TABLE predictions ADD COLUMN data_source VARCHAR(24)"))
-        except Exception as e:
-            if "duplicate column" not in str(e).lower():
-                logger.warning("Migration add data_source failed: %s", e)
+        await _migrate_data_source(conn)
     _db_initialized = True
 
 

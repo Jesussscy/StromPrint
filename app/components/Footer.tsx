@@ -41,16 +41,24 @@ const REDES = [
 
 export default function Footer() {
   const [health, setHealth] = useState<HealthResponse | null>(null);
+  // El anyo se fija en el montaje (no en render) para evitar diferencias de
+  // hidratacion en el cambio de anyo (31 dic -> 1 ene).
+  const [year, setYear] = useState<number | null>(null);
   const mounted = useRef(false);
 
   useEffect(() => {
     mounted.current = true;
+    setYear(new Date().getFullYear());
     const poll = () => {
       fetchHealth()
         .then((h) => {
           if (mounted.current) setHealth(h);
         })
-        .catch(() => {});
+        .catch(() => {
+          // Backend caido: marcar como degradado en lugar de dejar "Verificando…"
+          // para siempre, senalando que hay un problema.
+          if (mounted.current) setHealth((prev) => prev ?? { status: "degraded", timestamp: "", uptime_seconds: 0, database: "error", fuentes: {}, suscripciones: 0 });
+        });
     };
     poll();
     const id = setInterval(poll, 30_000);
@@ -63,7 +71,6 @@ export default function Footer() {
   const isOperational = health?.status === "operational";
   const uptimeH = health ? Math.floor(health.uptime_seconds / 3600) : 0;
   const uptimeM = health ? Math.floor((health.uptime_seconds % 3600) / 60) : 0;
-  const year = new Date().getFullYear();
 
   return (
     <footer className="group relative bg-[#080C14] border-t border-cyan/10 animate-fade-in-up">
@@ -192,7 +199,7 @@ export default function Footer() {
               <span className="text-slate-700">·</span>
               <a href="mailto:contacto@stormprint.co" className="hover:text-cyan transition-colors duration-200">contacto@stormprint.co</a>
             </p>
-            <p>© {year} StormPrint · Cartagena, Colombia</p>
+            <p>© {year ?? ""} StormPrint · Cartagena, Colombia</p>
           </div>
         </div>
       </div>

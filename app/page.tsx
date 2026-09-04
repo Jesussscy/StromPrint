@@ -742,13 +742,22 @@ function CTASection() {
 
 export default function LandingPage() {
   const [prediccion, setPrediccion] = useState<PrediccionResponse | null>(null);
+  const [cargandoPrediccion, setCargandoPrediccion] = useState(true);
+  const [errorPrediccion, setErrorPrediccion] = useState<string | null>(null);
   const [stormMode, setStormMode] = useState(false);
 
-  useEffect(() => {
+  const cargarPrediccion = useCallback(() => {
+    setCargandoPrediccion(true);
+    setErrorPrediccion(null);
     predecir({ horas_pronostico: 168, usar_datos_meteo: true })
-      .then(setPrediccion)
-      .catch(() => {});
+      .then((r) => setPrediccion(r))
+      .catch((e) => setErrorPrediccion(e instanceof Error ? e.message : "Error al cargar la predicción."))
+      .finally(() => setCargandoPrediccion(false));
   }, []);
+
+  useEffect(() => {
+    cargarPrediccion();
+  }, [cargarPrediccion]);
 
   // Clic en el gráfico de la sección Pronóstico: reproduce esa hora en el
   // visor 3D (evento global que escucha DashboardEmbedded).
@@ -775,6 +784,27 @@ export default function LandingPage() {
           document.getElementById("panel-vivo")?.scrollIntoView({ behavior: "smooth" });
         }}
       />
+
+      {errorPrediccion && (
+        <div className="fixed bottom-24 left-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 sm:bottom-8" role="alert">
+          <div className="glass-glow rounded-xl border border-red-500/30 px-4 py-3">
+            <div className="flex items-start gap-3">
+              <svg className="mt-0.5 shrink-0 text-red-400" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-red-300">No se pudo cargar la predicción</p>
+                <p className="mt-0.5 text-xs text-slate-400">{errorPrediccion}</p>
+                <button
+                  onClick={cargarPrediccion}
+                  disabled={cargandoPrediccion}
+                  className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-cyan/30 px-3 py-1.5 text-xs font-mono uppercase tracking-wider text-cyan hover:bg-cyan/10 active:scale-95 transition-all duration-150 min-h-[36px] disabled:opacity-40"
+                >
+                  {cargandoPrediccion ? "Cargando…" : "Reintentar"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <main id="contenido">
         <HeroSection />

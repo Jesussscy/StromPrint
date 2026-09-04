@@ -96,6 +96,7 @@ export default function CesiumMap({
   const fpsCountRef = useRef(0);
   const [fps, setFps] = useState(0);
   const [vista, setVista] = useState<"3d" | "heatmap">("3d");
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => { horaLocalRef.current = horaLocal; }, [horaLocal]);
   useEffect(() => { stormRef.current = stormMode; }, [stormMode]);
@@ -153,11 +154,16 @@ export default function CesiumMap({
       if (!containerRef.current || viewerRef.current) return;
 
       (globalThis as any).CESIUM_BASE_URL = "/cesium";
-      const Cesium: any = await import("cesium");
-      if (cancelado) return;
-      cesiumRef.current = Cesium;
 
       try {
+        // El import dinamico del chunk de Cesium (multi-MB) tambien puede
+        // fallar (red/red de cache). Al estar dentro del try, ese fallo se
+        // refleja en el estado `error` en vez de dejar el visor colgado en
+        // "Cargando modelo 3D…" indefinidamente.
+        const Cesium: any = await import("cesium");
+        if (cancelado) return;
+        cesiumRef.current = Cesium;
+
         const viewer = new Cesium.Viewer(containerRef.current, {
           baseLayer: Cesium.ImageryLayer.fromProviderAsync(
             new Cesium.UrlTemplateImageryProvider({
@@ -484,7 +490,7 @@ export default function CesiumMap({
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [retryKey]);
 
   // ── Animador: agua + zonas críticas en vivo ────────────────────────────
   const objetivoAguaRef = useRef(nivelAguaCm);
@@ -1125,6 +1131,16 @@ function recentrar() {
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-ocean-deep px-6 text-center">
           <p className="font-mono text-[10px] uppercase tracking-widest text-risk-emergency mb-2">No se pudo cargar el mapa 3D</p>
           <p className="max-w-md text-xs text-slate-400">{error}</p>
+          <button
+            onClick={() => {
+              setError(null);
+              setCargando(true);
+              setRetryKey((k) => k + 1);
+            }}
+            className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-cyan/30 px-4 py-2 text-[11px] font-mono uppercase tracking-wider text-cyan bg-ocean/60 hover:bg-cyan/10 active:scale-95 transition-all duration-150 min-h-[44px]"
+          >
+            Reintentar
+          </button>
         </div>
       )}
 

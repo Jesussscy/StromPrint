@@ -33,6 +33,9 @@ logger = logging.getLogger("stormprint.notifications")
 DASHBOARD_URL = "https://stormprint.vercel.app"
 
 
+from .storage import atomic_write_json as _atomic_write_json  # noqa: E402
+
+
 class NotificationService:
     """Canal de notificaciones con deduplicacion y persistencia leve."""
 
@@ -77,8 +80,7 @@ class NotificationService:
 
     def _save_subscriptions(self) -> None:
         try:
-            with open(self.SUBSCRIPTIONS_FILE, "w", encoding="utf-8") as fh:
-                json.dump(self.subscriptions, fh)
+            _atomic_write_json(self.SUBSCRIPTIONS_FILE, self.subscriptions)
         except Exception as exc:
             logger.warning("No se pudo guardar suscripciones: %s", exc)
 
@@ -282,8 +284,7 @@ class NotificationService:
         if len(self.notification_history) > self.MAX_HISTORY:
             self.notification_history = self.notification_history[-self.MAX_HISTORY:]
         try:
-            with open(self.HISTORY_FILE, "w", encoding="utf-8") as fh:
-                json.dump(self.notification_history, fh)
+            _atomic_write_json(self.HISTORY_FILE, self.notification_history)
         except Exception as exc:
             logger.warning("No se pudo guardar historial: %s", exc)
 

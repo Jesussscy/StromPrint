@@ -22,6 +22,8 @@ from typing import Any, Dict, List, Optional
 
 import httpx
 
+from .storage import atomic_write_json
+
 logger = logging.getLogger("stormprint.tide")
 
 MANGA_LAT = 10.4000
@@ -221,9 +223,9 @@ class TideService:
 
     def _store_cache(self, data: Dict[str, Any]) -> None:
         try:
-            data["timestamp"] = datetime.now().isoformat()
-            with open(self.CACHE_FILE, "w", encoding="utf-8") as fh:
-                json.dump(data, fh)
+            data = dict(data)
+            data["timestamp"] = datetime.utcnow().isoformat()
+            atomic_write_json(self.CACHE_FILE, data)
         except Exception as exc:
             logger.debug("tide_service: no se pudo guardar cache: %s", exc)
 

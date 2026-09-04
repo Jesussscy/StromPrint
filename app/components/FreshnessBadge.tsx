@@ -29,9 +29,13 @@ export default function FreshnessBadge({
   dataSource,
   labelPrefix = "Datos",
 }: FreshnessBadgeProps) {
-  const [now, setNow] = useState(() => Date.now());
+  // `now` se inicializa en el montaje (y por el intervalo) para evitar
+  // discrepancias de hidratacion SSR vs cliente al usar Date.now() en el
+  // inicializador de estado.
+  const [now, setNow] = useState(0);
 
   useEffect(() => {
+    setNow(Date.now());
     const t = setInterval(() => setNow(Date.now()), 30000);
     return () => clearInterval(t);
   }, []);

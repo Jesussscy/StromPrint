@@ -9,12 +9,13 @@ Simulación ciberfísica del riesgo de inundación en el barrio Manga, Cartagena
 StormPrint/
 ├── api/                    FastAPI serverless (Python 3.12)
 │   ├── index.py            Entrypoint, rutas, validación Pydantic V2
-│   ├── database.py         SQLite async (SQLAlchemy 2 + aiosqlite)
+│   ├── database.py         Persistencia: SQLite async (default) o Postgres/Neon vía DATABASE_URL
 │   ├── security.py         Auth por API key, rate limiting, headers, CORS
 │   ├── physics_engine.py   EDO de 2do orden (SciPy solve_ivp, RK45)
 │   ├── physics_engine_analytical.py  Solución analítica por tramos (Duhamel)
 │   ├── weather_service.py  Open-Meteo + cache resbaloso (vivo→histórico→promedio)
 │   ├── tide_service.py     Marea Open-Meteo Marine con fallback analítico
+│   ├── storage.py          Escritura JSON atómica (caches/notificaciones, serverless-safe)
 │   └── notification_service.py  Alertas multi-canal + suscripciones por email
 ├── app/                    Next.js 14 App Router (React 18 + TS)
 │   ├── layout.tsx
@@ -136,13 +137,21 @@ Durante desarrollo local, `next.config.js` ya reenvía `/api/v1/*` hacia
 ## Despliegue en Vercel
 
 1. Configura las variables de entorno del `.env.example` en el dashboard de
-   Vercel (Project Settings → Environment Variables).
+   Vercel (Project Settings → Environment Variables). Las **críticas** son:
+   - `STORMPRINT_API_KEY` y `NEXT_PUBLIC_STORMPRINT_API_KEY` (deben coincidir).
+   - `STORMPRINT_KEY_SALT` (sal estática de la key).
+   - `STORMPRINT_ALLOWED_ORIGINS` (dominios permitidos por CORS; si no se define,
+     la app también acepta automáticamente el `VERCEL_URL` activo).
 2. `vercel --prod`. `vercel.json` unifica el build de Next.js con la función
    serverless Python (`api/index.py`, runtime `python3.12`).
-3. En Vercel, SQLite se abre en `/tmp/stormprint.db` (única ruta escribible
-   en funciones serverless) — `database.py` detecta `VERCEL=1` automáticamente.
-   Para persistencia real entre invocaciones/deploys, migra a Postgres/Turso
-   manteniendo el mismo modelo `FloodRecord`.
+3. **Persistencia de datos**:
+   - Si defines `DATABASE_URL` (p. ej. Neon/Postgres/Turso con driver `asyncpg`),
+     el historial y las predicciones se guardan en esa base **persistente**.
+   - Si no, se usa SQLite en `/tmp/stormprint.db` (efímero entre invocaciones en
+     Vercel). **Esto NO tira la app**: caches, notificaciones y suscripciones usan
+     escritura atómica (`api/storage.py`) y ante fallo se degradan sin romper nada.
+   - Para que el historial y las alertas perduren entre deploys, configura
+     `DATABASE_URL` con la URL connection del proveedor desiderado.
 
 ## Modelo 3D
 

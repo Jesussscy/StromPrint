@@ -26,12 +26,23 @@ _RAW_API_KEY = os.environ.get("STORMPRINT_API_KEY", "")
 IS_PRODUCTION = os.environ.get("VERCEL_ENV", os.environ.get("ENV", "production")) != "development"
 
 if IS_PRODUCTION and not _RAW_API_KEY:
-    raise RuntimeError(
-        "CRITICAL: STORMPRINT_API_KEY environment variable must be set in production. "
-        "Generate a secure key with: python -c \"import secrets; print(secrets.token_urlsafe(48))\""
+    # En produccion la key deberia estar configurada, pero NO lanzamos una
+    # excepcion en el import: eso tumbaria TODA la API (incluido /health y
+    # /predecir). En su lugar registramos el problema y marcamos que los
+    # endpoints protegidos respondan 503 "API no configurada" de forma clara.
+    _API_NOT_CONFIGURED = True
+    import logging
+
+    logging.getLogger("stormprint").error(
+        "CRITICAL: STORMPRINT_API_KEY no esta configurado en produccion. "
+        "Los endpoints protegidos (/weather, /history, /predict) devolveran 503. "
+        "Genera una clave con: python -c \"import secrets; print(secrets.token_urlsafe(48))\""
     )
 elif not _RAW_API_KEY:
     _RAW_API_KEY = "sp_dev_only_not_for_production"
+    _API_NOT_CONFIGURED = False
+else:
+    _API_NOT_CONFIGURED = False
 
 
 def _hash_key(raw_key: str) -> str:
@@ -67,6 +78,13 @@ def verify_admin_credentials(password: str, salt: str, password_hash: str) -> bo
 
 
 async def verify_api_key(x_stormprint_key: Optional[str] = Header(default=None)) -> str:
+    if _API_NOT_CONFIGURED:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="API no configurada: falta STORMPRINT_API_KEY.",
+            headers={"WWW-Authenticate": "ApiKey"},
+        )
+
     if not x_stormprint_key:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -141,6 +159,15 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 # ---------------------------------------------------------------------------
 def get_allowed_origins() -> list:
     IS_PROD = os.environ.get("VERCEL_ENV", os.environ.get("ENV", "production")) != "development"
+
+    # Siempre aceptamos el dominio de Vercel activo (VERCEL_URL) además de la
+    # lista explícita, para que la app nunca quede bloqueada por CORS aunque el
+    # proyecto se despliegue en un alias/dominio distinto al configurado.
+    origins = set()
+    vercel_url = os.environ.get("VERCEL_URL")
+    if vercel_url:
+        origins.add(f"https://{vercel_url}")
+
     if IS_PROD:
         raw = os.environ.get(
             "STORMPRINT_ALLOWED_ORIGINS",
@@ -151,7 +178,12 @@ def get_allowed_origins() -> list:
             "STORMPRINT_ALLOWED_ORIGINS",
             "https://stormprint.vercel.app,http://localhost:3000,http://localhost:3001",
         )
-    return [origin.strip() for origin in raw.split(",") if origin.strip()]
+    for origin in raw.split(","):
+        origin = origin.strip()
+        if origin:
+            origins.add(origin)
+
+    return list(origins)
 
 
 # ---------------------------------------------------------------------------

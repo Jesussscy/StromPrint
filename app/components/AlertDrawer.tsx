@@ -116,7 +116,9 @@ export default function AlertDrawer({ nivelAguaCm, nivelMaximo, tendenciaCmH, on
   const [items, setItems] = useState<AlertItem[]>([]);
   const [metrics, setMetrics] = useState<{ alertas_hoy?: number; ultima_alerta?: string | null }>({});
   const [silenced, setSilenced] = useState<Set<string>>(new Set());
-  const [now, setNow] = useState(() => Date.now());
+  // Inicializado en el montaje (no en el inicializador) para evitar
+  // discrepancias de hidratacion SSR vs cliente.
+  const [now, setNow] = useState(0);
 
   const load = useCallback(async () => {
     try {
@@ -135,6 +137,7 @@ export default function AlertDrawer({ nivelAguaCm, nivelMaximo, tendenciaCmH, on
   }, [nivelAguaCm, nivelMaximo, tendenciaCmH]);
 
   useEffect(() => {
+    setNow(Date.now());
     load();
     const poll = setInterval(load, 30000);
     const tick = setInterval(() => setNow(Date.now()), 10000);

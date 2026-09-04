@@ -35,7 +35,7 @@ def test_health_ok(client):
     assert r.status_code == 200
     body = r.json()
     assert body["service"] == "stormprint-api"
-    assert body["version"] == "3.0.0"
+    assert body["version"] == "3.9.0"
     assert body["status"] in {"operational", "degraded"}
     assert "timestamp" in body
     assert "uptime_seconds" in body

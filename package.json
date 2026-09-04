@@ -1,6 +1,6 @@
 {
   "name": "stormprint",
-  "version": "3.0.0",
+  "version": "3.9.0",
   "private": true,
   "description": "StormPrint — La huella que deja cada tormenta en el territorio (Manga, Cartagena)",
   "scripts": {
@@ -46,5 +46,8 @@
   },
   "engines": {
     "node": ">=18.18.0"
+  },
+  "overrides": {
+    "@spz-loader/core": "0.3.0"
   }
 }

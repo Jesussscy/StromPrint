@@ -18,6 +18,8 @@ from typing import Any, Dict, List, Optional
 
 import httpx
 
+from .storage import atomic_write_json
+
 logger = logging.getLogger("stormprint.weather")
 
 # Short-lived in-memory forecast cache to avoid duplicate Open-Meteo calls
@@ -1042,8 +1044,7 @@ class WeatherService:
     def _store_cache(self, data: Dict[str, Any]) -> None:
         """Persiste el cache local (no bloquear el flujo si falla)."""
         try:
-            with open(self.CACHE_FILE, "w", encoding="utf-8") as fh:
-                json.dump(data, fh)
+            atomic_write_json(self.CACHE_FILE, data)
         except Exception as exc:
             logger.debug("WeatherService: no se pudo guardar cache: %s", exc)
 

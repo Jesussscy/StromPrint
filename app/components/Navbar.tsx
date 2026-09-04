@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { Home, LayoutDashboard, Brain, Siren, Phone } from "lucide-react";
 
 interface Tab {
   id: string;
@@ -10,12 +12,19 @@ interface Tab {
 }
 
 const DEFAULT_TABS: Tab[] = [
-  { id: "inicio", label: "Inicio", href: "/", icon: <span>🏠</span> },
-  { id: "panel", label: "Panel Vivo", href: "/#panel-vivo", icon: <span>📊</span> },
-  { id: "ciencia", label: "Ciencia", href: "/ciencia", icon: <span>🧠</span> },
-  { id: "alertas", label: "Alertas", href: "/alertas", icon: <span>🚨</span> },
-  { id: "contacto", label: "Contacto", href: "/#contacto", icon: <span>📞</span> },
+  { id: "inicio", label: "Inicio", href: "/", icon: <Home size={15} /> },
+  { id: "panel", label: "Panel Vivo", href: "/#panel-vivo", icon: <LayoutDashboard size={15} /> },
+  { id: "ciencia", label: "Ciencia", href: "/ciencia", icon: <Brain size={15} /> },
+  { id: "alertas", label: "Alertas", href: "/alertas", icon: <Siren size={15} /> },
+  { id: "contacto", label: "Contacto", href: "/#contacto", icon: <Phone size={15} /> },
 ];
+
+// Separa una URL "/ruta#ancla" en ruta y ancla. Devuelve { path, hash } | null.
+function parseHref(href: string): { path: string; hash: string } | null {
+  if (typeof window === "undefined") return null;
+  const [path, hash] = href.split("#");
+  return { path: path || "/", hash: hash || "" };
+}
 
 export default function Navbar({
   tabs = DEFAULT_TABS,
@@ -34,6 +43,8 @@ export default function Navbar({
   const tabsRef = useRef<Map<string, HTMLButtonElement>>(new Map());
   const [indicator, setIndicator] = useState({ left: 0, width: 0 });
   const [fade, setFade] = useState(true);
+  const router = useRouter();
+  const pathname = usePathname();
 
   const updateIndicator = useCallback(() => {
     const el = tabsRef.current.get(active);
@@ -53,9 +64,33 @@ export default function Navbar({
     return () => cancelAnimationFrame(t);
   }, [active]);
 
+  // Al cambiar de ruta externamente (e.g. desde el móvil), sincronizar la pestaña activa.
+  useEffect(() => {
+    const matching = tabs.find((t) => t.href && t.href.split("#")[0] === pathname);
+    if (matching && matching.id !== active) setActive(matching.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
   const handleClick = (tab: Tab) => {
     if (tab.href) {
-      window.location.hash = tab.href;
+      const parsed = parseHref(tab.href);
+      if (!parsed) return;
+      const { path, hash } = parsed;
+
+      if (hash) {
+        // Navegar a la ruta y luego hacer scroll al ancla.
+        if (pathname !== path) {
+          router.push(`${path}#${hash}`);
+          // Esperar el primer render de la nueva página antes de hacer scroll.
+          setTimeout(() => {
+            document.getElementById(hash)?.scrollIntoView({ behavior: "smooth" });
+          }, 150);
+        } else {
+          document.getElementById(hash)?.scrollIntoView({ behavior: "smooth" });
+        }
+      } else {
+        router.push(path || "/");
+      }
     }
     setBounce(tab.id);
     setPrevActive(active);
@@ -122,11 +157,10 @@ export default function Navbar({
               border: "none",
               cursor: "pointer",
               borderRadius: 8,
-              transform:
-                active === tab.id
-                  ? "scale(1)"
-                  : "scale(1)",
               transition: "color 0.2s, transform 0.15s",
+              WebkitTapHighlightColor: "transparent",
+              touchAction: "manipulation",
+              userSelect: "none" as const,
             }}
             onMouseEnter={(e) => {
               if (active !== tab.id) {

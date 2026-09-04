@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Line, Float, Html, Sparkles, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
+import { Download } from "lucide-react";
 import { correrSimulacion, SIM_PARAMS_DEFAULT, type RegistroSim } from "./simuladorFisica";
 import { clasificarNivel, COLOR_POR_NIVEL } from "@/app/lib/riesgo";
 import { ZONAS_MANGA } from "@/app/lib/zonasManga";
@@ -371,8 +372,8 @@ export function PanelSimulador() {
             <button onClick={() => setVerGrafico((v) => !v)} className="glass-glow rounded-lg px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-cyan hover:bg-cyan/10 transition">
               {verGrafico ? "Ocultar gráfico" : "Ver gráfico"}
             </button>
-            <button onClick={exportarCSV} className="rounded-lg border border-cyan/30 px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-cyan hover:bg-cyan/10 transition">
-              ⬇ Exportar CSV
+            <button onClick={exportarCSV} className="inline-flex items-center gap-1.5 rounded-lg border border-cyan/30 px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-cyan hover:bg-cyan/10 transition">
+              <Download size={12} /> Exportar CSV
             </button>
           </div>
         </div>

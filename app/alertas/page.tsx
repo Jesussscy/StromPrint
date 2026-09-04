@@ -13,6 +13,19 @@ import MobileBottomNav, {
   IconScience,
 } from "@/app/components/MobileBottomNav";
 import { Skeleton } from "@/app/components/Skeleton";
+import {
+  Check,
+  BellRing,
+  Activity,
+  MapPin,
+  Clock,
+  ShieldAlert,
+  Mail,
+  Webhook,
+  Download,
+  Search,
+  AlertTriangle,
+} from "lucide-react";
 import { formatFechaHoraCartagena } from "@/app/lib/datetime";
 
 const FADE = {
@@ -169,15 +182,25 @@ export default function AlertasPage() {
       <NotificationBanner />
 
       {/* Hero */}
-      <div className="relative py-24 overflow-hidden">
+      <div className="relative py-20 overflow-hidden">
         <div className="absolute inset-0 hero-gradient" />
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: "radial-gradient(circle at 1px 1px, rgba(0,210,255,0.4) 1px, transparent 0)",
+          backgroundSize: "36px 36px",
+        }} />
         <div className="relative mx-auto max-w-4xl px-6 md:px-12">
-          <Link href="/" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-cyan transition mb-8">
+          <Link href="/" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-cyan transition mb-6">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
             Volver al panel principal
           </Link>
           <motion.div {...FADE}>
-            <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-cyan mb-4">Monitoreo continuo</p>
+            <div className="inline-flex items-center gap-2 rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-red-400 mb-5">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-60" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+              </span>
+              Monitoreo continuo 24/7
+            </div>
             <h1 className="font-display text-3xl md:text-5xl font-bold text-white mb-4">
               Centro de <span className="neon-text">Alertas</span>
             </h1>
@@ -209,19 +232,28 @@ export default function AlertasPage() {
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
-                { label: "Alertas últimas 24 h", value: metricas?.alertas_hoy ?? 0, color: "#FFD600" },
-                { label: "Nivel máx. registrado", value: metricas?.nivel_maximo != null ? `${metricas.nivel_maximo.toFixed(0)} cm` : "—", color: "#FF0055" },
-                { label: "Zonas afectadas", value: metricas?.zonas_afectadas != null ? String(metricas.zonas_afectadas) : "—", color: "#B000FF" },
+                { label: "Alertas últimas 24 h", value: metricas?.alertas_hoy ?? 0, color: "#FFD600", icon: <BellRing size={16} /> },
+                { label: "Nivel máx. registrado", value: metricas?.nivel_maximo != null ? `${metricas.nivel_maximo.toFixed(0)} cm` : "—", color: "#FF0055", icon: <Activity size={16} /> },
+                { label: "Zonas afectadas", value: metricas?.zonas_afectadas != null ? String(metricas.zonas_afectadas) : "—", color: "#B000FF", icon: <MapPin size={16} /> },
                 {
                   label: "Última alerta",
                   value: metricas?.ultima_alerta ? formatFechaHoraCartagena(metricas.ultima_alerta) : "Sin alertas",
-                  color: "#00E5FF",
+                  color: "#00E5FF", icon: <Clock size={16} />,
                 },
               ].map((m) => (
-                <div key={m.label} className="glass rounded-2xl p-4">
-                  <p className="font-mono text-[9px] uppercase tracking-widest text-slate-500">{m.label}</p>
-                  <p className="mt-1 font-display text-lg font-bold font-tabular break-words" style={{ color: m.color }}>{m.value}</p>
-                </div>
+                <motion.div
+                  key={m.label}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4 }}
+                  className="relative overflow-hidden glass rounded-2xl p-4"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <p className="font-mono text-[9px] uppercase tracking-widest text-slate-500 leading-tight">{m.label}</p>
+                    <span className="rounded-md p-1.5" style={{ color: m.color, backgroundColor: `${m.color}14` }}>{m.icon}</span>
+                  </div>
+                  <p className="font-display text-xl font-bold font-tabular break-words leading-tight" style={{ color: m.color }}>{m.value}</p>
+                </motion.div>
               ))}
             </div>
           )}
@@ -229,8 +261,8 @@ export default function AlertasPage() {
           {/* Suscripción */}
           <motion.div {...FADE} className="glass-strong rounded-2xl p-5 mt-6">
             <div className="flex items-center gap-3 mb-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg glass-glow">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00F3FF" strokeWidth="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg glass-glow">
+                <Mail size={18} className="text-cyan" />
               </div>
               <div>
                 <p className="font-display text-sm font-bold text-white">Suscripción por correo</p>
@@ -252,14 +284,14 @@ export default function AlertasPage() {
               <button
                 onClick={() => gestionarSuscripcion("subscribe")}
                 disabled={enviando}
-                className="glass-glow rounded-lg px-4 py-2.5 font-mono text-[11px] uppercase tracking-wider text-cyan hover:bg-cyan/10 transition disabled:opacity-50 min-h-[44px]"
+                className="glass-glow rounded-lg px-4 py-2.5 font-mono text-[11px] uppercase tracking-wider text-cyan hover:bg-cyan/10 active:scale-95 transition-all duration-150 disabled:opacity-50 min-h-[44px]"
               >
                 {enviando ? "Guardando…" : "Suscribirme"}
               </button>
               <button
                 onClick={() => gestionarSuscripcion("unsubscribe")}
                 disabled={enviando}
-                className="glass rounded-lg px-4 py-2.5 font-mono text-[11px] uppercase tracking-wider text-slate-400 hover:text-white transition disabled:opacity-50 min-h-[44px]"
+                className="glass rounded-lg px-4 py-2.5 font-mono text-[11px] uppercase tracking-wider text-slate-400 hover:text-white active:scale-95 transition-all duration-150 disabled:opacity-50 min-h-[44px]"
               >
                 Darme de baja
               </button>
@@ -286,15 +318,18 @@ export default function AlertasPage() {
         <section id="historial" className="scroll-mt-24">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <div>
-              <p className="font-display text-xl font-bold text-white">Historial de alertas</p>
+              <div className="flex items-center gap-2">
+                <ShieldAlert size={16} className="text-cyan" />
+                <p className="font-display text-xl font-bold text-white">Historial de alertas</p>
+              </div>
               <p className="font-mono text-[9px] uppercase tracking-widest text-slate-500">{notas.length} registros</p>
             </div>
             <button
               onClick={exportarCSV}
               disabled={notas.length === 0}
-              className="glass-glow rounded-lg px-4 py-2 font-mono text-[11px] uppercase tracking-wider text-cyan hover:bg-cyan/10 transition disabled:opacity-40 min-h-[44px]"
+              className="inline-flex items-center gap-2 glass-glow rounded-lg px-4 py-2 font-mono text-[11px] uppercase tracking-wider text-cyan hover:bg-cyan/10 active:scale-95 transition-all duration-150 disabled:opacity-40 min-h-[44px]"
             >
-              Exportar CSV
+              <Download size={14} /> Exportar CSV
             </button>
           </div>
 
@@ -308,10 +343,10 @@ export default function AlertasPage() {
                   key={n}
                   onClick={() => setFiltro(activo ? "TODOS" : n)}
                   aria-pressed={activo}
-                  className={`rounded-md px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider transition min-h-[32px] ${
-                    activo ? "bg-white/5" : "text-slate-400 hover:text-white"
+                  className={`rounded-md px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider transition-all duration-150 min-h-[36px] ${
+                    activo ? "bg-white/5" : "text-slate-400 hover:text-white active:text-white"
                   }`}
-                  style={activo ? { color, boxShadow: `0 0 0 1px ${color}55` } : undefined}
+                  style={activo ? { color, boxShadow: `0 0 0 1px ${color}55`, backgroundColor: `${color}0d` } : undefined}
                 >
                   {n === "TODOS" ? "Todos" : NIVEL_STYLE[n].label}
                 </button>
@@ -321,7 +356,7 @@ export default function AlertasPage() {
 
           {/* Búsqueda */}
           <div className="relative mb-4">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
             <input
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
@@ -355,40 +390,58 @@ export default function AlertasPage() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.04 * Math.min(i, 6) }}
-                    className="glass rounded-xl p-4 flex flex-wrap items-start gap-3"
+                    className="group glass rounded-xl p-4 flex flex-wrap items-start gap-3 hover:border-white/10 transition-colors"
                   >
                     <span className="mt-1 inline-block h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: c.color, boxShadow: `0 0 10px ${c.color}80` }} />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="rounded-full border px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider" style={{ color: c.color, borderColor: `${c.color}55` }}>
-                          {c.label}
+                        <span className="rounded-full border px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider inline-flex items-center gap-1" style={{ color: c.color, borderColor: `${c.color}55`, backgroundColor: `${c.color}10` }}>
+                          <AlertTriangle size={9} /> {c.label}
                         </span>
                         {esSistema && (
                           <span className="rounded-full border border-cyan/30 px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-cyan">Estado en vivo</span>
                         )}
-                        <span className="font-mono text-[10px] text-slate-500">{formatFechaHoraCartagena(n.timestamp)}</span>
+                        <span className="font-mono text-[10px] text-slate-500 inline-flex items-center gap-1">
+                          <Clock size={10} /> {formatFechaHoraCartagena(n.timestamp)}
+                        </span>
                       </div>
                       <p className="mt-1.5 text-sm text-slate-300">
                         {(n.mensaje ?? n.titulo ?? n.descripcion ?? "Sin descripción") + (n.titulo && n.descripcion ? ` — ${n.descripcion}` : "")}
                       </p>
                       {nivelVal != null && (
-                        <p className="mt-1 font-mono text-[11px] text-slate-400 font-tabular">
-                          Nivel: {nivelVal.toFixed(1)} cm
-                        </p>
+                        <div className="mt-2 max-w-[280px]">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="font-mono text-[9px] uppercase tracking-widest text-slate-500">Nivel</span>
+                            <span className="font-mono text-[10px] text-slate-400 font-tabular">{nivelVal.toFixed(1)} cm</span>
+                          </div>
+                          <div className="h-1 rounded-full bg-white/5 overflow-hidden">
+                            <motion.div
+                              className="h-full rounded-full"
+                              style={{ backgroundColor: c.color, boxShadow: `0 0 8px ${c.color}` }}
+                              initial={{ width: 0 }}
+                              animate={{ width: `${Math.min(100, (nivelVal / 100) * 100)}%` }}
+                              transition={{ duration: 0.7, delay: 0.1 }}
+                            />
+                          </div>
+                        </div>
                       )}
                     </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="flex flex-col items-end gap-1.5 shrink-0">
                       <span
                         title={n.email_enviado ? "Correo enviado" : n.email_enviado === false ? "Correo no enviado" : "—"}
-                        className={`rounded-md border px-2 py-1 font-mono text-[9px] uppercase tracking-wider ${n.email_enviado ? "border-emerald-400/40 text-emerald-300" : "border-white/10 text-slate-600"}`}
+                        className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 font-mono text-[9px] uppercase tracking-wider ${
+                          n.email_enviado ? "border-emerald-400/40 text-emerald-300" : "border-white/10 text-slate-600"
+                        }`}
                       >
-                        correo{!!n.email_enviado && " ✓"}
+                        <Mail size={9} /> {!!n.email_enviado && <Check size={9} />}
                       </span>
                       <span
                         title={n.webhook_enviado ? "Webhook enviado" : n.webhook_enviado === false ? "Webhook no enviado" : "—"}
-                        className={`rounded-md border px-2 py-1 font-mono text-[9px] uppercase tracking-wider ${n.webhook_enviado ? "border-cyan/40 text-cyan" : "border-white/10 text-slate-600"}`}
+                        className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 font-mono text-[9px] uppercase tracking-wider ${
+                          n.webhook_enviado ? "border-cyan/40 text-cyan" : "border-white/10 text-slate-600"
+                        }`}
                       >
-                        webhook{!!n.webhook_enviado && " ✓"}
+                        <Webhook size={9} /> {!!n.webhook_enviado && <Check size={9} />}
                       </span>
                     </div>
                   </motion.div>

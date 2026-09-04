@@ -192,7 +192,7 @@ export default function ZonasMangaPanel({
           return (
             <div
               key={zona.id}
-              className={`w-full text-left rounded-xl px-1 py-1 transition flex items-center gap-1 ${
+              className={`w-full text-left rounded-xl px-1 py-1 transition flex items-center gap-1 select-none touch-manipulation ${
                 seleccionada ? "bg-cyan/10 ring-1 ring-cyan/40" : "hover:bg-white/5 active:bg-white/5"
               }`}
             >

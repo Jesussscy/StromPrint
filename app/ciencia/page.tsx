@@ -5,6 +5,7 @@ import { motion, useScroll, useSpring } from "framer-motion";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import InteractiveEquation from "./InteractiveEquation";
+import MetodoRK4 from "./MetodoRK4";
 import { PanelSimulador } from "./Simulador3D";
 import DataFlowDiagram from "@/app/components/DataFlowDiagram";
 import Navbar from "@/app/components/Navbar";
@@ -188,6 +189,9 @@ export default function CienciaPage() {
             modela el balance hídrico del Barrio Manga. Pasa el mouse sobre cada variable para explorarla.
           </p>
           <InteractiveEquation />
+          <div className="mt-6">
+            <MetodoRK4 />
+          </div>
         </motion.section>
 
         {/* 2. Flujo de Datos */}

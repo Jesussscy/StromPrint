@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, type JSX } from "react";
+import { useState, useEffect, useCallback, type JSX } from "react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 
 type NavAction = "scroll" | "route" | "alerts";
 
@@ -51,24 +52,27 @@ export const NAV_MAIN: MobileNavItem[] = [
   { href: "/ciencia", label: "Ciencia", action: "route", icon: <IconScience /> },
 ];
 
-function scrollToSection(hash: string) {
-  const id = hash.replace(/^#/, "");
-  const el = document.getElementById(id);
-  if (el) {
-    el.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-}
-
 interface MobileBottomNavProps {
   items?: MobileNavItem[];
 }
 
 export default function MobileBottomNav({ items = NAV_MAIN }: MobileBottomNavProps) {
   const [active, setActive] = useState(items[0]?.href ?? "");
+  const pathname = usePathname();
+  const router = useRouter();
 
-  // Observa las secciones de la página para resaltar el elemento activo
+  // Cuando cambia la ruta, si un item de route coincide, se marca activo.
+  useEffect(() => {
+    const routeItem = items.find((i) => i.action === "route" && i.href === pathname);
+    if (routeItem) setActive(routeItem.href);
+    else setActive(items[0]?.href ?? "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
+  // Observa las secciones de la página para resaltar el elemento activo.
   useEffect(() => {
     const scrollIds = items.filter((i) => i.action === "scroll").map((i) => i.href.replace(/^#/, ""));
+    if (scrollIds.length === 0) return;
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -78,7 +82,7 @@ export default function MobileBottomNav({ items = NAV_MAIN }: MobileBottomNavPro
           }
         });
       },
-      { threshold: 0.3, rootMargin: "-80px 0px -50% 0px" }
+      { threshold: 0.15, rootMargin: "-55% 0px -40% 0px" }
     );
     scrollIds.forEach((id) => {
       const el = document.getElementById(id);
@@ -86,6 +90,14 @@ export default function MobileBottomNav({ items = NAV_MAIN }: MobileBottomNavPro
     });
     return () => observer.disconnect();
   }, [items]);
+
+  const scrollToSection = useCallback((href: string) => {
+    const id = href.replace(/^#/, "");
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, []);
 
   const handleClick = (item: MobileNavItem, e: React.MouseEvent) => {
     if (item.action === "alerts") {
@@ -95,34 +107,56 @@ export default function MobileBottomNav({ items = NAV_MAIN }: MobileBottomNavPro
     if (item.action === "scroll") {
       e.preventDefault();
       setActive(item.href);
-      scrollToSection(item.href);
+      // Si estamos en otra página, primero navegamos a / y luego hacemos scroll.
+      if (pathname !== "/") {
+        router.push(item.href);
+        setTimeout(() => scrollToSection(item.href), 120);
+      } else {
+        scrollToSection(item.href);
+      }
     }
   };
 
   const activeScroll = active;
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-[60] md:hidden border-t border-cyan/15 bg-[#050A0F]/95 backdrop-blur-xl safe-area-bottom" role="navigation" aria-label="Navegación móvil">
+    <nav
+      className="fixed inset-x-0 bottom-0 z-[60] md:hidden border-t border-cyan/15 bg-[#050A0F]/95 backdrop-blur-xl safe-area-bottom"
+      role="navigation"
+      aria-label="Navegación móvil"
+    >
       <div className="grid" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
         {items.map((item) => {
           const isActive = item.action !== "alerts" && activeScroll === item.href;
-          const className = `flex flex-col items-center gap-0.5 py-2 transition-colors duration-200 min-h-[52px] justify-center ${
-            isActive ? "text-cyan" : "text-slate-500 active:text-cyan/70"
-          }`;
+          const base = "relative flex flex-col items-center justify-center gap-0.5 py-1.5 min-h-[52px] select-none touch-manipulation";
 
-          // Enlace a otra página (ruta) -> usa next/link para navegación cliente
+          const label = (
+            <>
+              <span className={`pointer-events-none flex h-7 items-center justify-center transition-transform duration-200 ${isActive ? "scale-105" : "scale-100"}`}>
+                {item.icon}
+              </span>
+              <span
+                className={`pointer-events-none font-mono text-[9.5px] uppercase tracking-wider transition-colors duration-200 ${
+                  isActive ? "text-cyan" : "text-slate-500"
+                }`}
+              >
+                {item.label}
+              </span>
+            </>
+          );
+
+          // Encapsulamos cada ítem en un wrapper con un hover/press sutil.
           if (item.action === "route") {
             return (
               <Link
                 key={item.label}
                 href={item.href}
-                className={className}
                 aria-label={item.label}
+                aria-current={isActive ? "page" : undefined}
+                className={`${base} active:scale-95 transition-transform duration-150`}
+                style={{ color: isActive ? "#22d3ee" : "#64748b", WebkitTapHighlightColor: "transparent" }}
               >
-                <span className={`transition-colors duration-200 ${isActive ? "text-cyan drop-shadow-[0_0_6px_rgba(0,229,255,0.5)]" : "text-slate-500"}`}>
-                  {item.icon}
-                </span>
-                <span className="font-mono text-[10px] uppercase tracking-wider">{item.label}</span>
+                {label}
               </Link>
             );
           }
@@ -132,14 +166,12 @@ export default function MobileBottomNav({ items = NAV_MAIN }: MobileBottomNavPro
               key={item.label}
               href={item.action === "alerts" ? "#alerts" : item.href}
               onClick={(e) => handleClick(item, e)}
-              className={className}
               aria-label={item.label}
               aria-current={isActive ? "page" : undefined}
+              className={`${base} active:scale-95 transition-transform duration-150`}
+              style={{ color: isActive ? "#22d3ee" : "#64748b", WebkitTapHighlightColor: "transparent" }}
             >
-              <span className={`transition-colors duration-200 ${isActive ? "text-cyan drop-shadow-[0_0_6px_rgba(0,229,255,0.5)]" : "text-slate-500"}`}>
-                {item.icon}
-              </span>
-              <span className="font-mono text-[10px] uppercase tracking-wider">{item.label}</span>
+              {label}
             </a>
           );
         })}

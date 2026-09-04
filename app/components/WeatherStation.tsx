@@ -2,6 +2,16 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import {
+  Sun,
+  CloudSun,
+  Cloud,
+  CloudRain,
+  CloudLightning,
+  Droplets,
+  Wind,
+  Umbrella,
+} from "lucide-react";
 import FreshnessBadge from "@/app/components/FreshnessBadge";
 import { SkeletonStat, Skeleton } from "@/app/components/Skeleton";
 import {
@@ -66,6 +76,50 @@ function StatPill({ label, value, unit, icon, color }: {
       <p className="text-[10px] text-slate-500">{unit}</p>
     </div>
   );
+}
+
+// Icono meteorológico grande y descriptivo por estado.
+function WeatherGlyph({ estado, size = 56 }: { estado?: EstadoMeteo; size?: number }) {
+  const common = { size, strokeWidth: 1.5 };
+  switch (estado) {
+    case "soleado":
+      return <Sun {...common} className="text-[#FFD60A]" />;
+    case "parcialmente_nublado":
+      return <CloudSun {...common} className="text-[#FFB86C]" />;
+    case "nublado":
+      return <Cloud {...common} className="text-[#9AA5B1]" />;
+    case "lluvioso":
+      return <CloudRain {...common} className="text-[#00B4D8]" />;
+    case "tormenta":
+      return <CloudLightning {...common} className="text-[#B000FF]" />;
+    default:
+      return <Cloud {...common} className="text-slate-500" />;
+  }
+}
+
+// Genera una frase natural tipo: "Mañana será nublado con máx. 28°C".
+function fraseDia(dia: string, estado: EstadoMeteo | undefined, temp: number, prob?: number) {
+  const base =
+    estado === "soleado" ? "pleno sol y cielo despejado"
+    : estado === "parcialmente_nublado" ? "intervalos de sol entre nubes"
+    : estado === "nublado" ? "cielo cubierto, sin lluvia significativa"
+    : estado === "lluvioso" ? "lluvias que podrían causar acumulación de agua"
+    : estado === "tormenta" ? "tormentas con riesgo elevado de inundación"
+    : "condiciones estables";
+  const tempTxt = `con máxima de ${Math.round(temp)}°C`;
+  const probTxt = prob != null && prob > 0 ? ` y ${Math.round(prob)}% de probabilidad de lluvia` : "";
+  return `${dia} será ${base}${tempTxt}${probTxt}.`;
+}
+
+// Da formato a la hora de la próxima pleamar (ISO) de forma legible.
+function formatProximaPleamar(iso: string): string {
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    return `a las ${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
+  } catch {
+    return iso;
+  }
 }
 
 export default function WeatherStation() {
@@ -207,33 +261,91 @@ export default function WeatherStation() {
                 { dia: "hoy", lluvia_mm: weather.lluvia_manana_mm, temp_max_c: weather.temp_max_c, estado: weather.estado, prob_lluvia_pct: undefined },
                 { dia: "manana", lluvia_mm: weather.lluvia_manana_mm, temp_max_c: weather.temp_max_c, estado: weather.estado, prob_lluvia_pct: undefined },
                 { dia: "pasado", lluvia_mm: 0, temp_max_c: weather.temp_max_c, estado: weather.estado, prob_lluvia_pct: undefined },
-              ].slice(0, 3)).map((p, i) => (
-                <motion.div
-                  key={p.dia}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 * i }}
-                  className="glass rounded-xl p-4 sm:p-3 text-center"
-                >
-                  <p className="font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">{dias[i]}</p>
-                  {p.estado && (
-                    <p className="mb-2 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-mono text-[8px] uppercase tracking-wider"
-                      style={{ borderColor: `${ESTADO_METEO_COLOR[p.estado]}55`, color: ESTADO_METEO_COLOR[p.estado] }}>
-                      <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: ESTADO_METEO_COLOR[p.estado] }} />
-                      {ESTADO_METEO_LABEL[p.estado]}
+              ].slice(0, 3)).map((p, i) => {
+                const esHoy = i === 0;
+                const color = p.estado ? ESTADO_METEO_COLOR[p.estado] : "#00E5FF";
+                return (
+                  <motion.div
+                    key={p.dia}
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.08 * i }}
+                    className={`relative overflow-hidden rounded-2xl border p-4 text-center ${
+                      esHoy ? "border-cyan/30 bg-cyan/[0.05]" : "glass"
+                    }`}
+                    style={{ boxShadow: esHoy ? "0 0 24px rgba(0,210,255,0.08)" : undefined }}
+                  >
+                    {esHoy && (
+                      <span className="absolute top-3 right-3 rounded-full bg-cyan/15 px-2 py-0.5 font-mono text-[8px] uppercase tracking-wider text-cyan">
+                        Hoy
+                      </span>
+                    )}
+                    {/* Icono grande */}
+                    <div className="mx-auto mb-2 flex h-16 w-16 items-center justify-center rounded-full border"
+                      style={{ borderColor: `${color}30`, backgroundColor: `${color}0d` }}>
+                      <WeatherGlyph estado={p.estado} />
+                    </div>
+                    <p className="font-mono text-[10px] uppercase tracking-wider text-slate-400 mb-1">{dias[i]}</p>
+                    <p className="font-display text-3xl font-bold neon-text">{Math.round(p.temp_max_c)}°C</p>
+
+                    {p.estado && (
+                      <p className="mt-1.5 inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 font-mono text-[9px] uppercase tracking-wider"
+                        style={{ borderColor: `${color}55`, color }}>
+                        {ESTADO_METEO_LABEL[p.estado]}
+                      </p>
+                    )}
+
+                    {/* Frase natural descriptiva */}
+                    <p className="mt-2 text-[11px] text-slate-400 leading-snug min-h-[32px]">
+                      {fraseDia(dias[i].toLowerCase(), p.estado, p.temp_max_c, p.prob_lluvia_pct).replace(/^\p{L}/u, (m) => m.toUpperCase())}
                     </p>
-                  )}
-                  <p className="font-display text-2xl font-bold neon-text">{Math.round(p.temp_max_c)}°C</p>
-                  <div className="mt-1 flex items-center justify-center gap-1 font-mono text-[10px] text-slate-500">
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#00F3FF" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><path d="M22 6l-10 7L2 6" /></svg>
-                    <span>{p.prob_lluvia_pct != null ? `${Math.round(p.prob_lluvia_pct)}%` : "—"} lluvia</span>
-                  </div>
-                  <div className="mt-1 h-1 rounded-full bg-white/5">
-                    <div className="h-full rounded-full" style={{ width: `${Math.min(100, p.lluvia_mm * 8)}%`, backgroundColor: "#00F3FF" }} />
-                  </div>
-                  <p className="font-mono text-[10px] text-slate-500 inline-flex items-center gap-1"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="20" y1="16.58" x2="20" y2="16.58" /><line x1="12" y1="16.58" x2="12" y2="16.58" /><line x1="4" y1="16.58" x2="4" y2="16.58" /><path d="M17 7h-1.78A2.5 2.5 0 0 0 13 5.5A2.5 2.5 0 0 0 10.5 8H9a4 4 0 0 0-4 4v6h16v-6a4 4 0 0 0-4-4z" /></svg>{p.lluvia_mm.toFixed(1)} mm</p>
-                </motion.div>
-              ))}
+
+                    {/* Probabilidad de lluvia + acumulado */}
+                    <div className="mt-2 flex items-center justify-center gap-3 text-[10px] font-mono text-slate-400">
+                      <span className="inline-flex items-center gap-1">
+                        <Umbrella size={12} />
+                        {p.prob_lluvia_pct != null ? `${Math.round(p.prob_lluvia_pct)}%` : "—"}
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <Droplets size={12} className="text-[#00B4D8]" />
+                        {p.lluvia_mm.toFixed(1)} mm
+                      </span>
+                    </div>
+
+                    {/* Barra de lluvia */}
+                    <div className="mt-1.5 h-1 rounded-full bg-white/5">
+                      <motion.div
+                        className="h-full rounded-full"
+                        style={{ backgroundColor: "#00F3FF" }}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${Math.min(100, p.lluvia_mm * 8)}%` }}
+                        transition={{ duration: 0.8, delay: 0.15 * i }}
+                      />
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            {/* Aviso de lluvia / marea */}
+            <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-white/5 bg-white/[0.02] px-4 py-2.5 text-[11px] text-slate-400">
+              {ES_DIA_LLUVIOSO(weather.estado) ? (
+                <>
+                  <Umbrella size={13} className="text-[#00B4D8]" />
+                  <span>
+                    Las próximas 24 h el clima estará dominado por lluvias:{" "}
+                    <strong className="text-white">{Math.max(1, Math.round(weather.lluvia_manana_mm))} mm</strong> acumulados previstos.
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Wind size={13} className="text-slate-500" />
+                  <span>
+                    Sin lluvia significativa en el horizonte: el nivel de agua dependerá principalmente de la{" "}
+                    <strong className="text-white">marea</strong> (próxima pleamar {weather.proxima_pleamar ? formatProximaPleamar(weather.proxima_pleamar) : "pronto"}).
+                  </span>
+                </>
+              )}
             </div>
           </div>
         </>

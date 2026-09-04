@@ -35,6 +35,22 @@ import {
   computeDaySummaries,
   type PrediccionResponse,
 } from "@/app/lib/api";
+import { ZONAS_MANGA } from "@/app/lib/zonasManga";
+
+// Simulación 3D de inundación por zona (WebGL pesado, carga diferida).
+const ZonaFlood3D = dynamic(() => import("@/app/components/ZonaFlood3D"), {
+  ssr: false,
+  loading: () => (
+    <div className="glass-strong rounded-2xl p-6 flex items-center justify-center">
+      <div className="flex items-center gap-3">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-cyan/40 border-t-cyan" />
+        <span className="font-mono text-[10px] uppercase tracking-widest text-cyan/70">
+          Cargando simulación 3D…
+        </span>
+      </div>
+    </div>
+  ),
+});
 
 const FADE = {
   initial: { opacity: 0, y: 20 },
@@ -273,6 +289,12 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
     setZonaEnfocada(z ? z.id : null);
   }, []);
 
+  // Zona completa seleccionada (para la simulación 3D de inundación).
+  const zonaSeleccionada = useMemo(
+    () => (zonaEnfocada != null ? ZONAS_MANGA.find((z) => z.id === zonaEnfocada) ?? null : null),
+    [zonaEnfocada]
+  );
+
   const onTogglePlay = useCallback(() => setIsPlaying((p) => !p), []);
 
   const handleScrub = useCallback((h: number) => {
@@ -373,7 +395,7 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
             />
             <button
               onClick={() => setControlesAbiertos(!controlesAbiertos)}
-              className="glass rounded-lg px-3 py-2 font-mono text-[10px] uppercase tracking-wider text-slate-400 hover:text-cyan transition flex items-center gap-1.5"
+              className="glass rounded-lg px-3 py-2 font-mono text-[10px] uppercase tracking-wider text-slate-400 hover:text-cyan active:scale-95 transition-all duration-150 flex items-center gap-1.5 select-none touch-manipulation"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
               Controles
@@ -392,7 +414,7 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
             <Slider label="Drenaje" value={drenaje} onChange={setDrenaje} min={0} max={100} step={1} unit="%" color="#00E5FF" disabled={usarMeteo} />
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <label className="flex items-center gap-2 cursor-pointer min-h-[32px]">
+            <label className="flex items-center gap-2 cursor-pointer min-h-[44px] select-none">
               <input type="checkbox" checked={usarMeteo} onChange={(e) => setUsarMeteo(e.target.checked)} className="accent-cyan h-4 w-4" />
               <span className="text-xs text-slate-500">Usar datos meteorológicos reales</span>
             </label>
@@ -402,7 +424,7 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
                 Simulación bloqueada · meteo en vivo
               </span>
             ) : (
-              <button onClick={loadPrediction} disabled={isLoading} className="glass-glow rounded-lg px-4 py-2.5 font-mono text-[11px] uppercase tracking-wider text-cyan hover:bg-cyan/10 active:bg-cyan/10 transition min-h-[40px]">
+              <button onClick={loadPrediction} disabled={isLoading} className="glass-glow rounded-lg px-4 py-2.5 font-mono text-[11px] uppercase tracking-wider text-cyan hover:bg-cyan/10 active:scale-95 active:bg-cyan/15 transition-all duration-150 min-h-[44px]">
                 {isLoading ? "Calculando..." : "Simular"}
               </button>
             )}
@@ -468,6 +490,17 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
         onSelect={onSelectZona}
       />
 
+      {/* ═══ FILA 3.5: SIMULACIÓN 3D DE INUNDACIÓN POR ZONA ═══ */}
+      {zonaSeleccionada && (
+        <ZonaFlood3D
+          zona={zonaSeleccionada}
+          nivelAguaCm={activePunto?.nivel_agua_cm ?? 0}
+          nivelMaximoCm={prediccion?.nivel_maximo_cm ?? 100}
+          horaLocal={Math.floor(currentHour) % 24}
+          onClose={() => onSelectZona(null)}
+        />
+      )}
+
       {/* ═══ FILA 4: GRÁFICO DE PROYECCIÓN ═══ */}
       <ProjectionChart puntos={prediccion?.puntos ?? []} currentHour={currentHour} />
 
@@ -516,7 +549,7 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
           <span>{error}</span>
           <button
             onClick={loadPrediction}
-            className="glass-glow shrink-0 rounded-lg px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-cyan hover:bg-cyan/10 transition min-h-[44px] min-w-[44px]"
+            className="glass-glow shrink-0 rounded-lg px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-cyan hover:bg-cyan/10 active:scale-95 transition-all duration-150 min-h-[44px] min-w-[44px]"
           >
             Reintentar
           </button>
@@ -542,7 +575,7 @@ function Slider({ label, value, onChange, min, max, step, unit, color, disabled 
         min={min} max={max} step={step}
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value))}
-        className="w-full h-2 slider-cyber"
+        className="w-full h-6 slider-cyber"
         style={{
           background: `linear-gradient(to right, ${color} 0%, ${color} ${pct}%, rgba(255,255,255,0.08) ${pct}%, rgba(255,255,255,0.08) 100%)`,
           boxShadow: disabled ? "none" : `0 0 12px ${color}33`,
@@ -667,7 +700,7 @@ function TechnologySection() {
         </div>
 
         <motion.div {...FADE} className="mt-8 text-center">
-          <a href="/ciencia" className="glass-glow rounded-lg px-5 py-2.5 font-mono text-[11px] uppercase tracking-wider text-cyan hover:bg-cyan/10 transition inline-block">
+          <a href="/ciencia" className="glass-glow rounded-lg px-5 py-2.5 font-mono text-[11px] uppercase tracking-wider text-cyan hover:bg-cyan/10 active:scale-95 transition-all duration-150 inline-block select-none">
             Conocer el modelo matemático
           </a>
         </motion.div>
@@ -691,11 +724,11 @@ function CTASection() {
             contactanos para una demo del sistema completo.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <a href="mailto:contacto@stormprint.app" className="glass-glow rounded-lg px-6 py-3 font-mono text-[11px] uppercase tracking-wider text-cyan hover:bg-cyan/10 transition inline-flex items-center gap-2">
+            <a href="mailto:contacto@stormprint.app" className="glass-glow rounded-lg px-6 py-3 font-mono text-[11px] uppercase tracking-wider text-cyan hover:bg-cyan/10 active:scale-95 transition-all duration-150 inline-flex items-center gap-2 select-none">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
               Solicitar demo
             </a>
-            <a href="/ciencia" className="glass rounded-lg px-6 py-3 font-mono text-[11px] uppercase tracking-wider text-slate-400 hover:text-cyan transition">
+            <a href="/ciencia" className="glass rounded-lg px-6 py-3 font-mono text-[11px] uppercase tracking-wider text-slate-400 hover:text-cyan active:scale-95 active:text-cyan transition-all duration-150 select-none">
               Ciencia
             </a>
           </div>

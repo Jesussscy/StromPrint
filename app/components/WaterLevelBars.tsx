@@ -120,7 +120,7 @@ function WaterLevelBars({ nivelAguaCm, punto, zonasCriticas = 0 }: WaterLevelBar
           <div className="flex items-center justify-between">
             <span className="font-mono text-[9px] uppercase tracking-widest text-slate-500">Zonas críticas</span>
             <span className="font-display text-sm font-bold font-tabular" style={{ color: zonasCriticas > 0 ? "#FF0055" : "#00E5FF" }}>
-              {zonasCriticas > 0 ? `🔴 ${zonasCriticas}` : "0"}
+              {zonasCriticas > 0 ? `● ${zonasCriticas}` : "0"}
             </span>
           </div>
         </div>

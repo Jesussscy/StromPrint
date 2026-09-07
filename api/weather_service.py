@@ -13,8 +13,10 @@ import json
 import logging
 import math
 import os
-from datetime import datetime, timedelta
+import time
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import httpx
 
@@ -30,6 +32,17 @@ _forecast_cache_key: str = ""
 # Coordenadas de Barrio Manga, Cartagena de Indias
 MANGA_LAT = 10.4000
 MANGA_LON = -75.5167
+
+# Todas las horas de Open-Meteo se piden en hora local de Colombia. El servidor
+# (local o Vercel/UTC) puede estar en otra zona horaria, por lo que toda
+# comparacion contra "ahora" DEBE hacerse en America/Bogota para no desplazar
+# el pronostico ni leer la temperatura de la hora incorrecta.
+MANGA_TIMEZONE_NAME = "America/Bogota"
+try:
+    MANGA_TZ = ZoneInfo(MANGA_TIMEZONE_NAME)
+except ZoneInfoNotFoundError:  # pragma: no cover - requerido es instalar 'tzdata'
+    logger.warning("Zona America/Bogota no disponible (instala 'tzdata'): usando UTC")
+    MANGA_TZ = timezone.utc
 
 OPEN_METEO_BASE = "https://api.open-meteo.com/v1/forecast"
 
@@ -183,8 +196,11 @@ def tiene_lluvia_en_horizonte(hourly_data: List[Dict], horas: Optional[int] = No
     A diferencia de es_dia_lluvioso (que mira solo el estado actual), aqui se
     recorre todo el horizonte de pronostico: puede estar soleado "ahora" y
     llover mas tarde en el dia; en ese caso el modelo debe conservar la lluvia.
-    """
-    window = hourly_data[:horas] if horas is not None else hourly_data
+    La ventana se cuenta DESDE AHORA (hora local de Bogota), alineada con la
+    marea y el resumen (t=0 = ahora)."""
+    if horas is None:
+        horas = max(0, len(hourly_data) - _hora_actual_index(hourly_data))
+    window = _ventana_desde_ahora(hourly_data, horas)
     for h in window:
         if (h.get("precipitation", 0.0) or 0.0) > LLUVIA_LIGERA_MMH:
             return True
@@ -221,6 +237,98 @@ DATOS_PROMEDIO = {
 }
 
 
+# ---------------------------------------------------------------------------
+# Timezone helpers — TODO pronostico y marea estan en America/Bogota (hora
+# local de Cartagena). El servidor puede correr en UTC (Vercel) o en otra zona,
+# por lo que toda logica que compare con "ahora" debe usar Bogota, si no las
+# lecturas se desplazan horas (temp/lluvia/marea del instante equivocado).
+# ---------------------------------------------------------------------------
+def _parse_hora(t: Any) -> Optional[datetime]:
+    """Parsea una hora de Open-Meteo ("YYYY-MM-DDTHH:MM" o ISO con Z)
+    a un datetime naive (hora local del pronostico: America/Bogota)."""
+    try:
+        ts = datetime.fromisoformat(str(t).replace("Z", ""))
+    except (ValueError, TypeError):
+        return None
+    return ts
+
+
+def _as_bogota(dt: Optional[datetime]) -> datetime:
+    """Asegura que un datetime se interprete/compare en America/Bogota."""
+    if dt is None:
+        return datetime.now(MANGA_TZ)
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=MANGA_TZ)
+    return dt.astimezone(MANGA_TZ)
+
+
+def _ahora_bogota() -> datetime:
+    """Instante actual exacto en America/Bogota (aware)."""
+    return datetime.now(MANGA_TZ)
+
+
+def hora_inicio_bogota() -> int:
+    """Hora del reloj (0-23) en Bogota en este instante.
+
+    Se usa para anclar el frontend: el indice 0 del pronostico = 'ahora' en
+    Cartagena. Asi el panel sabe a que hora de reloj correspondio t=0."""
+    return _ahora_bogota().hour
+
+
+def _hoy_en_timezone(tz_name: Optional[str]) -> str:
+    """Fecha de hoy (YYYY-MM-DD) en la zona horaria de los datos."""
+    tz = MANGA_TZ
+    if tz_name:
+        try:
+            tz = ZoneInfo(tz_name)
+        except ZoneInfoNotFoundError:  # pragma: no cover
+            tz = MANGA_TZ
+    return datetime.now(tz).strftime("%Y-%m-%d")
+
+
+def _hora_actual_index(hourly: List[Dict]) -> int:
+    """Indice dentro de `hourly` (lista que arranca en 00:00 Bogota) de la
+    hora correspondiente a AHORA. Si la lista no tiene esa hora exacta (p. ej.
+    llega truncada), cae al registro mas cercano en el pasado reciente."""
+    if not hourly:
+        return 0
+    now_aware = _ahora_bogota()
+    today_iso = now_aware.date().isoformat()
+
+    for i, rec in enumerate(hourly):
+        ts = _parse_hora(rec.get("time"))
+        if not ts:
+            continue
+        if ts.date().isoformat() == today_iso and ts.hour == now_aware.hour:
+            return i
+
+    best_idx = 0
+    best_gap = float("inf")
+    now_naive = now_aware.replace(tzinfo=None)
+    for i, rec in enumerate(hourly):
+        ts = _parse_hora(rec.get("time"))
+        if not ts:
+            continue
+        gap = (now_naive - ts).total_seconds()
+        if 0 <= gap < best_gap:
+            best_gap = gap
+            best_idx = i
+    return best_idx
+
+
+def _ventana_desde_ahora(hourly: List[Dict], horas: Optional[int]) -> List[Dict]:
+    """Ventana de `n` horas del pronostico CONTADAS DESDE AHORA (hora local de
+    Bogota), no desde 00:00. Con esto lluvia, marea y resumen comparten el
+    mismo eje temporal t=0 = 'ahora' (antes, la lluvia arrancaba a medianoche
+    y la marea en 'ahora': desalineacion de hasta un dia)."""
+    if not hourly:
+        return []
+    start = _hora_actual_index(hourly)
+    if horas is None or horas <= 0:
+        return hourly[start:]
+    return hourly[start: start + int(horas)]
+
+
 async def fetch_weather_forecast(
     forecast_days: int = 7,
     lat: float = MANGA_LAT,
@@ -236,10 +344,9 @@ async def fetch_weather_forecast(
       - daily: lista de datos diarios
       - metadata: lat, lon, timezone, elevation
     """
-    import time as _time
     global _forecast_inflight, _forecast_cache_ts, _forecast_cache_key
 
-    now = _time.monotonic()
+    now = time.monotonic()
     cache_key = f"{lat}:{lon}:{forecast_days}"
 
     # Return cached result if fresh (< 60s old)
@@ -259,7 +366,10 @@ async def fetch_weather_forecast(
         "daily": ",".join(DAILY_VARS),
         "timezone": "America/Bogota",
         "past_days": PAST_DAYS,
-        "forecast_days": min(forecast_days, 7),
+        # El tope de 7 era insuficiente: predecir pide 8 dias para garantizar
+        # 168 h del horizonte CONTADAS DESDE AHORA (si ahora son las 23:00, desde
+        # la medianoche solo quedarian 144 h). Open-Meteo permite hasta 16.
+        "forecast_days": min(forecast_days, 15),
     }
 
     async with httpx.AsyncClient(timeout=15.0) as client:
@@ -276,7 +386,7 @@ async def fetch_weather_forecast(
 
     result = _process_forecast(data)
     _forecast_inflight = result
-    _forecast_cache_ts = __import__("time").monotonic()
+    _forecast_cache_ts = time.monotonic()
     return result
 
 
@@ -350,7 +460,9 @@ def _process_forecast(raw: Dict[str, Any]) -> Dict[str, Any]:
     # funciones existentes que asumen hourly[0] = inicio de hoy (extract_simulation_params,
     # get_weather_summary, tiene_lluvia_en_horizonte). El pasado real se expone
     # aparte y alimenta la racha de lluvia y la humedad del suelo.
-    today_str = datetime.now().strftime("%Y-%m-%d")
+    # "Hoy" se calcula en la zona horaria de los datos (America/Bogota), no en
+    # la zona horaria del servidor: un server en UTC dividiria mal los dias.
+    today_str = _hoy_en_timezone(raw.get("timezone") or MANGA_TIMEZONE_NAME)
     past_records = [r for r in hourly_records if str(r.get("time", ""))[:10] < today_str]
     forecast_records = [r for r in hourly_records if str(r.get("time", ""))[:10] >= today_str]
     past_daily = _aggregate_daily(past_records)
@@ -448,8 +560,10 @@ def extract_simulation_params(
             "consecutive_rainy_days": 0,
         }
 
-    # Tomar solo las horas del pronostico
-    forecast_hours = hourly_data[:horas_pronostico]
+    # Tomar solo las horas del pronostico CONTADAS desde AHORA (t=0 = ahora),
+    # alineadas con la serie de marea y el resumen. Antes la lluvia arrancaba
+    # a medianoche y la marea en 'ahora': desfase de hasta ~23 h.
+    forecast_hours = _ventana_desde_ahora(hourly_data, horas_pronostico)
 
     # Encontrar hora pico de lluvia
     max_precip = 0.0
@@ -473,8 +587,6 @@ def extract_simulation_params(
         avg_wind_speed = sum(h["wind_speed_10m"] for h in forecast_hours) / max(1, len(forecast_hours))
 
     # Datos diarios para humedad del suelo
-    from .weather_service import compute_consecutive_rainy_days, estimate_soil_humidity
-
     # Reconstruir daily data del hourly (futuro/presente)
     daily_from_hourly = _aggregate_daily(forecast_hours)
     # Preferir los dias pasados reales (Open-Meteo past_days) para la racha y
@@ -528,6 +640,10 @@ def _aggregate_daily(hourly_data: List[Dict]) -> List[Dict]:
 def get_weather_summary(hourly_data: List[Dict], horas: int = 72) -> Dict[str, Any]:
     """
     Genera un resumen meteorologico para las proximas N horas.
+
+    La ventana se cuenta DESDE AHORA (America/Bogota), igual que la marea:
+    el resumen describe el mismo horizonte temporal que los puntos de la
+    simulacion. Incluye la temperatura del instante actual (lectura exacta).
     """
     if not hourly_data:
         return {
@@ -538,15 +654,27 @@ def get_weather_summary(hourly_data: List[Dict], horas: int = 72) -> Dict[str, A
             "viento_max_kmh": 0.0,
             "dias_lluviosos": 0,
             "horas_con_lluvia": 0,
+            "temperatura_actual_c": 28.0,
         }
 
-    forecast = hourly_data[:horas]
+    forecast = _ventana_desde_ahora(hourly_data, horas)
     temps = [h["temperature_2m"] for h in forecast]
     humidity = [h["relative_humidity_2m"] for h in forecast]
     wind = [h["wind_speed_10m"] for h in forecast]
     precip = [h["precipitation"] for h in forecast]
 
     daily_data = _aggregate_daily(forecast)
+    # Dias REALMENTE lluviosos dentro de la ventana (fechas con lluvia),
+    # no una racha consecutiva desde hoy: la racha ignoraba dias lluviosos
+    # futuros y contaba dias pasados; es la metrica equivocada aqui.
+    dias_lluviosos = sum(
+        1 for d in daily_data if (d.get("rain_sum", 0.0) or 0.0) > 0.1
+    )
+
+    actual = _closest_hour_record(hourly_data)
+    temperatura_actual = float(actual.get("temperature_2m") or 0.0) or (
+        _actual_promediado(hourly_data, "temperature_2m", 28.0, ventana=3)
+    )
 
     return {
         "lluvia_total_mm": round(sum(precip), 2),
@@ -554,8 +682,9 @@ def get_weather_summary(hourly_data: List[Dict], horas: int = 72) -> Dict[str, A
         "temp_min_c": round(min(temps), 1) if temps else 24.0,
         "humedad_promedio": round(sum(humidity) / len(humidity), 1) if humidity else 80.0,
         "viento_max_kmh": round(max(wind), 1) if wind else 0.0,
-        "dias_lluviosos": compute_consecutive_rainy_days(daily_data),
+        "dias_lluviosos": dias_lluviosos,
         "horas_con_lluvia": sum(1 for p in precip if p > 0.1),
+        "temperatura_actual_c": round(temperatura_actual, 1),
     }
 
 
@@ -570,7 +699,7 @@ def _proxima_pleamar(reference: Optional[datetime] = None) -> str:
     Sin datos reales de marea, asumimos un ciclo con un offset fijo que
     aproxima la pleamar de la marea semidiurna del Caribe.
     """
-    now = reference or datetime.now()
+    now = _as_bogota(reference)
     # Desplazamiento de fase arbitrario (radianes): asumimos primera pleamar del dia ~06:xx
     # Periodo P = 12.42 h -> frecuencia angular w = 2*pi/P
     w = 2 * 3.141592653589793 / TIDE_PERIOD_H
@@ -612,7 +741,7 @@ def _estimar_marea_cm(reference: Optional[datetime] = None) -> float:
     La pleamar coincide con el maximo de la senoide. Amplitud tipica del
     Caribe ~ 25 cm sobre la media (mean_sea_level = 8 cm).
     """
-    now = reference or datetime.now()
+    now = _as_bogota(reference)
     w = 2 * 3.141592653589793 / TIDE_PERIOD_H
     phase_hours = 5.0  # desfase: primera pleamar del dia ~06:xx
     t_hours = now.hour + now.minute / 60.0
@@ -631,19 +760,22 @@ def _closest_hour_record(
     Open-Meteo devuelve horas desde el inicio del dia (America/Bogota). En vez
     de tomar arbitrariamente hourly[0], elegimos la fila cuya hora de pronostico
     este mas proxima a "ahora" para dar una lectura de temperatura/humedad
-    correcta en tiempo real.
+    correcta en tiempo real. La comparacion se hace SIEMPRE en America/Bogota
+    (no en la zona del servidor): esto evita leer la temperatura de la hora
+    equivocada cuando el server corre en UTC.
     """
-    now = reference or datetime.now()
+    now = _as_bogota(reference)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=MANGA_TZ)
+    else:
+        now = now.astimezone(MANGA_TZ)
     best: Optional[Dict[str, Any]] = None
     best_delta: Optional[float] = None
     for rec in hourly:
-        t = rec.get("time")
+        t = _parse_hora(rec.get("time"))
         if not t:
             continue
-        try:
-            ts = datetime.fromisoformat(str(t).replace("Z", ""))
-        except (ValueError, TypeError):
-            continue
+        ts = t.replace(tzinfo=MANGA_TZ)
         delta = abs((ts - now).total_seconds())
         if best_delta is None or delta < best_delta:
             best_delta = delta
@@ -659,10 +791,7 @@ def _actual_promediado(hourly: List[Dict], campo: str, default: float, ventana: 
         return default
     actual = _closest_hour_record(hourly)
     base_t = str(actual.get("time", ""))
-    try:
-        base = datetime.fromisoformat(base_t.replace("Z", ""))
-    except (ValueError, TypeError):
-        base = None
+    base = _parse_hora(base_t)
 
     valores = []
     if base is None:
@@ -673,10 +802,8 @@ def _actual_promediado(hourly: List[Dict], campo: str, default: float, ventana: 
                 valores.append(float(v))
     else:
         for rec in hourly:
-            t = str(rec.get("time", ""))
-            try:
-                ts = datetime.fromisoformat(t.replace("Z", ""))
-            except (ValueError, TypeError):
+            ts = _parse_hora(rec.get("time"))
+            if not ts:
                 continue
             gap = abs((ts - base).total_seconds()) / 3600.0
             if gap <= ventana:
@@ -770,12 +897,30 @@ class WeatherService:
         daily = forecast.get("daily", [])
         current = forecast.get("current") or {}
         today = daily[0] if daily else {}
-        now = datetime.now()
+        now = _ahora_bogota()
 
         # Lectura "ahora" EXACTA: bloque current de Open-Meteo (momento real).
         # Si el bloque current no viene, se cae a la hora mas cercana del hourly.
         actual = current if current else _closest_hour_record(hourly)
         dias_lluviosos = summary.get("dias_lluviosos", 0)
+
+        # Marea REAL: Open-Meteo Marine (sea_level_height_msl, en cm sobre el
+        # nivel medio del mar) para las coordenadas de Manga. Antes se mostraba
+        # una senoide analitica inventada (dato no veridico). Si la API falla,
+        # se cae a la estimacion.
+        marea_actual_cm = 8.0
+        marea_origen = "estimada"
+        proxima_pleamar = _proxima_pleamar(now)
+        try:
+            from .tide_service import tide_service as _tide_svc
+
+            tide = await _tide_svc.get_tide(duration_hours=48.0)
+            marea_actual_cm = float(tide.get("nivel_actual_cm") or marea_actual_cm)
+            marea_origen = str(tide.get("origen") or "estimada")
+            if tide.get("proxima_pleamar"):
+                proxima_pleamar = tide["proxima_pleamar"]
+        except Exception as exc:
+            logger.warning("WeatherService: marea real no disponible (%s), usando estimacion", exc)
 
         humedad_suelo_real = (
             float(actual.get("soil_moisture_0_1cm") or 0.0)
@@ -836,8 +981,9 @@ class WeatherService:
             "temp_min_c": summary.get("temp_min_c", 24.0),
             "viento_max_kmh": summary.get("viento_max_kmh", 0.0),
             "lluvia_manana_mm": daily[1].get("rain_sum", 0.0) if len(daily) > 1 else 0.0,
-            "marea_actual_cm": _estimar_marea_cm(now),
-            "proxima_pleamar": _proxima_pleamar(now),
+            "marea_actual_cm": marea_actual_cm,
+            "marea_origen": marea_origen,
+            "proxima_pleamar": proxima_pleamar,
             "parametros_simulacion": parametros,
             "pronostico": [
                 {
@@ -860,7 +1006,7 @@ class WeatherService:
         Si el historico no existe para el mes (no deberia), devuelve
         estado=sin_datos para que get_weather caiga al promedio.
         """
-        now = datetime.now()
+        now = _ahora_bogota()
         hora = now.hour
         mes = now.month
         hist = DATOS_HISTORICOS_POR_MES.get(mes)
@@ -919,7 +1065,7 @@ class WeatherService:
 
     def _generate_promedio_data(self) -> Dict[str, Any]:
         """Ultimo recurso: datos promedio anuales (confianza baja 0.40)."""
-        now = datetime.now()
+        now = _ahora_bogota()
         ahora = now.hour
 
         return self._base_weather(
@@ -965,7 +1111,7 @@ class WeatherService:
         parametros: Optional[Dict[str, Any]],
     ) -> Dict[str, Any]:
         """Construye el payload comun de weather a partir de valores escalares."""
-        now = datetime.now()
+        now = _ahora_bogota()
         if parametros is None:
             parametros = {
                 "storm_peak_hour": 12.0,

@@ -90,6 +90,8 @@ export interface MeteorologiaResumen {
   viento_max_kmh: number;
   dias_lluviosos: number;
   horas_con_lluvia: number;
+  /** Temperatura del instante actual (lectura exacta de la hora actual). */
+  temperatura_actual_c?: number;
 }
 
 export interface PrediccionResponse {
@@ -110,6 +112,12 @@ export interface PrediccionResponse {
   fuente_meteo?: string;
   es_dia_lluvioso?: boolean;
   proxima_pleamar?: string;
+  /**
+   * Hora del reloj (0-23, America/Bogota) que corresponde a t=0 ('ahora').
+   * El backend indica con que hora real comienza la serie para que las
+   * etiquetas del eje temporal muestren la hora correcta del dia.
+   */
+  hora_inicio_h?: number;
 }
 
 export interface DiaPronostico {
@@ -317,16 +325,35 @@ export function formatConfianza(confianza?: number): string {
   return `${Math.round(confianza * 100)}%`;
 }
 
+// ---------------------------------------------------------------------------
+// Ancla temporal del eje (igual que el backend): t=0 = 'ahora' en Cartagena.
+// La hora de reloj que corresponde a t=0 la informa el backend en
+// `hora_inicio_h` (hora de America/Bogota en el momento de la prediccion).
+// El frontend la aplica via setHoraInicio() tras recibir los datos; mientras
+// tanto (SSR/hidratacion) se usa 0, que conserva el comportamiento previo.
+// ---------------------------------------------------------------------------
+let horaInicioBogota = 0;
+
+export function setHoraInicio(hora: number | null | undefined): void {
+  if (typeof hora === "number" && Number.isFinite(hora) && hora >= 0 && hora < 24) {
+    horaInicioBogota = Math.floor(hora);
+  }
+}
+
+/** Convierte un indice de hora (t=0 = ahora) a la hora del reloj del dia. */
+function horaReloj(hora: number): number {
+  return (horaInicioBogota + Math.floor(hora)) % 24;
+}
+
 export function formatHour(hora: number): string {
   const day = Math.floor(hora / 24);
-  const h = Math.floor(hora % 24);
-  if (day === 0) return `Hoy ${String(h).padStart(2, "0")}:00`;
-  return `Dia ${day + 1}, ${String(h).padStart(2, "0")}:00`;
+  const h = horaReloj(hora);
+  const label = day === 0 ? "Hoy" : day === 1 ? "Manana" : `Dia ${day + 1}`;
+  return `${label} ${String(h).padStart(2, "0")}:00`;
 }
 
 export function formatHourShort(hora: number): string {
-  const h = Math.floor(hora % 24);
-  return `${String(h).padStart(2, "0")}:00`;
+  return `${String(horaReloj(hora)).padStart(2, "0")}:00`;
 }
 
 export function dayLabel(hora: number): string {

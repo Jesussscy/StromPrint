@@ -82,7 +82,11 @@ def test_predecir_manual_offline(client):
     body = r.json()
     assert len(body["puntos"]) == 24
     assert body["nivel_maximo_cm"] >= 0.0
-    assert body["fuente_meteo"] == "open-meteo"
+    # Modo manual: sin datos meteorologicos reales => la fuente es "manual".
+    assert body["fuente_meteo"] == "manual"
+    # El eje temporal arranca en "ahora": hora_inicio_h indica la hora de
+    # reloj (0-23) en America/Bogota que corresponde a t=0.
+    assert 0 <= body["hora_inicio_h"] <= 23
 
 
 def test_predecir_manual_sin_lluvia_no_rompe(client):

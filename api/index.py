@@ -65,6 +65,7 @@ from .weather_service import (
     extract_simulation_params,
     fetch_weather_forecast,
     get_weather_summary,
+    hora_inicio_bogota,
     tiene_lluvia_en_horizonte,
     weather_service,
 )
@@ -251,6 +252,7 @@ class MeteorologiaResumen(BaseModel):
     viento_max_kmh: float
     dias_lluviosos: int
     horas_con_lluvia: int
+    temperatura_actual_c: float = 28.0
 
 
 class PrediccionResponse(BaseModel):
@@ -273,6 +275,9 @@ class PrediccionResponse(BaseModel):
     es_dia_lluvioso: bool = False
     proxima_pleamar: str = ""
     factores_dominantes: list[str] = Field(default_factory=list)
+    # Hora del reloj (0-23, America/Bogota) que corresponde a t=0 ('ahora').
+    # Permite al frontend anclar las etiquetas del eje temporal a la hora real.
+    hora_inicio_h: int = 0
 
 
 class InfraResponse(BaseModel):
@@ -348,7 +353,7 @@ async def get_weather(
         return {
             "status": "success",
             "weather": data,
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
     except Exception as exc:
         logger.exception("Unhandled error in /weather")
@@ -495,7 +500,7 @@ async def predecir(
             if tide_data.get("proxima_pleamar"):
                 proxima_pleamar = tide_data["proxima_pleamar"]
 
-            forecast = await fetch_weather_forecast(forecast_days=7)
+            forecast = await fetch_weather_forecast(forecast_days=8)
             # En modo meteo el nivel medio del mar lo decide la meteorologia
             # (marea), NUNCA el deslizador deshabilitado del dashboard.
             nivel_msl = tide_actual_cm or 8.0
@@ -524,7 +529,8 @@ async def predecir(
                 meteo_summary["horas_con_lluvia"] = 0
                 meteo_summary["dias_lluviosos"] = 0
         else:
-            # Modo manual: usar intensidad proporcionada
+            # Modo manual: usar intensidad proporcionada (no hay datos meteo reales)
+            fuente_meteo = "manual"
             meteo_summary = {
                 "lluvia_total_mm": 0,
                 "temp_max_c": 30.0,
@@ -533,6 +539,7 @@ async def predecir(
                 "viento_max_kmh": 0.0,
                 "dias_lluviosos": 0,
                 "horas_con_lluvia": 0,
+                "temperatura_actual_c": 28.0,
             }
             hay_lluvia_horizonte = (payload.intensidad_lluvia_mm_h or 0.0) > 0.0
             estimated_peak = payload.horas_pronostico * 0.25
@@ -612,7 +619,10 @@ async def predecir(
 
         # 5. Metricas para el resumen
         max_record = max(records, key=lambda r: r["water_level_cm"])
-        current = records[min(1, len(records) - 1)]
+        # records[0] es AHORA: el motor siembra H(0) en el equilibrio estatico
+        # de la marea real, por lo que esta es la lectura del nivel ACTUAL
+        # (antes se usaba records[min(1,...)] y records[0]=0 por el transitorio).
+        current = records[0]
         peak_idx = records.index(max_record)
 
         # Tendencia: comparar nivel actual con nivel en +6h
@@ -650,7 +660,7 @@ async def predecir(
         if estado_meteo == ESTADO_TORMENTA:
             narrativa = (
                 f"Tormenta en curso ({estado_label}): el modelo estima un nivel maximo de "
-                f"{nivel_max:.0f} cm hacia la hora {hora_pico:.0f}. "
+                f"{nivel_max:.0f} cm en ~{hora_pico:.0f} h. "
             )
             narrativa += (
                 "La lluvia intensa se combina con la marea y reduce la capacidad de drenaje. "
@@ -660,7 +670,7 @@ async def predecir(
         elif dia_lluvioso:
             narrativa = (
                 f"Jornada lluviosa ({estado_label}): se prevé acumulacion de hasta "
-                f"{nivel_max:.0f} cm hacia la hora {hora_pico:.0f}. "
+                f"{nivel_max:.0f} cm en ~{hora_pico:.0f} h. "
             )
             narrativa += (
                 "El aporte pluvial mantiene el nivel en aumento. "
@@ -675,7 +685,7 @@ async def predecir(
             )
             narrativa += (
                 "Máximo previsto de "
-                + f"{nivel_max:.0f} cm hacia la hora {hora_pico:.0f}. "
+                + f"{nivel_max:.0f} cm en ~{hora_pico:.0f} h. "
                 + ("El nivel crece con la marea entrante. " if tendencia == "creciente" else
                    "El nivel desciende conforme baja la marea. " if tendencia == "decreciente" else
                    "El nivel oscila suavemente con la marea. ")
@@ -729,6 +739,7 @@ async def predecir(
             es_dia_lluvioso=dia_lluvioso,
             proxima_pleamar=proxima_pleamar,
             factores_dominantes=factores,
+            hora_inicio_h=hora_inicio_bogota(),
         )
 
     except ValueError as exc:

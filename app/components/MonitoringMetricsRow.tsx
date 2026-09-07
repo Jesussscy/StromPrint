@@ -121,7 +121,7 @@ export default function MonitoringMetricsRow({ punto, prediccion, isLoading }: M
           <div className="flex items-center justify-between">
             <span className="font-mono text-[9px] uppercase tracking-widest text-slate-500">Pico</span>
             <span className="font-mono text-xs font-tabular text-slate-300">
-              {horaPico.toFixed(0)}h · {maxCm.toFixed(0)} cm
+              +{horaPico.toFixed(0)}h · {maxCm.toFixed(0)} cm
             </span>
           </div>
         </div>
@@ -155,7 +155,7 @@ export default function MonitoringMetricsRow({ punto, prediccion, isLoading }: M
         <div className="grid grid-cols-2 gap-3">
           <MeteoStat
             label="Temperatura"
-            value={punto ? (prediccion?.meteorologia_resumen?.temp_max_c ?? 28).toFixed(1) : "—"}
+            value={punto ? (prediccion?.meteorologia_resumen?.temperatura_actual_c ?? prediccion?.meteorologia_resumen?.temp_max_c ?? 28).toFixed(1) : "—"}
             unit="°C"
             color="#FFD600"
             icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z" /></svg>}
@@ -265,7 +265,7 @@ export default function MonitoringMetricsRow({ punto, prediccion, isLoading }: M
           <div className="flex items-center gap-2 rounded-lg bg-black/20 px-3 py-2">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={rc.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
             <span className="font-mono text-[10px] text-slate-300">
-              Pico: <span className="font-bold" style={{ color: rc.color }}>{maxCm.toFixed(0)} cm</span> a la hora {horaPico.toFixed(0)}h
+              Pico: <span className="font-bold" style={{ color: rc.color }}>{maxCm.toFixed(0)} cm</span> en +{horaPico.toFixed(0)}h
             </span>
           </div>
         )}

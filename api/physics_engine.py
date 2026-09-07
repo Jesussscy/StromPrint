@@ -41,7 +41,9 @@ de acumulacion de agua en Manga, Cartagena de Indias.
  Sea y = [H, H']:
    dy/dt = [y[1], (F_total(t) - c(t)*y[1] - k(t)*y[0]) / m]
 
- Condiciones iniciales: H(0) = 0, H'(0) = 0 (territorio seco al inicio)
+ Condiciones iniciales: H(0) = nivel de equilibrio de la marea real (si hay
+   serie; si no, 0) y H'(0) = 0. La siembra evita el transitorio artificial
+   de arrancar desde seco cuando la marea ya esta alta "ahora".
 
  Se resuelve numericamente con scipy.integrate.solve_ivp (Runge-Kutta 45).
 
@@ -72,6 +74,16 @@ from scipy.integrate import solve_ivp
 RISK_THRESHOLD_NORMAL = 30.0      # cm — Normal (cota de calle Manga ~1.2 msnm)
 RISK_THRESHOLD_ALERTA = 60.0      # cm — Alerta (calles inundadas)
 RISK_THRESHOLD_EMERGENCIA = 100.0 # cm — Emergencia (entrada a viviendas)
+
+# Calibracion de la serie de marea REAL (Open-Meteo Marine, en cm sobre el
+# nivel medio del mar). La serie incluye el ciclo spring/neap real: en marea
+# viva la desviacion pico puede llegar a ~±26 cm, y un dia seco debe quedar
+# SIEMPRE en riesgo "Normal" (< 30 cm), igual que con la senoide analitica
+# (que calibra ~max 20 cm con MSL=8). Sin este factor la serie real empujaba
+# los dias secos a "Emergencia" en marea viva (~59 cm medido en experimentos).
+# El factor es el cociente entre la respuesta analitica objetivo (~20 cm) y
+# la respuesta sin calibrar de una marea viva tipica (~44 cm).
+TIDE_SERIES_SCALE = 0.45
 
 
 @dataclass
@@ -186,8 +198,10 @@ def tide_forcing(t: float, params: PhysicalParameters) -> float:
         else:
             nivel = params.mean_sea_level
         media = sum(serie) / len(serie)
-        # Oscilacion en torno al nivel medio del mar, escalada por el gain.
-        return params.tide_gain * (nivel - media)
+        # Oscilacion en torno al nivel medio del mar, escalada por el gain y
+        # CALIBRADA (TIDE_SERIES_SCALE) para que la marea real tenga el mismo
+        # regimen que la senoide analitica en dias secos (ver constante).
+        return params.tide_gain * (nivel - media) * TIDE_SERIES_SCALE
 
     semi_diurnal = math.sin(2 * math.pi * t / params.tide_period_h)
     # Envolvente spring/neap (ciclo de ~14.77 dias)
@@ -311,6 +325,33 @@ def compute_advanced_metrics(records: List[dict]) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Condicion inicial coherente con la marea real
+# ---------------------------------------------------------------------------
+def initial_level(params: PhysicalParameters) -> float:
+    """Nivel inicial H(0) coherente con el forzamiento actual.
+
+    Antes se arrancaba siempre en H(0)=0 (territorio seco), lo que generaba un
+    transitorio artificial y hacia que records[0] fuese 0 aunque la marea
+    estuviera alta EN ESTE MOMENTO. Con una marea real se siembra el nivel en
+    el equilibrio estatico F_tide(0)/k(0) (la asintota de la solucion), por lo
+    que records[0] es directamente el nivel de agua ACTUAL y se elimina el
+    pico artificial de arranque. Sin serie activa, devuelve 0 (test: dia seco
+    -> 0)."""
+    if not params.tide_series_cm:
+        return 0.0
+    serie = params.tide_series_cm
+    if not any(v != 0.0 for v in serie):
+        return 0.0  # serie toda ceros (fallback): no hay nivel por siembra
+    f0 = tide_forcing(0.0, params)  # ya incluye TIDE_SERIES_SCALE
+    k0 = effective_stiffness(0.0, params)
+    if k0 <= 0:
+        return 0.0
+    eq = f0 / k0
+    # El nivel no arranca en negativo (el agua no se "hunde").
+    return max(0.0, eq)
+
+
+# ---------------------------------------------------------------------------
 # Solucion numerica de la EDO
 # ---------------------------------------------------------------------------
 def run_simulation(
@@ -354,10 +395,13 @@ def run_simulation(
 
     t_eval = np.arange(0, duration_hours, resolution_hours)
 
+    # H(0) se siembra al equilibrio estatico de la marea real (si hay serie):
+    # records[0] = nivel actual y se elimina el transitorio artificial.
+    h0 = initial_level(p)
     solution = solve_ivp(
         fun=system,
         t_span=(0, duration_hours),
-        y0=[0.0, 0.0],
+        y0=[h0, 0.0],
         method="RK45",
         t_eval=t_eval,
         rtol=1e-6,

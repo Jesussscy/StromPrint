@@ -4,6 +4,38 @@ Todas las versiones notables de StormPrint.
 
 ## [3.9.0] — Estabilidad de producción y pulido de interfaz
 
+### Exactitud de datos (timezone, marea real y calibración)
+- **Timezone America/Bogota en TODO el pipeline**: el servidor (local o Vercel/UTC)
+  podía estar en otra zona que Cartagena. Ahora toda comparación contra "ahora"
+  (temperatura actual, ventanas de lluvia, pleamar, serie de marea) se hace en
+  `America/Bogota` via `zoneinfo`, con dependencia `tzdata` para Windows/CI.
+- **Eje temporal unificado t=0 = "ahora"**: lluvia (`extract_simulation_params`,
+  `get_weather_summary`, `tiene_lluvia_en_horizonte`) contaba desde 00:00 mientras
+  la marea contaba desde "ahora" → desfase de hasta ~23 h. Las ventanas ahora se
+  cuentan desde el instante real y `/predecir` pide `forecast_days=8` para
+  garantizar 168 h completas. La respuesta incluye `hora_inicio_h` para que el
+  frontend ancle las etiquetas del eje (`setHoraInicio` en `app/lib/api.ts`).
+- **`dias_lluviosos` corregido**: se contaban días consecutivos desde hoy; ahora
+  es el conteo real de días con lluvia dentro de la ventana de pronóstico.
+- **Marea real en `/weather`**: se mostraba una senoide analítica inventada; ahora
+  usa `tide_service` (Open-Meteo Marine) y expone `marea_origen`.
+- **Calibración de la serie real de marea** (`TIDE_SERIES_SCALE=0.45`): la marea
+  viva real empujaba los días secos a "Emergencia" (~59 cm medido en experimentos);
+  un día seco queda ahora siempre en "Normal" (≤ ~24 cm) igual que la senoide
+  analítica, conservando el patrón real de sube/baja.
+- **Condición inicial sembrada**: `initial_level()` arranca `H(0)` en el equilibrio
+  estático de la marea actual, de modo que `records[0]` es el nivel ACTUAL (antes
+  era el transitorio artificial desde 0). `nivel_actual_cm` y la tendencia ahora
+  usan `records[0]`.
+- **`fuente_meteo` honesta**: en modo manual (sin datos reales) reporta `"manual"`
+  en vez de fingir `"open-meteo"`.
+- **`temperatura_actual_c`** en el resumen meteorológico: temperatura del instante
+  exacto, usada por los monitores en el panel.
+- Cache de marea con reloj consistente (`datetime.now()` al escribir y leer).
+- Limpieza de docs: eliminadas referencias a `physics_engine_analytical.py` y
+  `POST /api/v1/comparacion`, que fueron removidos en la eliminación del módulo
+  analítico (Version 3.5); `/ciencia` usa su laboratorio RK4/3D client-side.
+
 ### Estabilidad crítica de producción (Vercel)
 - **Fix de arranque del frontend (Cesium)**: `cesium` -> `@cesium/engine` -> `@spz-loader/core`
   traía la WASM de Gaussian splatting embebida como template literal con escapes octales
@@ -88,7 +120,7 @@ Se completó el plan de mejora «StormPrint 3.0» (10 lotes). Resumen por lote:
 ### Lote 4 · Integridad de datos
 - `storm_width` ahora alimenta `rain_duration_h` en `/api/v1/predict` (antes se ignoraba).
 - `run_simulation` respeta el argumento `mean_sea_level` (bug corregido).
-- `ValidationChart` consume `/api/v1/comparacion` real (RMSE, error máx. y promedio).
+- `ValidationChart` consume `/api/v1/comparacion` real (RMSE, error máx. y promedio) *(endpoint eliminado en 3.5; la validación se hace ahora en el cliente).* 
 - Eliminados claims de precisión sin respaldo («98.7%»).
 - Paleta de riesgo corregida en backend y frontend; umbrales unificados 30/60/100.
 - Fechas/horas en `America/Bogota` (`app/lib/datetime.ts`).

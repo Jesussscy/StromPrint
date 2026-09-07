@@ -11,8 +11,7 @@ StormPrint/
 │   ├── index.py            Entrypoint, rutas, validación Pydantic V2
 │   ├── database.py         Persistencia: SQLite async (default) o Postgres/Neon vía DATABASE_URL
 │   ├── security.py         Auth por API key, rate limiting, headers, CORS
-│   ├── physics_engine.py   EDO de 2do orden (SciPy solve_ivp, RK45)
-│   ├── physics_engine_analytical.py  Solución analítica por tramos (Duhamel)
+│   ├── physics_engine.py   EDO de 2do orden (SciPy solve_ivp, RK45) + marea real calibrada
 │   ├── weather_service.py  Open-Meteo + cache resbaloso (vivo→histórico→promedio)
 │   ├── tide_service.py     Marea Open-Meteo Marine con fallback analítico
 │   ├── storage.py          Escritura JSON atómica (caches/notificaciones, serverless-safe)
@@ -42,40 +41,27 @@ El nivel de acumulación de agua $H(t)$ en el territorio se modela como un
 oscilador amortiguado de segundo orden:
 
 ```
-m·H''(t) + c·H'(t) + k·H(t) = F_lluvia(t) + F_marea(t)
+m·H''(t) + c(t)·H'(t) + k(t)·H(t) = F_lluvia(t) + F_marea(t) + F_viento(t)
 ```
 
 - `m` — inercia de la masa hídrica
-- `c` — coeficiente de amortiguamiento (capacidad de drenaje pluvial)
-- `k` — rigidez del terreno (absorción natural / elevación)
+- `c(t)` — amortiguamiento temporal (capacidad de drenaje pluvial, saturado por lluvia y racha de días lluviosos)
+- `k(t)` — rigidez del terreno (absorción natural / humedad del suelo)
 - `F_lluvia(t)` — pulso gaussiano representando una tormenta convectiva tropical
-- `F_marea(t)` — forzamiento semidiurno acoplado a la Bahía de Cartagena
+- `F_marea(t)` — marea real horaria de Open-Meteo Marine (serie `sea_level_height_msl`), oscilando en torno a su media y **calibrada** (`TIDE_SERIES_SCALE`) para que un día seco quede siembre en riesgo *Normal*
+- `F_viento(t)` — empuje de marea por viento del sur/oeste (mar de levante)
 
-Se resuelve numéricamente con `scipy.integrate.solve_ivp` (Runge-Kutta 45),
-persistiendo cada paso de tiempo en SQLite (`FloodRecord`).
+Se resuelve numéricamente con `scipy.integrate.solve_ivp` (Runge-Kutta 45).
+La condición inicial se **siembra** en el equilibrio estático de la marea actual
+`H(0) ≈ F_marea(0)/k(0)`, de modo que `records[0]` es el nivel de agua *actual*
+(no un transitorio artificial desde cero).
 
 Umbrales de riesgo: `< 30cm` Normal · `30–59cm` Alerta · `60–99cm` Emergencia · `≥ 100cm` Crítico.
-
-## Solución analítica (académica)
-
-`physics_engine_analytical.py` resuelve la misma EDO de forma **analítica por tramos**
-con fines educativos, sin sustituir a `solve_ivp` en producción:
-
-- Divide el tiempo en tramos donde `c(t)` y `k(t)` son constantes.
-- En cada tramo usa la ecuación característica `m·r² + c·r + k = 0` y la solución
-  homogénea cerrada (sobreamortiguada / crítico / subamortiguado).
-- El forzamiento se resuelve con la integral de convolución de **Duhamel**
-  `H_p(t) = ∫₀ᵗ F(τ)·g(t−τ) dτ` (única parte numérica).
-- Ajusta las constantes de la homogénea para satisfacer condiciones iniciales.
-
-`POST /api/v1/comparacion` ejecuta ambos métodos y devuelve ambas curvas más las
-métricas de error (promedio, máximo, RMSE) para contrastarlas en la UI de `/ciencia`.
-Verificación: `python -m api.physics_engine_analytical`.
 
 ## Seguridad (OWASP Top 10)
 
 - **Auth**: header `X-StormPrint-Key`, comparado en tiempo constante contra un
-  hash SHA-256 salado. Cubre `/predict`, `/history`, `/weather` y `/comparacion`.
+  hash SHA-256 salado. Cubre `/predict`, `/history` y `/weather`.
   `/predecir`, `/predicciones`, `/health`, `/notifications` y `/notify/*` son
   públicos y dependen de rate limiting + validación estricta.
 - **Rate limiting**: `slowapi`, 10 peticiones/min por IP en `/api/v1/predict`;
@@ -102,15 +88,14 @@ GET  /api/v1/health         Healthcheck ampliado (DB, caches, uptime)
 GET  /api/v1/weather        Clima en vivo (requiere API key)
 GET  /api/v1/history        Historial de simulaciones (requiere API key)
 GET  /api/v1/predicciones   Últimas predicciones guardadas
-POST /api/v1/comparacion    Analítico vs numérico (requiere API key)
 GET  /api/v1/notifications  Historial de alertas + métricas
 POST /api/v1/notify/subscribe|unsubscribe   Suscripción por email
 GET  /api/v1/notify/status  Estado del canal de alertas
 ```
 
 La UI de `/alertas` consume notificaciones + estado del canal y permite
-suscribirse por correo; `/ciencia` contrasta la solución analítica contra la
-numérica con métricas reales (promedio, máximo, RMSE).
+suscribirse por correo; `/ciencia` ofrece un laboratorio didáctico (método
+RK4 y simulador 3D por zona) ejecutado 100% en el navegador.
 
 ## Desarrollo local
 

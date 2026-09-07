@@ -17,8 +17,9 @@ import json
 import logging
 import math
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import httpx
 
@@ -31,6 +32,15 @@ MANGA_LON = -75.5167
 
 OPEN_METEO_MARINE = "https://marine-api.open-meteo.com/v1/marine"
 
+# Las horas de la serie llegan en America/Bogota. Toda comparacion contra
+# "ahora" debe hacerse en esa zona (el server puede correr en UTC/Vercel).
+MANGA_TIMEZONE_NAME = "America/Bogota"
+try:
+    MANGA_TZ = ZoneInfo(MANGA_TIMEZONE_NAME)
+except ZoneInfoNotFoundError:  # pragma: no cover - requerido es instalar 'tzdata'
+    logger.warning("Zona America/Bogota no disponible (instala 'tzdata'): usando UTC")
+    MANGA_TZ = timezone.utc
+
 # Periodo semidiurno (~12.42 h) usado solo como fallback y para extender la serie.
 TIDE_PERIOD_H = 12.42
 
@@ -38,16 +48,38 @@ TIDE_PERIOD_H = 12.42
 CACHE_TTL_SECONDS = 1800
 
 
+def _as_bogota(dt: Optional[datetime]) -> datetime:
+    """Asegura que un datetime se interprete/compare en America/Bogota."""
+    if dt is None:
+        return datetime.now(MANGA_TZ)
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=MANGA_TZ)
+    return dt.astimezone(MANGA_TZ)
+
+
+def _parse_hora(t: Any) -> Optional[datetime]:
+    try:
+        return datetime.fromisoformat(str(t).replace("Z", ""))
+    except (ValueError, TypeError):
+        return None
+
+
 def _closest_index(times: List[str], reference: datetime, at_or_after: bool = True) -> Optional[int]:
-    """Devuelve el indice de la hora mas cercana (>=) al instante dado."""
+    """Devuelve el indice de la hora mas cercana (>=) al instante dado.
+
+    La referencia se interpreta en America/Bogota: comparar el "ahora" del
+    servidor (UTC) contra horas naive de Bogota corria la serie ~5 h."""
+    ref = _as_bogota(reference)
+    if ref.tzinfo is None:
+        ref = ref.replace(tzinfo=MANGA_TZ)
+    ref_naive = ref.astimezone(MANGA_TZ).replace(tzinfo=None)
     best_idx: Optional[int] = None
     best_delta: Optional[float] = None
     for i, t in enumerate(times):
-        try:
-            ts = datetime.fromisoformat(str(t).replace("Z", ""))
-        except (ValueError, TypeError):
+        ts = _parse_hora(t)
+        if ts is None:
             continue
-        delta = (ts - reference).total_seconds()
+        delta = (ts - ref_naive).total_seconds()
         if at_or_after and delta < 0:
             continue
         if best_idx is None or abs(delta) < best_delta:
@@ -58,18 +90,17 @@ def _closest_index(times: List[str], reference: datetime, at_or_after: bool = Tr
 
 def _proxima_pleamar_de_serie(times: List[str], heights_m: List[float], reference: datetime) -> str:
     """Primer maximo local de la serie de marea estrictamente despues de 'now'."""
-    now_ts = reference.timestamp()
+    now_ts = _as_bogota(reference).astimezone(MANGA_TZ).replace(tzinfo=None).timestamp()
     best_iso: Optional[str] = None
     for i in range(1, len(heights_m) - 1):
-        tt = times[i]
-        try:
-            ts = datetime.fromisoformat(str(tt).replace("Z", "")).timestamp()
-        except (ValueError, TypeError):
+        ts_naive = _parse_hora(times[i])
+        if ts_naive is None:
             continue
+        ts = ts_naive.timestamp()
         if ts <= now_ts:
             continue
         if heights_m[i] >= heights_m[i - 1] and heights_m[i] >= heights_m[i + 1]:
-            best_iso = tt
+            best_iso = times[i]
             break
     return best_iso or ""
 
@@ -127,7 +158,7 @@ def serie_marea_desde_ahora(
     como dure la simulacion. Si faltan valores, extiende periodicamente con el
     ultimo ciclo semidiurno disponible (fallback).
     """
-    now = reference or datetime.now()
+    now = _as_bogota(reference)
     duration_hours = max(1, int(duration_hours))
     idx = _closest_index(time, now, at_or_after=True)
     if idx is None:
@@ -176,7 +207,7 @@ class TideService:
                 return cached
 
         raw = await fetch_tide_hourly()
-        now = datetime.now()
+        now = datetime.now(MANGA_TZ)
         if raw is None or not raw.get("time"):
             # Fallback analitico (misma estimacion actual del weather_service)
             data = {
@@ -224,7 +255,9 @@ class TideService:
     def _store_cache(self, data: Dict[str, Any]) -> None:
         try:
             data = dict(data)
-            data["timestamp"] = datetime.utcnow().isoformat()
+            # Mismo reloj que _load_cache: antes se escribia con utcnow() y se
+            # comparaba con now() (desfase de horas si el server no esta en UTC).
+            data["timestamp"] = datetime.now().isoformat()
             atomic_write_json(self.CACHE_FILE, data)
         except Exception as exc:
             logger.debug("tide_service: no se pudo guardar cache: %s", exc)

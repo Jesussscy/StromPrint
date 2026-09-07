@@ -33,6 +33,7 @@ import Footer from "@/app/components/Footer";
 import {
   predecir,
   computeDaySummaries,
+  setHoraInicio,
   type PrediccionResponse,
 } from "@/app/lib/api";
 import { ZONAS_MANGA } from "@/app/lib/zonasManga";
@@ -339,6 +340,7 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
         eficiencia_drenaje: drenaje,
         usar_datos_meteo: usarMeteo,
       });
+      setHoraInicio(result.hora_inicio_h);
       setPrediccion(result);
       setCurrentHour(0);
       setIsPlaying(false);
@@ -750,7 +752,10 @@ export default function LandingPage() {
     setCargandoPrediccion(true);
     setErrorPrediccion(null);
     predecir({ horas_pronostico: 168, usar_datos_meteo: true })
-      .then((r) => setPrediccion(r))
+      .then((r) => {
+        setHoraInicio(r.hora_inicio_h);
+        setPrediccion(r);
+      })
       .catch((e) => setErrorPrediccion(e instanceof Error ? e.message : "Error al cargar la predicción."))
       .finally(() => setCargandoPrediccion(false));
   }, []);

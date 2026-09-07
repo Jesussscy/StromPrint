@@ -32,7 +32,7 @@ export default function PeakAlert({ prediccion }: { prediccion: PrediccionRespon
       </span>
       <div className="min-w-0 flex-1">
         <p className="font-display text-sm font-bold" style={{ color }}>
-          Pico previsto: {max.toFixed(0)} cm a la hora {prediccion.hora_pico.toFixed(0)}h · Nivel {nivel}
+          Pico previsto: {max.toFixed(0)} cm en +{prediccion.hora_pico.toFixed(0)}h · Nivel {nivel}
         </p>
         <p className="font-mono text-[10px] uppercase tracking-widest text-slate-500">
           {alcanzaEmergencia > 0 ? `${alcanzaEmergencia} h bajo nivel de emergencia` : `${alcanzaAlerta} h bajo nivel de alerta`} dentro de las {prediccion.horas_pronostico} h del pronóstico

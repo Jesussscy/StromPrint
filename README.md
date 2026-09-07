@@ -56,6 +56,13 @@ La condición inicial se **siembra** en el equilibrio estático de la marea actu
 `H(0) ≈ F_marea(0)/k(0)`, de modo que `records[0]` es el nivel de agua *actual*
 (no un transitorio artificial desde cero).
 
+Todo el pipeline temporal corre en **America/Bogota** (dependencia `tzdata` para
+Windows/CI): `t=0` es *ahora* en Cartagena, no las 00:00 del día. La lluvia, la
+marea y las ventanas de pronóstico se alinean a ese instante real, y `/predecir`
+devuelve `hora_inicio_h` (0–23, America/Bogota) para que el frontend ancle las
+etiquetas del eje temporal a la hora real del reloj (`setHoraInicio` en
+`app/lib/api.ts`).
+
 Umbrales de riesgo: `< 30cm` Normal · `30–59cm` Alerta · `60–99cm` Emergencia · `≥ 100cm` Crítico.
 
 ## Seguridad (OWASP Top 10)
@@ -96,6 +103,19 @@ GET  /api/v1/notify/status  Estado del canal de alertas
 La UI de `/alertas` consume notificaciones + estado del canal y permite
 suscribirse por correo; `/ciencia` ofrece un laboratorio didáctico (método
 RK4 y simulador 3D por zona) ejecutado 100% en el navegador.
+
+### Campos clave de la respuesta de `/predecir`
+
+- `hora_inicio_h` — hora del reloj (0–23, America/Bogota) que corresponde a
+  `records[0]`/`series[0]` (t=0 = «ahora»), para anclar el eje temporal de la UI.
+- `nivel_actual_cm` — lectura estimada en t=0 (nivel real de la marea sembrado
+  como condición inicial), ya no el arranque en 0 de un transitorio artificial.
+- `meteorologia_resumen.temperatura_actual_c` — temperatura del instante exacto
+  (bloque `current` de Open-Meteo), usada por los monitores del panel.
+- `fuente_meteo` — `"open-meteo"` si la simulación usó datos reales o
+  `"manual"` cuando se alimentó del deslizador (sin fingir datos que no existen).
+- `proxima_pleamar` y `marea_origen` — pleamar próxima y origen de la serie de
+  marea (`tide_service`, Open-Meteo Marine) para los avisos del dashboard.
 
 ## Desarrollo local
 

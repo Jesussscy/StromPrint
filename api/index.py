@@ -77,7 +77,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger("stormprint")
 
-APP_VERSION = "3.9.0"
+APP_VERSION = "3.10.0"
 _START_TIMESTAMP = time.monotonic()
 
 # Simple in-memory cache for read-only endpoints
@@ -746,6 +746,140 @@ async def predecir(
         return JSONResponse(status_code=422, content={"error": "validation_error", "message": str(exc)})
     except Exception as exc:
         logger.exception("Unhandled error in /predecir")
+        return JSONResponse(status_code=500, content=sanitize_exception_response(exc))
+
+
+# ---------------------------------------------------------------------------
+# Pydantic schemas — Estado del agua en vivo
+# ---------------------------------------------------------------------------
+class WaterStatePunto(BaseModel):
+    tiempo_hora: int
+    nivel_agua_cm: float
+    velocidad_cambio: float
+
+
+class WaterStateResponse(BaseModel):
+    territorio: str = "Manga, Cartagena de Indias"
+    timestamp: str = ""
+    nivel_agua_cm: float = 0.0
+    velocidad_cambio_cm_h: float = 0.0
+    tendencia: str = "estable"
+    riesgo: Literal["Normal", "Alerta", "Emergencia", "Critico"] = "Normal"
+    estado_meteorologico: str = "soleado"
+    estado_label: str = "Soleado"
+    lluvia_mm_h: float = 0.0
+    viento_kmh: float = 0.0
+    direccion_viento_deg: float = 0.0
+    pico_maximo_cm: float = 0.0
+    hora_pico: float = 0.0
+    hora_inicio_h: int = 0
+    serie: list[WaterStatePunto] = Field(default_factory=list)
+    serie_horas: int = 0
+
+
+# ---------------------------------------------------------------------------
+# Routes — Estado del agua en vivo (polling del dashboard)
+# ---------------------------------------------------------------------------
+@app.get("/api/v1/water-state", response_model=WaterStateResponse)
+@limiter.limit("30/minute")
+async def water_state(request: Request):
+    """Estado del agua AHORA: nivel H(t), velocidad de cambio, tendencia y una
+    serie corta de pronostico (72 h, 1 h). Publico y con cache de 60 s:
+    el dashboard lo consume por polling cada ~30 s para animar el flujo en vivo
+    por las calles, sin pegarle a Open-Meteo en cada lectura."""
+    cached = _response_cache.get("water_state")
+    if cached and (time.monotonic() - cached[0]) < 60:
+        return cached[1]
+
+    try:
+        # 1. Clima + marea reales (resilientes a fallos de la API)
+        wea = await weather_service.get_weather()
+        tide = await tide_service.get_tide(duration_hours=72.0)
+        weather_data = dict(wea.get("parametros_simulacion") or {})
+        tide_serie_cm = tide.get("serie_cm", [])
+        tide_actual_cm = tide.get("marea_actual_cm", 8.0)
+        weather_data["mean_sea_level"] = float(tide_actual_cm or 8.0)
+
+        # 2. En dias secos (sin lluvia en el resumen) el nivel queda dominado
+        #    por la marea y el viento: mismo criterio conservador que /predecir.
+        lluvia_total = wea.get("lluvia_total_mm") or 0.0
+        estado_meteo = wea.get("estado", ESTADO_SOLEADO)
+        if (
+            (weather_data.get("storm_intensity") or 0.0) > 0.0
+            and estado_meteo not in (ESTADO_TORMENTA, ESTADO_LLUVIOSO)
+            and lluvia_total <= 0.0
+        ):
+            weather_data["storm_intensity"] = 0.0
+            weather_data["storm_peak_hour"] = 18.0
+            weather_data["rain_duration_h"] = 2.0
+
+        # 3. Mismas puertas de entrada que /predecir
+        params = PhysicalParameters(
+            damping=_drenaje_a_amortiguamiento(None),
+            soil_humidity=weather_data.get("soil_humidity", 0.3),
+            consecutive_rainy_days=weather_data.get("consecutive_rainy_days", 0),
+            rain_duration_h=weather_data.get("rain_duration_h", 2.0),
+            wind_direction_deg=weather_data.get("wind_direction_deg", 0.0),
+            wind_speed_kmh=weather_data.get("wind_speed_kmh", 0.0),
+            mean_sea_level=weather_data.get("mean_sea_level", 8.0),
+            tide_series_cm=tide_serie_cm,
+        )
+        records = run_simulation(
+            duration_hours=72.0,
+            resolution_hours=1.0,
+            storm_peak_hour=weather_data.get("storm_peak_hour", 18.0),
+            storm_intensity=weather_data.get("storm_intensity", 0.0),
+            mean_sea_level=weather_data.get("mean_sea_level", 8.0),
+            params=params,
+        )
+
+        # 4. Snapshot AHORA (records[0]) + serie completa para playback
+        current = records[0]
+        nivel_actual = current["water_level_cm"]
+        vel_actual = current.get("dH_dt", 0.0)
+        future_idx = min(6, len(records) - 1)
+        delta = records[future_idx]["water_level_cm"] - nivel_actual
+        if delta > 2.0:
+            tendencia = "creciente"
+        elif delta < -2.0:
+            tendencia = "decreciente"
+        else:
+            tendencia = "estable"
+
+        max_record = max(records, key=lambda r: r["water_level_cm"])
+        estado_label = ESTADO_LABEL.get(estado_meteo, estado_meteo)
+
+        result = WaterStateResponse(
+            timestamp=datetime.now(timezone.utc).isoformat(),
+            nivel_agua_cm=round(nivel_actual, 2),
+            velocidad_cambio_cm_h=round(vel_actual, 3),
+            tendencia=tendencia,
+            riesgo=current["risk_level"],
+            estado_meteorologico=estado_meteo,
+            estado_label=estado_label,
+            lluvia_mm_h=round(wea.get("precipitacion_actual_mm_h") or 0.0, 2),
+            viento_kmh=round(wea.get("velocidad_viento_kmh") or 0.0, 2),
+            direccion_viento_deg=round(wea.get("direccion_viento_deg") or 0.0, 1),
+            pico_maximo_cm=round(max_record["water_level_cm"], 2),
+            hora_pico=round(max_record["hour"], 1),
+            hora_inicio_h=hora_inicio_bogota(),
+            serie=[
+                WaterStatePunto(
+                    tiempo_hora=int(r["hour"]),
+                    nivel_agua_cm=round(r["water_level_cm"], 2),
+                    velocidad_cambio=round(r.get("dH_dt", 0.0), 3),
+                )
+                for r in records
+            ],
+            serie_horas=len(records),
+        ).model_dump()
+        _response_cache["water_state"] = (time.monotonic(), result)
+        return result
+
+    except ValueError as exc:
+        return JSONResponse(status_code=422, content={"error": "validation_error", "message": str(exc)})
+    except Exception as exc:
+        logger.exception("Unhandled error in /water-state")
         return JSONResponse(status_code=500, content=sanitize_exception_response(exc))
 
 

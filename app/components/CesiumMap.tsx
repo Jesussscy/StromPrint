@@ -13,8 +13,9 @@ import {
   type ZonaManga,
   type NivelRiesgo,
 } from "@/app/lib/zonasManga";
-import { riscoColorEstilo, clasificarNivel as clasificarNivelCentral } from "@/app/lib/riesgo";
+import { riscoColorEstilo, clasificarNivel as clasificarNivelCentral, colorDeNivelCm } from "@/app/lib/riesgo";
 import { pinTexture } from "@/app/lib/cesiumTextures";
+import { FloodRenderer } from "@/app/lib/floodRenderer";
 import HeatmapView from "@/app/components/HeatmapView";
 
 interface CesiumMapProps {
@@ -26,6 +27,8 @@ interface CesiumMapProps {
   stormMode?: boolean;
   puntoMeteo?: { lluvia_mm_h?: number; marea_cm?: number } | null;
   meteorologia?: import("@/app/lib/api").MeteorologiaResumen | null;
+  /** Snapshot del estado del agua en vivo (polling del dashboard). */
+  liveWater?: import("@/app/lib/api").WaterStateResponse | null;
 }
 
 // Rectangulo geografico del barrio Manga, Cartagena (lat/lng bounds)
@@ -81,9 +84,11 @@ export default function CesiumMap({
   stormMode = false,
   puntoMeteo = null,
   meteorologia = null,
+  liveWater = null,
 }: CesiumMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<{ viewer: any; destroy: () => void } | null>(null);
+  const floodRendererRef = useRef<FloodRenderer | null>(null);
   const cesiumRef = useRef<any>(null);
   const screenSpaceHandlerRef = useRef<{ destroy: () => void } | null>(null);
   const hoverHandlerRef = useRef<{ destroy: () => void } | null>(null);
@@ -103,7 +108,7 @@ export default function CesiumMap({
 
   // Control de capas y base mapas (mapa interno).
   const [baseMapa, setBaseMapa] = useState<"sate" | "oscuro" | "hibrido">("sate");
-  const [capas, setCapas] = useState({ zonas: true, etiquetas: true });
+  const [capas, setCapas] = useState({ zonas: true, etiquetas: true, agua: true });
   const [panelCapas, setPanelCapas] = useState(false);
   // Registro de proveedores ya probados para el failover automático de capas
   // base: si un proveedor falla repetidamente (p.ej. un proxy/ISP inyecta un
@@ -457,6 +462,16 @@ export default function CesiumMap({
         (viewerRef.current as any).volverAMangaFn = volverAManga;
         screenSpaceHandlerRef.current = handler;
         hoverHandlerRef.current = hoverHandler;
+
+        // ── Inundacion animada fluyendo por las calles ──────────────────
+        const floodRenderer = new FloodRenderer(Cesium, viewer, {
+          bounds: MANGA_BOUNDS,
+          isTouch: isTouchDevice,
+        });
+        floodRenderer.update({ nivelCm: 0, velCmH: 0, storm: false });
+        floodRendererRef.current = floodRenderer;
+        (viewerRef.current as any).floodRenderer = floodRenderer;
+
         setCargando(false);
       } catch (err) {
         if (!cancelado) {
@@ -484,6 +499,8 @@ export default function CesiumMap({
         medicionHandlerRef.current.destroy();
         medicionHandlerRef.current = null;
       }
+      floodRendererRef.current?.dispose();
+      floodRendererRef.current = null;
       if (viewerRef.current) {
         viewerRef.current.destroy();
         viewerRef.current = null;
@@ -520,6 +537,13 @@ export default function CesiumMap({
       aguaActualRef.current += vel;
 
       const nivel = aguaActualRef.current;
+
+      // Inundacion en vivo: lamina de agua + calles + flujo, guiada por H(t).
+      floodRendererRef.current?.update({
+        nivelCm: nivel,
+        velCmH: vel,
+        storm: stormRef.current,
+      });
 
       // Zonas críticas en vivo: solo se retocan los billboards/círculos cuando
       // cambia el riesgo (imagen y tamaño), evitando re-subidas de textura.
@@ -597,6 +621,37 @@ export default function CesiumMap({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nivelAguaCm, cargando, selectedZona]);
+
+  // ── Flujo continuo del agua por las calles ──────────────────────────────
+  // A diferencia del animador de nivel (que se detiene al estabilizarse), este
+  // bucle mantiene las gotas en movimiento de forma economica (~30 fps, pausado
+  // cuando la pestana esta oculta) para que el agua "viva" incluso en planos.
+  useEffect(() => {
+    if (!viewerRef.current || !floodRendererRef.current) return;
+    let raf = 0;
+    let last = performance.now();
+    let acc = 0;
+    const tick = (now: number) => {
+      raf = requestAnimationFrame(tick);
+      const dt = (now - last) / 1000;
+      last = now;
+      if (document.hidden) return;
+      acc += dt;
+      if (acc >= 0.033) {
+        floodRendererRef.current?.animate(acc);
+        acc = 0;
+      }
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [cargando]);
+
+  // Toggle de la capa de agua desde el panel de capas.
+  useEffect(() => {
+    if (!viewerRef.current || !floodRendererRef.current) return;
+    floodRendererRef.current.setVisible(capas.agua);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [capas.agua, cargando]);
 
   // ── Volar a una zona seleccionada desde el panel ───────────────────────
   useEffect(() => {
@@ -1028,6 +1083,7 @@ function recentrar() {
       else if (k === "3") recentrar();
       else if (k === "c") setPanelCapas((p) => !p);
       else if (k === "z") setCapas((c) => ({ ...c, zonas: !c.zonas }));
+      else if (k === "a") setCapas((c) => ({ ...c, agua: !c.agua }));
       else if (k === "l") setCapas((c) => ({ ...c, etiquetas: !c.etiquetas }));
       else if (k === "m") toggleMedicion();
       else if (k === "escape") {
@@ -1216,6 +1272,7 @@ function recentrar() {
             [
               ["zonas", "Zonas"],
               ["etiquetas", "Etiquetas"],
+              ["agua", "Agua en calles"],
               ["sol", "Sol (hora real)"],
             ] as const
           ).map(([val, label]) => (
@@ -1398,6 +1455,28 @@ function recentrar() {
         <p className="mt-2 font-tabular text-[9px] text-slate-500">
           Escenario · hora {String(horaLocal).padStart(2, "0")}:00
         </p>
+
+        {/* Estado en vivo (polling del endpoint /water-state) */}
+        {liveWater && (
+          <div className="mt-2 pt-2 border-t border-cyan/10 flex items-center gap-x-2.5 flex-wrap">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse-slow" />
+              <span className="font-mono text-[9px] uppercase tracking-widest text-emerald-300">LIVE</span>
+            </span>
+            <span className="font-tabular text-[10px] font-bold" style={{ color: liveColor(liveWater.nivel_agua_cm) }}>
+              {liveWater.nivel_agua_cm.toFixed(1)} cm
+            </span>
+            <span className="font-tabular text-[10px] text-slate-300" title={liveWater.tendencia}>
+              {liveWater.tendencia === "creciente" ? "▲" : liveWater.tendencia === "decreciente" ? "▼" : "—"}
+            </span>
+            <span className="font-tabular text-[9px] text-slate-500">
+              viento {liveWater.viento_kmh.toFixed(0)} km/h
+            </span>
+            <span className="font-tabular text-[9px] text-slate-500">
+              {clasificarNivel(liveWater.nivel_agua_cm)}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Estado de la herramienta de medición */}
@@ -1549,4 +1628,8 @@ function nivelColorCached(nivelCm: number): string {
   const hex = riesgoColorHex(clasificarNivel(nivelCm));
   nivelColorCache.set(key, hex);
   return hex;
+}
+
+function liveColor(nivelCm: number): string {
+  return colorDeNivelCm(nivelCm);
 }

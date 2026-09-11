@@ -32,9 +32,11 @@ import NeighborhoodStatusBar from "@/app/components/NeighborhoodStatusBar";
 import Footer from "@/app/components/Footer";
 import {
   predecir,
+  fetchWaterState,
   computeDaySummaries,
   setHoraInicio,
   type PrediccionResponse,
+  type WaterStateResponse,
 } from "@/app/lib/api";
 import { ZONAS_MANGA } from "@/app/lib/zonasManga";
 
@@ -278,6 +280,7 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
   const [marea, setMarea] = useState(8);
   const [drenaje, setDrenaje] = useState(70);
   const [usarMeteo, setUsarMeteo] = useState(true);
+  const [liveWater, setLiveWater] = useState<WaterStateResponse | null>(null);
   const [zonaEnfocada, setZonaEnfocada] = useState<number | null>(() => {
     const z = leerParamURL("zona");
     return z ? Number(z) : null;
@@ -353,6 +356,27 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadPrediction(); }, []);
+
+  // Polling del estado del agua en vivo: el backend cachea 60 s, así que una
+  // consulta cada 30 s alimenta la píldora LIVE y la animación de flujo.
+  useEffect(() => {
+    let activo = true;
+    const tick = async () => {
+      if (!activo) return;
+      try {
+        const data = await fetchWaterState();
+        if (activo) setLiveWater(data);
+      } catch (_e) {
+        // Silencio: si la red o el backend fallan, se conserva el ultimo snapshot.
+      }
+    };
+    tick();
+    const t = window.setInterval(tick, 30_000);
+    return () => {
+      activo = false;
+      window.clearInterval(t);
+    };
+  }, []);
 
   useEffect(() => {
     if (isPlaying && prediccion && prediccion.puntos.length > 0) {
@@ -457,6 +481,7 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
             stormMode={stormMode}
             puntoMeteo={activePunto}
             meteorologia={prediccion?.meteorologia_resumen ?? null}
+            liveWater={liveWater}
           />
         </LazyMount>
 

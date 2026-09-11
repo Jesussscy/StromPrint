@@ -35,7 +35,7 @@ def test_health_ok(client):
     assert r.status_code == 200
     body = r.json()
     assert body["service"] == "stormprint-api"
-    assert body["version"] == "3.9.0"
+    assert body["version"] == "3.10.0"
     assert body["status"] in {"operational", "degraded"}
     assert "timestamp" in body
     assert "uptime_seconds" in body
@@ -152,3 +152,123 @@ def test_notifications_estructura(client):
     assert "notifications" in body
     assert "metrics" in body
     assert body["total"] <= 5
+
+
+def _meteo_fija():
+    """Payload de weather_service.get_weather determinista (sin red).
+
+    Escenario: tormenta en curso (estado TORMENTA) con lluvia, viento del
+    noreste y parametros de simulacion acordes (misma forma que la real).
+    """
+    return {
+        "source": "open-meteo",
+        "fuente": "open-meteo",
+        "confianza": 0.95,
+        "timestamp": "2026-09-10T14:00:00",
+        "estado": "tormenta",
+        "estado_label": "Tormenta",
+        "precipitacion_actual_mm_h": 8.5,
+        "velocidad_viento_kmh": 24.0,
+        "direccion_viento_deg": 45.0,
+        "lluvia_total_mm": 40.0,
+        "parametros_simulacion": {
+            "storm_peak_hour": 6.0,
+            "storm_intensity": 35.0,
+            "rain_duration_h": 6.0,
+            "mean_sea_level": 8.0,
+            "wind_direction_deg": 45.0,
+            "wind_speed_kmh": 24.0,
+            "soil_humidity": 0.7,
+            "consecutive_rainy_days": 2,
+        },
+    }
+
+
+def _marea_fija():
+    """Serie de marea semidiurna realista (media 12 cm, amplitud 10 cm, sin red).
+
+    El modelo fuerza la oscilacion de la marea alrededor de la media: si la
+    serie fuera constante el nivel quedaria sembrado en 0 (forzamiento nulo).
+    """
+    import math
+
+    serie = [round(12.0 + 10.0 * math.sin(2 * math.pi * (h + 3) / 12.4), 3) for h in range(72)]
+    return {
+        "serie_cm": serie,
+        "marea_actual_cm": serie[0],
+        "nivel_actual_cm": serie[0],
+        "origen": "prueba",
+        "proxima_pleamar": "16:00",
+    }
+
+
+async def _async_meteo_fija(force_refresh: bool = False):
+    return _meteo_fija()
+
+
+async def _async_marea_fija(force_refresh: bool = False, duration_hours: float = 72.0):
+    return _marea_fija()
+
+
+def test_water_state_publico_devuelve_202_sin_key_o_con_key(client):
+    """El snapshot es el mismo con o sin API key (endpoint publico de polling)."""
+    assert client.get("/api/v1/water-state").status_code == 200
+    assert client.get("/api/v1/water-state", headers=KEY_HEADER).status_code == 200
+
+
+def test_water_state_estructura(client, monkeypatch):
+    """Estructura del snapshot: nivel actual, tendencia, serie de 72 h y hora de ancla."""
+    index._response_cache.clear()
+    monkeypatch.setattr(index.weather_service, "get_weather", _async_meteo_fija)
+    monkeypatch.setattr(index.tide_service, "get_tide", _async_marea_fija)
+    monkeypatch.setattr(index, "hora_inicio_bogota", lambda: 9)
+
+    r = client.get("/api/v1/water-state")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["territorio"] == "Manga, Cartagena de Indias"
+    assert body["nivel_agua_cm"] > 0.0
+    assert body["tendencia"] in {"creciente", "decreciente", "estable"}
+    assert body["riesgo"] in {"Normal", "Alerta", "Emergencia", "Critico"}
+    assert body["estado_meteorologico"] == "tormenta"
+    assert body["estado_label"] == "Tormenta"
+    assert body["lluvia_mm_h"] == 8.5
+    assert body["viento_kmh"] == 24.0
+    assert body["direccion_viento_deg"] == 45.0
+    assert body["pico_maximo_cm"] >= body["nivel_agua_cm"]
+    assert body["hora_pico"] >= 0.0
+    assert body["hora_inicio_h"] == 9
+    assert body["serie_horas"] == 72
+    assert len(body["serie"]) == 72
+    first = body["serie"][0]
+    assert set(first.keys()) == {"tiempo_hora", "nivel_agua_cm", "velocidad_cambio"}
+    assert first["tiempo_hora"] == 0
+    assert abs(first["nivel_agua_cm"] - body["nivel_agua_cm"]) < 0.05
+
+
+def test_water_state_dia_seco_quita_lluvia(client, monkeypatch):
+    """Regresion: dia seco (sin lluvia en el resumen) => storm_intensity se anula
+    y el nivel queda gobernado por la marea, nunca explota."""
+    index._response_cache.clear()
+    seco = dict(_meteo_fija())
+    seco["estado"] = "soleado"
+    seco["estado_label"] = "Soleado"
+    seco["precipitacion_actual_mm_h"] = 0.0
+    seco["lluvia_total_mm"] = 0.0
+    seco["parametros_simulacion"] = {
+        **_meteo_fija()["parametros_simulacion"],
+        "storm_intensity": 35.0,  # el weather la habia estimado, pero no llueve
+    }
+
+    async def _get_weather(force_refresh: bool = False):
+        return seco
+
+    monkeypatch.setattr(index.weather_service, "get_weather", _get_weather)
+    monkeypatch.setattr(index.tide_service, "get_tide", _async_marea_fija)
+
+    r = client.get("/api/v1/water-state")
+    assert r.status_code == 200
+    body = r.json()
+    # Dia soleado sin lluvia: el nivel sigue la marea, no crece a valores de tormenta.
+    assert body["nivel_agua_cm"] < 40.0
+    assert body["lluvia_mm_h"] == 0.0

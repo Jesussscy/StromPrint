@@ -168,6 +168,41 @@ export function fetchWeather(force = false): Promise<{ weather: WeatherResponse 
   );
 }
 
+// --- Estado del agua en vivo (snapshot para el polling del visor 3D) ---
+
+export interface WaterStatePunto {
+  tiempo_hora: number;
+  nivel_agua_cm: number;
+  velocidad_cambio: number;
+}
+
+export interface WaterStateResponse {
+  territorio: string;
+  timestamp: string;
+  nivel_agua_cm: number;
+  velocidad_cambio_cm_h: number;
+  tendencia: "creciente" | "decreciente" | "estable";
+  riesgo: "Normal" | "Alerta" | "Emergencia" | "Critico";
+  estado_meteorologico: EstadoMeteo;
+  estado_label: string;
+  lluvia_mm_h: number;
+  viento_kmh: number;
+  direccion_viento_deg: number;
+  pico_maximo_cm: number;
+  hora_pico: number;
+  hora_inicio_h: number;
+  serie: WaterStatePunto[];
+  serie_horas: number;
+}
+
+// El backend cachea 60 s; el dashboard consulta cada ~30 s con N sin cache.
+export function fetchWaterState(): Promise<WaterStateResponse> {
+  const key = `GET /api/v1/water-state ${Math.floor(Date.now() / 30_000)}`;
+  return dedupeFetch(key, () =>
+    stormprintFetch<WaterStateResponse>("/api/v1/water-state", { method: "GET" })
+  );
+}
+
 export interface PrediccionGuardada {
   id: number;
   timestamp: string;

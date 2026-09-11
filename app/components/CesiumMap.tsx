@@ -16,6 +16,7 @@ import {
 import { riscoColorEstilo, clasificarNivel as clasificarNivelCentral, colorDeNivelCm } from "@/app/lib/riesgo";
 import { pinTexture } from "@/app/lib/cesiumTextures";
 import { FloodRenderer } from "@/app/lib/floodRenderer";
+import { MeteoRenderer } from "@/app/lib/meteoRenderer";
 import HeatmapView from "@/app/components/HeatmapView";
 
 interface CesiumMapProps {
@@ -29,6 +30,8 @@ interface CesiumMapProps {
   meteorologia?: import("@/app/lib/api").MeteorologiaResumen | null;
   /** Snapshot del estado del agua en vivo (polling del dashboard). */
   liveWater?: import("@/app/lib/api").WaterStateResponse | null;
+  /** Latencia del ultimo fetch a /water-state (ms), para el HUD LIVE. */
+  liveLatenciaMs?: number | null;
 }
 
 // Rectangulo geografico del barrio Manga, Cartagena (lat/lng bounds)
@@ -85,10 +88,12 @@ export default function CesiumMap({
   puntoMeteo = null,
   meteorologia = null,
   liveWater = null,
+  liveLatenciaMs = null,
 }: CesiumMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<{ viewer: any; destroy: () => void } | null>(null);
   const floodRendererRef = useRef<FloodRenderer | null>(null);
+  const meteoRendererRef = useRef<MeteoRenderer | null>(null);
   const cesiumRef = useRef<any>(null);
   const screenSpaceHandlerRef = useRef<{ destroy: () => void } | null>(null);
   const hoverHandlerRef = useRef<{ destroy: () => void } | null>(null);
@@ -98,6 +103,9 @@ export default function CesiumMap({
   const [error, setError] = useState<string | null>(null);
   const horaLocalRef = useRef<number>(horaLocal);
   const stormRef = useRef<boolean>(stormMode);
+  const puntoMeteoRef = useRef<{ lluvia_mm_h?: number; marea_cm?: number } | null>(puntoMeteo);
+  const meteorologiaRef = useRef<import("@/app/lib/api").MeteorologiaResumen | null>(meteorologia);
+  const liveWaterRef = useRef<import("@/app/lib/api").WaterStateResponse | null>(liveWater);
   const fpsCountRef = useRef(0);
   const [fps, setFps] = useState(0);
   const [vista, setVista] = useState<"3d" | "heatmap">("3d");
@@ -105,11 +113,27 @@ export default function CesiumMap({
 
   useEffect(() => { horaLocalRef.current = horaLocal; }, [horaLocal]);
   useEffect(() => { stormRef.current = stormMode; }, [stormMode]);
+  useEffect(() => { puntoMeteoRef.current = puntoMeteo; }, [puntoMeteo]);
+  useEffect(() => { meteorologiaRef.current = meteorologia; }, [meteorologia]);
+  useEffect(() => { liveWaterRef.current = liveWater; }, [liveWater]);
 
   // Control de capas y base mapas (mapa interno).
-  const [baseMapa, setBaseMapa] = useState<"sate" | "oscuro" | "hibrido">("sate");
-  const [capas, setCapas] = useState({ zonas: true, etiquetas: true, agua: true });
+  const [baseMapa, setBaseMapa] = useState<"sate" | "oscuro" | "hibrido" | "osm">("sate");
+  const [capas, setCapas] = useState({
+    zonas: true,
+    etiquetas: true,
+    agua: true,
+    lluvia: true,
+    viento: true,
+    mareas: true,
+  });
   const [panelCapas, setPanelCapas] = useState(false);
+  // Relieve 3D: terreno real (ArcGIS World Elevation) o elipsoide plano.
+  const [relieve3D, setRelieve3D] = useState(true);
+  const relieve3DRef = useRef<boolean>(true);
+  const terrenoProviderRef = useRef<any>(null);
+  // Modal de ayuda de atajos (tecla ? o /).
+  const [ayuda, setAyuda] = useState(false);
   // Registro de proveedores ya probados para el failover automático de capas
   // base: si un proveedor falla repetidamente (p.ej. un proxy/ISP inyecta un
   // banner "API KEY REQUIRED" en los tiles), saltamos a uno más robusto y el
@@ -131,6 +155,7 @@ export default function CesiumMap({
   useEffect(() => { onSelectZonaRef.current = onSelectZona; }, [onSelectZona]);
   useEffect(() => { nivelMaximoRef.current = nivelMaximoCm; }, [nivelMaximoCm]);
   useEffect(() => { midiendoRef.current = midiendo; }, [midiendo]);
+  useEffect(() => { relieve3DRef.current = relieve3D; }, [relieve3D]);
 
   // Reloj en hora local de Cartagena (UTC-5) para el HUD del visor.
   useEffect(() => {
@@ -259,6 +284,7 @@ export default function CesiumMap({
             "https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer"
           );
           viewer.terrainProvider = provider;
+          terrenoProviderRef.current = provider;
         } catch (e) {
           console.warn("Terreno 3D no disponible, usando elipsoide.", e);
         }
@@ -472,6 +498,19 @@ export default function CesiumMap({
         floodRendererRef.current = floodRenderer;
         (viewerRef.current as any).floodRenderer = floodRenderer;
 
+        // ── Meteorologia visual: lluvia, viento y oleaje ─────────────────
+        const meteoRenderer = new MeteoRenderer(Cesium, viewer, {
+          bounds: MANGA_BOUNDS,
+        });
+        meteoRenderer.update({
+          lluviaMmH: puntoMeteoRef.current?.lluvia_mm_h ?? 0,
+          vientoKmh: meteorologiaRef.current?.viento_max_kmh ?? 0,
+          vientoDeg: liveWaterRef.current?.direccion_viento_deg ?? 90,
+          mareaCm: puntoMeteoRef.current?.marea_cm ?? 0,
+          storm: stormRef.current,
+        });
+        meteoRendererRef.current = meteoRenderer;
+
         setCargando(false);
       } catch (err) {
         if (!cancelado) {
@@ -501,6 +540,9 @@ export default function CesiumMap({
       }
       floodRendererRef.current?.dispose();
       floodRendererRef.current = null;
+      meteoRendererRef.current?.dispose();
+      meteoRendererRef.current = null;
+      terrenoProviderRef.current = null;
       if (viewerRef.current) {
         viewerRef.current.destroy();
         viewerRef.current = null;
@@ -542,6 +584,21 @@ export default function CesiumMap({
       floodRendererRef.current?.update({
         nivelCm: nivel,
         velCmH: vel,
+        storm: stormRef.current,
+      });
+
+      // Meteorologia visual sincronizada con el punto del escenario en curso.
+      const pm = puntoMeteoRef.current;
+      const met = meteorologiaRef.current;
+      const lw = liveWaterRef.current;
+      const lluvia = pm?.lluvia_mm_h ?? lw?.lluvia_mm_h ?? 0;
+      const viento = met?.viento_max_kmh ?? lw?.viento_kmh ?? 0;
+      const dir = lw?.direccion_viento_deg ?? 90 + (stormRef.current ? 45 : Math.sin(horaLocalRef.current * Math.PI / 12) * 60);
+      meteoRendererRef.current?.update({
+        lluviaMmH: lluvia,
+        vientoKmh: viento,
+        vientoDeg: dir,
+        mareaCm: pm?.marea_cm ?? 0,
         storm: stormRef.current,
       });
 
@@ -639,6 +696,7 @@ export default function CesiumMap({
       acc += dt;
       if (acc >= 0.033) {
         floodRendererRef.current?.animate(acc);
+        meteoRendererRef.current?.animate(acc);
         acc = 0;
       }
     };
@@ -652,6 +710,50 @@ export default function CesiumMap({
     floodRendererRef.current.setVisible(capas.agua);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [capas.agua, cargando]);
+
+  // Toggles de meteorologia visual (lluvia / viento / mareas).
+  useEffect(() => {
+    if (!meteoRendererRef.current) return;
+    meteoRendererRef.current.setVisible({
+      lluvia: capas.lluvia,
+      viento: capas.viento,
+      mareas: capas.mareas,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [capas.lluvia, capas.viento, capas.mareas, cargando]);
+
+  // Relieve 3D: terreno real (ArcGIS) o elipsoide plano (mas rapido/plano).
+  useEffect(() => {
+    const V: any = viewerRef.current;
+    const Cesium: any = cesiumRef.current;
+    if (!V?.viewer || !Cesium) return;
+    const viewer = V.viewer;
+    const setTerreno = (p: any) => {
+      viewer.terrainProvider = p;
+      viewer.scene.requestRender();
+    };
+    if (relieve3DRef.current) {
+      if (terrenoProviderRef.current) {
+        setTerreno(terrenoProviderRef.current);
+      } else {
+        Cesium.ArcGISTiledElevationTerrainProvider.fromUrl(
+          "https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer"
+        )
+          .then((provider: any) => {
+            if (!relieve3DRef.current || !viewerRef.current) return;
+            terrenoProviderRef.current = provider;
+            setTerreno(provider);
+          })
+          .catch((_e: unknown) => {
+            terrenoProviderRef.current = new Cesium.EllipsoidTerrainProvider();
+            setTerreno(terrenoProviderRef.current);
+          });
+      }
+    } else {
+      setTerreno(new Cesium.EllipsoidTerrainProvider());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cargando, relieve3D]);
 
   // ── Volar a una zona seleccionada desde el panel ───────────────────────
   useEffect(() => {
@@ -1048,7 +1150,7 @@ function recentrar() {
 
   // ── Capas base: satelital / oscuro / híbrido con fallback automático ──
   // Delega en cambiarBaseCapa (failover resiliente a tiles inválidos/HTML).
-  async function cambiarBase(base: "sate" | "oscuro" | "hibrido") {
+  async function cambiarBase(base: "sate" | "oscuro" | "hibrido" | "osm") {
     await cambiarBaseCapa(base);
   }
 
@@ -1085,6 +1187,11 @@ function recentrar() {
       else if (k === "z") setCapas((c) => ({ ...c, zonas: !c.zonas }));
       else if (k === "a") setCapas((c) => ({ ...c, agua: !c.agua }));
       else if (k === "l") setCapas((c) => ({ ...c, etiquetas: !c.etiquetas }));
+      else if (k === "i") setCapas((c) => ({ ...c, lluvia: !c.lluvia }));
+      else if (k === "v") setCapas((c) => ({ ...c, viento: !c.viento }));
+      else if (k === "w") setCapas((c) => ({ ...c, mareas: !c.mareas }));
+      else if (k === "t") setRelieve3D((r) => !r);
+      else if (k === "?" || k === "/" || e.key === "F1") setAyuda((a) => !a);
       else if (k === "m") toggleMedicion();
       else if (k === "escape") {
         if (midiendoRef.current) {
@@ -1106,6 +1213,17 @@ function recentrar() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Esc cierra el modal de ayuda cuando está abierto (efecto aislado para no
+  // depender del estado en el manejador global de atajos).
+  useEffect(() => {
+    if (!ayuda) return;
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === "escape") setAyuda(false);
+    };
+    window.addEventListener("keydown", onEsc);
+    return () => window.removeEventListener("keydown", onEsc);
+  }, [ayuda]);
+
   // Métricas derivadas para el HUD (calibrador de umbrales y alertas).
   const escalaGauge = Math.max(nivelMaximoCm, 120);
   const pctGauge = Math.min(100, Math.max(0, (nivelAguaCm / escalaGauge) * 100));
@@ -1118,7 +1236,7 @@ function recentrar() {
     <div
       className="relative w-full h-full min-h-[380px] sm:min-h-[560px]"
       role="region"
-      aria-label={`Mapa 3D de Manga, Cartagena. Nivel ${nivelAguaCm.toFixed(1)} cm · ${clasificarNivel(nivelAguaCm)} · ${zonasAlerta} zonas en alerta. Atajos: R re-centrar, C capas, flechas recorren zonas.`}
+      aria-label={`Mapa 3D de Manga, Cartagena. Nivel ${nivelAguaCm.toFixed(1)} cm · ${clasificarNivel(nivelAguaCm)} · ${zonasAlerta} zonas en alerta. Atajos: R re-centrar, C capas, flechas recorren zonas, ? ayuda.`}
       tabIndex={0}
     >
       <div
@@ -1230,6 +1348,18 @@ function recentrar() {
         </button>
       )}
 
+      {/* Botón de ayuda (atajos de teclado) */}
+      {!cargando && !error && (
+        <button
+          onClick={() => setAyuda((a) => !a)}
+          aria-pressed={ayuda}
+          className="absolute top-24 right-3 z-10 glass rounded-lg px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-cyan hover:bg-cyan/10 transition flex items-center gap-1.5 min-h-[44px] min-w-[44px] justify-center"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
+          Ayuda
+        </button>
+      )}
+
       {/* Panel de capas: base mapas, capas internas y vistas */}
       {panelCapas && !cargando && !error && vista === "3d" && (
         <div className="absolute top-28 right-3 z-20 glass rounded-xl p-3 text-xs text-white w-48">
@@ -1250,6 +1380,7 @@ function recentrar() {
               ["sate", "Satelital"],
               ["oscuro", "Oscuro"],
               ["hibrido", "Híbrido"],
+              ["osm", "Calles (OSM)"],
             ] as const
           ).map(([val, label]) => (
             <button
@@ -1273,6 +1404,10 @@ function recentrar() {
               ["zonas", "Zonas"],
               ["etiquetas", "Etiquetas"],
               ["agua", "Agua en calles"],
+              ["lluvia", "Lluvia (radar)"],
+              ["viento", "Viento"],
+              ["mareas", "Oleaje"],
+              ["relieve3D", "Relieve 3D"],
               ["sol", "Sol (hora real)"],
             ] as const
           ).map(([val, label]) => (
@@ -1280,10 +1415,12 @@ function recentrar() {
               <span className="text-slate-300">{label}</span>
               <input
                 type="checkbox"
-                checked={val === "sol" ? luzSolar : capas[val]}
-                onChange={() =>
-                  val === "sol" ? setLuzSolar((s) => !s) : setCapas((c) => ({ ...c, [val]: !c[val] }))
-                }
+                checked={val === "relieve3D" ? relieve3D : val === "sol" ? luzSolar : capas[val as keyof typeof capas]}
+                onChange={() => {
+                  if (val === "relieve3D") setRelieve3D((r) => !r);
+                  else if (val === "sol") setLuzSolar((s) => !s);
+                  else setCapas((c) => ({ ...c, [val]: !c[val as keyof typeof capas] }));
+                }}
                 className="accent-cyan"
               />
             </label>
@@ -1336,7 +1473,15 @@ function recentrar() {
             Capturar PNG
           </button>
 
-          <p className="mt-2 text-[9px] text-slate-500">Atajos: <kbd>Z</kbd> <kbd>A</kbd> <kbd>L</kbd> <kbd>C</kbd> <kbd>R</kbd> <kbd>2</kbd> <kbd>3</kbd></p>
+          <button
+            onClick={() => setAyuda(true)}
+            className="mt-2 w-full rounded-lg bg-white/5 px-2 py-1.5 text-[10px] font-mono uppercase tracking-wider text-cyan hover:bg-cyan/10 transition flex items-center justify-center gap-1.5"
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
+            Ayuda de atajos (?)
+          </button>
+
+          <p className="mt-2 text-[9px] text-slate-500">Atajos: <kbd>Z</kbd> <kbd>A</kbd> <kbd>I</kbd> <kbd>V</kbd> <kbd>W</kbd> <kbd>T</kbd> <kbd>L</kbd> <kbd>C</kbd> <kbd>R</kbd> <kbd>2</kbd> <kbd>3</kbd> <kbd>?</kbd></p>
         </div>
       )}
 
@@ -1415,7 +1560,8 @@ function recentrar() {
 
         <p className="mt-2 text-[10px] text-slate-500">
           Arrastrá · scroll · <kbd className="text-slate-400">R</kbd> re-centrar ·{" "}
-          <kbd className="text-slate-400">C</kbd> capas · <kbd className="text-slate-400">M</kbd> medir
+          <kbd className="text-slate-400">C</kbd> capas · <kbd className="text-slate-400">M</kbd> medir ·{" "}
+          <kbd className="text-slate-400">?</kbd> ayuda
         </p>
 
         {/* Hora de Cartagena + datos meteorológicos en vivo */}
@@ -1469,12 +1615,15 @@ function recentrar() {
             <span className="font-tabular text-[10px] text-slate-300" title={liveWater.tendencia}>
               {liveWater.tendencia === "creciente" ? "▲" : liveWater.tendencia === "decreciente" ? "▼" : "—"}
             </span>
-            <span className="font-tabular text-[9px] text-slate-500">
-              viento {liveWater.viento_kmh.toFixed(0)} km/h
+            <span className="font-tabular text-[9px] text-slate-500" title={`Viento desde ${rumboViento(liveWater.direccion_viento_deg)}`}>
+              viento {liveWater.viento_kmh.toFixed(0)} km/h {rumboViento(liveWater.direccion_viento_deg)}
             </span>
             <span className="font-tabular text-[9px] text-slate-500">
               {clasificarNivel(liveWater.nivel_agua_cm)}
             </span>
+            {liveLatenciaMs != null && (
+              <span className="font-tabular text-[9px] text-slate-600">{liveLatenciaMs} ms</span>
+            )}
           </div>
         )}
       </div>
@@ -1573,7 +1722,52 @@ function recentrar() {
           </div>
         </div>
       )}
+
+      {/* Modal de ayuda: todos los atajos del visor */}
+      {ayuda && (
+        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/50 p-4">
+          <div className="glass rounded-2xl p-5 text-white w-full max-w-md max-h-[80%] overflow-y-auto">
+            <div className="flex items-center justify-between mb-3">
+              <p className="font-display font-bold text-cyan">Atajos del mapa 3D</p>
+              <button
+                onClick={() => setAyuda(false)}
+                aria-label="Cerrar ayuda"
+                className="text-slate-500 hover:text-white transition-colors"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+              </button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-slate-300">
+              <AyudaLinea k="R">Re-centrar en Manga</AyudaLinea>
+              <AyudaLinea k="2">Vista cenital</AyudaLinea>
+              <AyudaLinea k="3">Vista oblicua</AyudaLinea>
+              <AyudaLinea k="C">Abrir / cerrar capas</AyudaLinea>
+              <AyudaLinea k="Z">Zonas críticas</AyudaLinea>
+              <AyudaLinea k="A">Agua en calles</AyudaLinea>
+              <AyudaLinea k="L">Etiquetas</AyudaLinea>
+              <AyudaLinea k="I">Lluvia (radar)</AyudaLinea>
+              <AyudaLinea k="V">Viento</AyudaLinea>
+              <AyudaLinea k="W">Oleaje</AyudaLinea>
+              <AyudaLinea k="T">Relieve 3D</AyudaLinea>
+              <AyudaLinea k="M">Medir distancias</AyudaLinea>
+              <AyudaLinea k="↑ ↓">Recorrer zonas</AyudaLinea>
+              <AyudaLinea k="Esc">Cerrar / limpiar selección</AyudaLinea>
+              <AyudaLinea k="?">Esta ayuda</AyudaLinea>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+// Fila compacta del modal de ayuda: tecla + descripción.
+function AyudaLinea({ k, children }: { k: string; children: React.ReactNode }) {
+  return (
+    <p className="flex items-center justify-between gap-2">
+      <span className="text-slate-400">{children}</span>
+      <kbd className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[10px] text-cyan">{k}</kbd>
+    </p>
   );
 }
 
@@ -1632,4 +1826,11 @@ function nivelColorCached(nivelCm: number): string {
 
 function liveColor(nivelCm: number): string {
   return colorDeNivelCm(nivelCm);
+}
+
+// Rumbo compass (16 puntos) para la dirección meteorológica del viento.
+function rumboViento(deg: number): string {
+  const puntos = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
+  const idx = Math.round((((deg % 360) + 360) % 360) / 22.5) % 16;
+  return puntos[idx];
 }

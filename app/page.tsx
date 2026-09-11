@@ -39,6 +39,19 @@ import {
   type WaterStateResponse,
 } from "@/app/lib/api";
 import { ZONAS_MANGA } from "@/app/lib/zonasManga";
+import {
+  exportPrediccionCSV,
+  exportPrediccionJSON,
+  copiarResumen,
+} from "@/app/lib/export";
+import {
+  playAlerta,
+  sirenaOn,
+  sirenaOff,
+  soundEnabled,
+  setSoundEnabled,
+} from "@/app/lib/sound";
+import { loadJSON, loadNumber, saveJSON } from "@/app/lib/storage";
 
 // Simulación 3D de inundación por zona (WebGL pesado, carga diferida).
 const ZonaFlood3D = dynamic(() => import("@/app/components/ZonaFlood3D"), {
@@ -276,11 +289,24 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [lluvia, setLluvia] = useState(0.6);
-  const [marea, setMarea] = useState(8);
-  const [drenaje, setDrenaje] = useState(70);
-  const [usarMeteo, setUsarMeteo] = useState(true);
+  // Parámetros del escenario: se restauran y persisten en localStorage.
+  const escenarioGuardado = useMemo(
+    () =>
+      loadJSON<{ lluvia: number; marea: number; drenaje: number; usarMeteo: boolean } | null>(
+        "escenario",
+        null
+      ),
+    []
+  );
+  const [lluvia, setLluvia] = useState(escenarioGuardado?.lluvia ?? 0.6);
+  const [marea, setMarea] = useState(escenarioGuardado?.marea ?? 8);
+  const [drenaje, setDrenaje] = useState(escenarioGuardado?.drenaje ?? 70);
+  const [usarMeteo, setUsarMeteo] = useState(escenarioGuardado?.usarMeteo ?? true);
+  const [velocidad, setVelocidad] = useState(() => loadNumber("velocidad", 1));
+  const [sonido, setSonido] = useState<boolean>(() => soundEnabled());
+  const [copiado, setCopiado] = useState(false);
   const [liveWater, setLiveWater] = useState<WaterStateResponse | null>(null);
+  const [liveLatenciaMs, setLiveLatenciaMs] = useState<number | null>(null);
   const [zonaEnfocada, setZonaEnfocada] = useState<number | null>(() => {
     const z = leerParamURL("zona");
     return z ? Number(z) : null;
@@ -288,6 +314,16 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
   const [controlesAbiertos, setControlesAbiertos] = useState(false);
   const playbackRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const urlHoraRef = useRef(false);
+  const prevEstadoRef = useRef<string | null>(null);
+
+  // Persistir los parámetros cuando cambian (sin spam: se escribe en cada
+  // cambio de slider, volumen despreciable).
+  useEffect(() => {
+    saveJSON("escenario", { lluvia, marea, drenaje, usarMeteo });
+  }, [lluvia, marea, drenaje, usarMeteo]);
+  useEffect(() => {
+    saveJSON("velocidad", velocidad);
+  }, [velocidad]);
 
   const onSelectZona = useCallback((z: { id: number } | null) => {
     setZonaEnfocada(z ? z.id : null);
@@ -363,9 +399,12 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
     let activo = true;
     const tick = async () => {
       if (!activo) return;
+      const t0 = performance.now();
       try {
         const data = await fetchWaterState();
-        if (activo) setLiveWater(data);
+        if (!activo) return;
+        setLiveWater(data);
+        setLiveLatenciaMs(Math.round(performance.now() - t0));
       } catch (_e) {
         // Silencio: si la red o el backend fallan, se conserva el ultimo snapshot.
       }
@@ -384,12 +423,12 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
         setCurrentHour((prev) => {
           const max = prediccion.puntos[prediccion.puntos.length - 1].tiempo_hora;
           if (prev >= max) { setIsPlaying(false); return max; }
-          return prev + 1;
+          return prev + 0.5;
         });
-      }, PLAYBACK_SPEED_MS);
+      }, PLAYBACK_SPEED_MS / velocidad);
     }
     return () => { if (playbackRef.current) clearInterval(playbackRef.current); };
-  }, [isPlaying, prediccion]);
+  }, [isPlaying, prediccion, velocidad]);
 
   const activePunto = useMemo(() => {
     if (!prediccion || prediccion.puntos.length === 0) return null;
@@ -399,6 +438,58 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
   }, [prediccion, currentHour]);
 
   const daySummaries = useMemo(() => prediccion ? computeDaySummaries(prediccion.puntos) : [], [prediccion]);
+
+  // ── Alertas sonoras al cruzar umbrales de riesgo ─────────────────────────
+  // Beep progresivo cuando el punto activo entra en Alerta/Emergencia/Critico.
+  useEffect(() => {
+    if (!activePunto || !sonido) return;
+    const estado = activePunto.estado;
+    const prev = prevEstadoRef.current;
+    prevEstadoRef.current = estado;
+    if (estado === prev) return;
+    const n = estado === "Critico" ? 3 : estado === "Emergencia" ? 2 : estado === "Alerta" ? 1 : 0;
+    if (n > 0) {
+      playAlerta(n, estado === "Critico" ? 880 : estado === "Emergencia" ? 660 : 520);
+    }
+  }, [activePunto, sonido]);
+
+  // Sirena de dos tonos mientras dura la tormenta simulada.
+  useEffect(() => {
+    if (!sonido) {
+      sirenaOff();
+      return;
+    }
+    if (stormMode) sirenaOn();
+    else sirenaOff();
+    return () => sirenaOff();
+  }, [stormMode, sonido]);
+
+  const toggleSonido = () => {
+    const nv = !sonido;
+    setSonido(nv);
+    setSoundEnabled(nv);
+    if (!nv) sirenaOff();
+  };
+
+  const irAlInicio = () => {
+    setIsPlaying(false);
+    setCurrentHour(0);
+  };
+
+  const irAlPico = () => {
+    if (!prediccion) return;
+    setIsPlaying(false);
+    setCurrentHour(Math.max(0, Math.floor(prediccion.hora_pico)));
+  };
+
+  const copiarResumenPrediccion = async () => {
+    if (!prediccion) return;
+    const ok = await copiarResumen(prediccion);
+    if (ok) {
+      setCopiado(true);
+      window.setTimeout(() => setCopiado(false), 1800);
+    }
+  };
 
   return (
     <div className="mx-auto max-w-7xl space-y-4">
@@ -482,6 +573,7 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
             puntoMeteo={activePunto}
             meteorologia={prediccion?.meteorologia_resumen ?? null}
             liveWater={liveWater}
+            liveLatenciaMs={liveLatenciaMs}
           />
         </LazyMount>
 
@@ -547,6 +639,97 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
           </div>
         </div>
       )}
+
+      {/* ═══ FILA 3.75: REPRODUCCIÓN + EXPORTACIÓN ═══ */}
+      <div className="glass rounded-xl p-2 flex flex-wrap items-center gap-x-3 gap-y-2">
+        <div className="flex items-center gap-1">
+          <span className="font-mono text-[9px] uppercase tracking-widest text-slate-500 mr-1">Vel</span>
+          {[0.5, 1, 2, 4].map((v) => (
+            <button
+              key={v}
+              onClick={() => setVelocidad(v)}
+              aria-pressed={velocidad === v}
+              className={`rounded-md px-2 py-1 font-mono text-[10px] transition ${
+                velocidad === v ? "bg-cyan/20 text-cyan" : "text-slate-400 hover:text-white"
+              }`}
+            >
+              {v}x
+            </button>
+          ))}
+        </div>
+
+        <span className="hidden sm:block h-4 w-px bg-white/10" />
+
+        <div className="flex items-center gap-1">
+          <button
+            onClick={irAlInicio}
+            title="Ir al inicio de la serie"
+            className="rounded-md px-2 py-1 font-mono text-[10px] text-slate-300 hover:bg-white/5 hover:text-white transition flex items-center gap-1"
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="19 20 9 12 19 4 19 20" /><line x1="5" y1="19" x2="5" y2="5" /></svg>
+            Inicio
+          </button>
+          <button
+            onClick={irAlPico}
+            disabled={!prediccion}
+            title="Saltar a la hora del nivel máximo"
+            className="rounded-md px-2 py-1 font-mono text-[10px] text-risk-emergency hover:bg-white/5 hover:text-white transition disabled:opacity-40"
+          >
+            ▲ Pico
+          </button>
+        </div>
+
+        <span className="hidden sm:block h-4 w-px bg-white/10" />
+
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => prediccion && exportPrediccionCSV(prediccion)}
+            disabled={!prediccion || isLoading}
+            className="rounded-md px-2 py-1 font-mono text-[10px] text-slate-300 hover:bg-white/5 hover:text-white transition flex items-center gap-1 disabled:opacity-40"
+            title="Descargar pronóstico en CSV"
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+            CSV
+          </button>
+          <button
+            onClick={() => prediccion && exportPrediccionJSON(prediccion)}
+            disabled={!prediccion || isLoading}
+            className="rounded-md px-2 py-1 font-mono text-[10px] text-slate-300 hover:bg-white/5 hover:text-white transition flex items-center gap-1 disabled:opacity-40"
+            title="Descargar pronóstico en JSON"
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+            JSON
+          </button>
+          <button
+            onClick={copiarResumenPrediccion}
+            disabled={!prediccion || isLoading}
+            className={`rounded-md px-2 py-1 font-mono text-[10px] transition flex items-center gap-1 disabled:opacity-40 ${
+              copiado ? "text-emerald-300" : "text-slate-300 hover:bg-white/5 hover:text-white"
+            }`}
+            title="Copiar resumen al portapapeles"
+          >
+            {copiado ? "✓ Copiado" : "Copiar"}
+          </button>
+        </div>
+
+        <span className="flex-1" />
+
+        <button
+          onClick={toggleSonido}
+          aria-pressed={sonido}
+          className={`rounded-md px-2 py-1 font-mono text-[10px] transition flex items-center gap-1.5 ${
+            sonido ? "text-cyan hover:bg-white/5" : "text-slate-500 hover:text-white"
+          }`}
+          title={sonido ? "Apagar alertas sonoras" : "Encender alertas sonoras"}
+        >
+          <span
+            className={`inline-block h-1.5 w-1.5 rounded-full ${
+              sonido ? "bg-cyan animate-pulse-slow" : "bg-slate-600"
+            }`}
+          />
+          {sonido ? "Sonido" : "Silencio"}
+        </button>
+      </div>
 
       {/* ═══ TIMELINE ═══ */}
       <TimelineSlider puntos={prediccion?.puntos ?? []} currentHour={currentHour} onScrub={handleScrub} isPlaying={isPlaying} onTogglePlay={onTogglePlay} />

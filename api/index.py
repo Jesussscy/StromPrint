@@ -77,7 +77,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger("stormprint")
 
-APP_VERSION = "3.10.0"
+APP_VERSION = "3.11.0"
 _START_TIMESTAMP = time.monotonic()
 
 # Simple in-memory cache for read-only endpoints

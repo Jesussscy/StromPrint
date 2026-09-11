@@ -45,6 +45,64 @@ interface Droplet {
 const AGUA_MIN_VISIBLE_CM = 2; // por debajo, el barrio esta "seco"
 const MAX_POR_SEGMENTO = 4;
 
+/**
+ * MaterialProperty del agua: puente entre la API de entidades de Cesium y el
+ * shader Water nativo. Las entidades exigen un objeto con getValue/getType
+ * (no sirve un `Cesium.Material` crudo: `createMaterialProperty` lanzaria
+ * "Unable to infer material type"). Aqui se conserva el Water animado por GPU
+ * y se exponen uniforms vivos para que el animador los afine sin recrear nada.
+ */
+class WaterMaterialProperty {
+  private _C: any;
+  private _type: string;
+  readonly definitionChanged: any;
+  isConstant: boolean;
+
+  baseWaterColor: any;
+  blendColor: any;
+  frequency: number;
+  animationSpeed: number;
+  amplitude: number;
+  specularIntensity: number;
+  fadeFactor: number;
+
+  constructor(C: any, uniforms: Record<string, any>) {
+    this._C = C;
+    this._type = C.Material.WaterType;
+    this.definitionChanged = new C.Event();
+    this.isConstant = false;
+    this.baseWaterColor = uniforms.baseWaterColor;
+    this.blendColor = uniforms.blendColor;
+    this.frequency = uniforms.frequency;
+    this.animationSpeed = uniforms.animationSpeed;
+    this.amplitude = uniforms.amplitude;
+    this.specularIntensity = uniforms.specularIntensity;
+    this.fadeFactor = uniforms.fadeFactor;
+  }
+
+  getType(): string {
+    return this._type;
+  }
+
+  getValue(_time: number, result?: any): any {
+    if (!result) result = {};
+    // El updater usa el material con las texturas Water nativas de Cesium,
+    // así que solo se propagan los parametros que controlan el look.
+    result.baseWaterColor = this.baseWaterColor;
+    result.blendColor = this.blendColor;
+    result.frequency = this.frequency;
+    result.animationSpeed = this.animationSpeed;
+    result.amplitude = this.amplitude;
+    result.specularIntensity = this.specularIntensity;
+    result.fadeFactor = this.fadeFactor;
+    return result;
+  }
+
+  equals(other: any): boolean {
+    return this === other;
+  }
+}
+
 export class FloodRenderer {
   private Cesium: any;
   private viewer: any;
@@ -101,16 +159,15 @@ export class FloodRenderer {
     const canvas = waterTexture(0, 0.5, 128);
     // Material shader de agua nativo de Cesium: ondas animadas por GPU (el
     // shader desplaza las texturas con czm_frameNumber, así que los ripples
-    // se mueven solos). Si algo fallara, cae al ImageMaterialProperty plano.
+    // se mueven solos). Se envuelve en un MaterialProperty para que las
+    // entidades lo acepten; si algo fallara, cae al ImageMaterialProperty.
     // Nota: el material Water ignora `material.alpha`; la "gasa" sobre la
     // imagen satelital se resuelve vía fadeFactor + color semi-transparente.
     let material: any;
     try {
-      material = C.Material.fromType(C.Material.WaterType, {
+      material = new WaterMaterialProperty(C, {
         baseWaterColor: C.Color.fromCssColorString("#0891B2"),
         blendColor: C.Color.fromCssColorString("#00E5FF"),
-        normalMap: canvas.toDataURL(),
-        specularMap: canvas.toDataURL(),
         frequency: 4200.0,
         animationSpeed: 0.04,
         amplitude: 6.0,

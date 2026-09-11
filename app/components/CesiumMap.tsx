@@ -377,9 +377,7 @@ export default function CesiumMap({
                 Cesium.Color.fromCssColorString(RIESGO_META[nivelBase].color).withAlpha(0.1)
               ),
               outline: true,
-              outlineColor: new Cesium.ColorMaterialProperty(
-                Cesium.Color.fromCssColorString(RIESGO_META[nivelBase].color).withAlpha(0.3)
-              ),
+              outlineColor: Cesium.Color.fromCssColorString(RIESGO_META[nivelBase].color).withAlpha(0.3),
               outlineWidth: 1,
             },
             properties: { zonaCriticaId: zona.id, tipo: "influencia" },
@@ -631,9 +629,7 @@ export default function CesiumMap({
             influencia.ellipse.material.color.setValue(
               Cesium.Color.fromCssColorString(meta.color).withAlpha(0.22)
             );
-            influencia.ellipse.outlineColor.color.setValue(
-              Cesium.Color.fromCssColorString(meta.color).withAlpha(0.32)
-            );
+            influencia.ellipse.outlineColor = Cesium.Color.fromCssColorString(meta.color).withAlpha(0.32);
           }
         }
       });

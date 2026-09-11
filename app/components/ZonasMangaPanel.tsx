@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ZONAS_MANGA,
   RIESGO_META,
@@ -42,9 +42,17 @@ export default function ZonasMangaPanel({
 }: ZonasMangaPanelProps) {
   const [filtro, setFiltro] = useState<NivelRiesgo | "TODOS">("TODOS");
   const [busqueda, setBusqueda] = useState("");
-  const [favoritas, setFavoritas] = useState<number[]>(cargarFavoritos);
+  const [favoritas, setFavoritas] = useState<number[]>([]);
 
+  // La primera ejecución lee los favoritos guardados (localStorage no existe en
+  // el servidor); las siguientes persisten los cambios del usuario.
+  const primeraLectura = useRef(true);
   useEffect(() => {
+    if (primeraLectura.current) {
+      primeraLectura.current = false;
+      setFavoritas(cargarFavoritos());
+      return;
+    }
     try {
       window.localStorage.setItem(FAV_STORAGE_KEY, JSON.stringify(favoritas));
     } catch {

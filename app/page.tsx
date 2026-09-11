@@ -282,35 +282,22 @@ function leerParamURL(nombre: string): string | null {
 
 function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; onToggleStorm: () => void }) {
   const [prediccion, setPrediccion] = useState<PrediccionResponse | null>(null);
-  const [currentHour, setCurrentHour] = useState(() => {
-    const h = parseFloat(leerParamURL("hora") ?? "");
-    return Number.isFinite(h) && h >= 0 ? h : 0;
-  });
+  const [currentHour, setCurrentHour] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // Parámetros del escenario: se restauran y persisten en localStorage.
-  const escenarioGuardado = useMemo(
-    () =>
-      loadJSON<{ lluvia: number; marea: number; drenaje: number; usarMeteo: boolean } | null>(
-        "escenario",
-        null
-      ),
-    []
-  );
-  const [lluvia, setLluvia] = useState(escenarioGuardado?.lluvia ?? 0.6);
-  const [marea, setMarea] = useState(escenarioGuardado?.marea ?? 8);
-  const [drenaje, setDrenaje] = useState(escenarioGuardado?.drenaje ?? 70);
-  const [usarMeteo, setUsarMeteo] = useState(escenarioGuardado?.usarMeteo ?? true);
-  const [velocidad, setVelocidad] = useState(() => loadNumber("velocidad", 1));
-  const [sonido, setSonido] = useState<boolean>(() => soundEnabled());
+  // Parametros del escenario: se restauran desde localStorage + URL en un
+  // efecto tras el primer render para no divergir entre servidor y cliente.
+  const [lluvia, setLluvia] = useState(0.6);
+  const [marea, setMarea] = useState(8);
+  const [drenaje, setDrenaje] = useState(70);
+  const [usarMeteo, setUsarMeteo] = useState(true);
+  const [velocidad, setVelocidad] = useState(1);
+  const [sonido, setSonido] = useState<boolean>(false);
   const [copiado, setCopiado] = useState(false);
   const [liveWater, setLiveWater] = useState<WaterStateResponse | null>(null);
   const [liveLatenciaMs, setLiveLatenciaMs] = useState<number | null>(null);
-  const [zonaEnfocada, setZonaEnfocada] = useState<number | null>(() => {
-    const z = leerParamURL("zona");
-    return z ? Number(z) : null;
-  });
+  const [zonaEnfocada, setZonaEnfocada] = useState<number | null>(null);
   const [controlesAbiertos, setControlesAbiertos] = useState(false);
   const playbackRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const urlHoraRef = useRef(false);
@@ -324,6 +311,35 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
   useEffect(() => {
     saveJSON("velocidad", velocidad);
   }, [velocidad]);
+
+  // Restaurar estado guardado y parametros de URL tras el primer render: evita
+  // discrepancias de hidratacion y predice con el escenario real del arranque.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const saved = loadJSON<{
+      lluvia: number;
+      marea: number;
+      drenaje: number;
+      usarMeteo: boolean;
+    } | null>("escenario", null);
+    const rLluvia = saved?.lluvia ?? 0.6;
+    const rMarea = saved?.marea ?? 8;
+    const rDrenaje = saved?.drenaje ?? 70;
+    const rMeteo = saved?.usarMeteo ?? true;
+    setLluvia(rLluvia);
+    setMarea(rMarea);
+    setDrenaje(rDrenaje);
+    setUsarMeteo(rMeteo);
+    setVelocidad(loadNumber("velocidad", 1));
+    setSonido(soundEnabled());
+    const z = leerParamURL("zona");
+    if (z) {
+      const n = Number(z);
+      if (Number.isFinite(n)) setZonaEnfocada(n);
+    }
+    void loadPrediction({ lluvia: rLluvia, marea: rMarea, drenaje: rDrenaje, usarMeteo: rMeteo });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onSelectZona = useCallback((z: { id: number } | null) => {
     setZonaEnfocada(z ? z.id : null);
@@ -368,16 +384,22 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
     }
   }, [prediccion]);
 
-  const loadPrediction = useCallback(async () => {
+  const loadPrediction = useCallback(async (forzar?: {
+      lluvia?: number;
+      marea?: number;
+      drenaje?: number;
+      usarMeteo?: boolean;
+    }) => {
     setIsLoading(true);
     setError(null);
     try {
+      const eMeteo = forzar?.usarMeteo ?? usarMeteo;
       const result = await predecir({
         horas_pronostico: 168,
-        intensidad_lluvia_mm_h: usarMeteo ? undefined : lluvia,
-        nivel_marea_cm: marea,
-        eficiencia_drenaje: drenaje,
-        usar_datos_meteo: usarMeteo,
+        intensidad_lluvia_mm_h: eMeteo ? undefined : forzar?.lluvia ?? lluvia,
+        nivel_marea_cm: forzar?.marea ?? marea,
+        eficiencia_drenaje: forzar?.drenaje ?? drenaje,
+        usar_datos_meteo: eMeteo,
       });
       setHoraInicio(result.hora_inicio_h);
       setPrediccion(result);
@@ -389,9 +411,6 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
       setIsLoading(false);
     }
   }, [lluvia, marea, drenaje, usarMeteo]);
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { loadPrediction(); }, []);
 
   // Polling del estado del agua en vivo: el backend cachea 60 s, así que una
   // consulta cada 30 s alimenta la píldora LIVE y la animación de flujo.
@@ -541,7 +560,7 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
                 Simulación bloqueada · meteo en vivo
               </span>
             ) : (
-              <button onClick={loadPrediction} disabled={isLoading} className="glass-glow rounded-lg px-4 py-2.5 font-mono text-[11px] uppercase tracking-wider text-cyan hover:bg-cyan/10 active:scale-95 active:bg-cyan/15 transition-all duration-150 min-h-[44px]">
+              <button onClick={() => loadPrediction()} disabled={isLoading} className="glass-glow rounded-lg px-4 py-2.5 font-mono text-[11px] uppercase tracking-wider text-cyan hover:bg-cyan/10 active:scale-95 active:bg-cyan/15 transition-all duration-150 min-h-[44px]">
                 {isLoading ? "Calculando..." : "Simular"}
               </button>
             )}
@@ -758,7 +777,7 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
         <div className="flex items-center justify-between gap-3 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
           <span>{error}</span>
           <button
-            onClick={loadPrediction}
+            onClick={() => loadPrediction()}
             className="glass-glow shrink-0 rounded-lg px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-cyan hover:bg-cyan/10 active:scale-95 transition-all duration-150 min-h-[44px] min-w-[44px]"
           >
             Reintentar

@@ -1,9 +1,61 @@
-# StormPrint
+<div align="center">
 
-**La huella que deja cada tormenta en el territorio.**
-Simulación ciberfísica del riesgo de inundación en el barrio Manga, Cartagena de Indias.
+# 🌊 StormPrint
 
-## Arquitectura
+**«La huella que deja cada tormenta en el territorio»**
+
+Simulación ciberfísica del riesgo de inundación en el barrio **Manga, Cartagena de Indias**.
+
+[version_badge]: https://img.shields.io/badge/StormPrint_3.11.0-00E5FF?style=for-the-badge&logo=waves&logoColor=black
+[status_badge]: https://img.shields.io/badge/Panel_en_vivo-ACTIVO-22c55e?style=for-the-badge&logo=activity&logoColor=white
+[tests_badge]: https://img.shields.io/badge/tests-45_passed-22c55e?style=for-the-badge&logo=pytest&logoColor=white
+
+![version][version_badge] ![status][status_badge] ![tests][tests_badge]
+
+![vercel]: https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white
+![next]: https://img.shields.io/badge/Next.js_14-000000?style=for-the-badge&logo=nextdotjs&logoColor=white
+![react]: https://img.shields.io/badge/React_18-61DAFB?style=for-the-badge&logo=react&logoColor=black
+![ts]: https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white
+![tailwind]: https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=black
+![framer]: https://img.shields.io/badge/framer--motion-0055FF?style=for-the-badge&logo=framer&logoColor=white
+
+![python]: https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white
+![fastapi]: https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white
+![pydantic]: https://img.shields.io/badge/Pydantic-EA5F57?style=for-the-badge&logo=pydantic&logoColor=white
+![sqlalchemy]: https://img.shields.io/badge/SQLAlchemy-D71F00?style=for-the-badge&logo=sqlalchemy&logoColor=white
+![sqlite]: https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white
+![scipy]: https://img.shields.io/badge/SciPy-8CAAE6?style=for-the-badge&logo=scipy&logoColor=black
+
+![cesium]: https://img.shields.io/badge/Cesium_3D-0E5A8A?style=for-the-badge&logo=cesium&logoColor=white
+![three]: https://img.shields.io/badge/Three.js-000000?style=for-the-badge&logo=threedotjs&logoColor=white
+![recharts]: https://img.shields.io/badge/Recharts-coral?style=for-the-badge&logo=recharts&logoColor=white
+![pwa]: https://img.shields.io/badge/PWA-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white
+
+![vercel][vercel] ![next][next] ![react][react] ![ts][ts] ![tailwind][tailwind] ![framer][framer]
+![python][python] ![fastapi][fastapi] ![pydantic][pydantic] ![sqlalchemy][sqlalchemy] ![sqlite][sqlite] ![scipy][scipy]
+![cesium][cesium] ![three][three] ![recharts][recharts] ![pwa][pwa]
+
+</div>
+
+---
+
+## ✨ ¿Qué es?
+
+Un **sistema de alerta temprana de inundaciones** que combina un modelo físico
+(de EDOs de segundo orden) con datos meteorológicos y de marea **reales** de
+Open-Meteo, y lo visualiza en un **visor 3D** del barrio Manga.
+
+- 🔴 **Predictivo** — resuelve el nivel de agua `H(t)` hora a hora (hasta 168 h de pronóstico).
+- 🗺️ **Geoespacial** — 20 zonas críticas simuladas individualmente y mapeadas sobre Cartagena.
+- 📡 **En vivo** — `polling` de `/api/v1/water-state` para animar el agua en tiempo real.
+- 📱 **PWA** — instalable en el móvil, con layout «app-like» optimizado para el pulgar.
+- 🔐 **Seguro** — API keys, rate limiting, validación estricta y cabeceras OWASP.
+
+> 📚 **Stack completo, versiones y dónde vive cada tecnología:** [`TECNOLOGIAS.md`](TECNOLOGIAS.md).
+
+---
+
+## 🧱 Arquitectura
 
 ```
 StormPrint/
@@ -17,169 +69,142 @@ StormPrint/
 │   ├── storage.py          Escritura JSON atómica (caches/notificaciones, serverless-safe)
 │   └── notification_service.py  Alertas multi-canal + suscripciones por email
 ├── app/                    Next.js 14 App Router (React 18 + TS)
-│   ├── layout.tsx
-│   ├── template.tsx        Transición de página entre pestañas (framer-motion)
-│   ├── page.tsx            Dashboard
+│   ├── layout.tsx          Metadatos + PWA (manifest, apple-touch-icon)
+│   ├── page.tsx            Dashboard «Panel en vivo»
 │   ├── alertas/page.tsx    Centro de Alertas + suscripción
-│   ├── ciencia/page.tsx    Validación analítica vs numérica
+│   ├── ciencia/page.tsx    Validación analítica vs numérica (RK4 en el navegador)
 │   ├── middleware.ts       Bloqueo Edge de archivos sensibles (404)
 │   ├── globals.css         Tema Cyber-Hydro Glassmorphism
-│   ├── lib/api.ts          Cliente HTTP tipado con timeout y dedupe
-│   └── components/         Navbar, Footer, MobileBottomNav, Panel, CesiumMap
-│                           (visor 3D), HeatmapView, WeatherStation, ForecastDayCard,
-│                           SummaryDashboard, ZonasMangaPanel, Simulador3D, …
+│   ├── lib/api.ts          Cliente HTTP tipado (timeout, dedupe, polling)
+│   └── components/         Navbar, Footer, MobileBottomNav, CesiumMap (visor 3D),
+│                           HeatmapView, DashboardMovil, WeatherStation,
+│                           ZonaFlood3D, ForecastDayCard, SummaryDashboard, …
 ├── tests/                  Suite pytest (umbrales, motor, notificaciones, API)
-├── vercel.json
-├── requirements.txt
-├── package.json
-└── tailwind.config.js
+├── vercel.json             Unifica build Next.js + función Python serverless
+├── requirements.txt        Backend
+├── package.json            Frontend
+└── public/                 Assets, PWA icons, /cesium (Cesium estático)
 ```
 
-## Modelo físico
+---
 
-El nivel de acumulación de agua $H(t)$ en el territorio se modela como un
-oscilador amortiguado de segundo orden:
+## 🧪 Modelo físico
+
+El nivel de acumulación de agua `H(t)` se modela como un **oscilador
+amortiguado de segundo orden**:
 
 ```
 m·H''(t) + c(t)·H'(t) + k(t)·H(t) = F_lluvia(t) + F_marea(t) + F_viento(t)
 ```
 
-- `m` — inercia de la masa hídrica
-- `c(t)` — amortiguamiento temporal (capacidad de drenaje pluvial, saturado por lluvia y racha de días lluviosos)
-- `k(t)` — rigidez del terreno (absorción natural / humedad del suelo)
-- `F_lluvia(t)` — pulso gaussiano representando una tormenta convectiva tropical
-- `F_marea(t)` — marea real horaria de Open-Meteo Marine (serie `sea_level_height_msl`), oscilando en torno a su media y **calibrada** (`TIDE_SERIES_SCALE`) para que un día seco quede siembre en riesgo *Normal*
-- `F_viento(t)` — empuje de marea por viento del sur/oeste (mar de levante)
+| Símbolo | Significado |
+|---|---|
+| `m` | Inercia de la masa hídrica |
+| `c(t)` | Amortiguamiento = capacidad de drenaje, *saturado* por racha de días lluviosos |
+| `k(t)` | Rigidez del terreno (absorción / humedad del suelo) |
+| `F_lluvia(t)` | Pulso gaussiano de una tormenta convectiva tropical |
+| `F_marea(t)` | Marea real horaria Open-Meteo Marine, calibrada (`TIDE_SERIES_SCALE`) |
+| `F_viento(t)` | Empuje de la marea por viento del sur/oeste (mar de levante) |
 
-Se resuelve numéricamente con `scipy.integrate.solve_ivp` (Runge-Kutta 45).
-La condición inicial se **siembra** en el equilibrio estático de la marea actual
-`H(0) ≈ F_marea(0)/k(0)`, de modo que `records[0]` es el nivel de agua *actual*
-(no un transitorio artificial desde cero).
+- ✅ Se resuelve numéricamente con **`scipy.integrate.solve_ivp` (Runge-Kutta 45)** → `api/physics_engine.py`.
+- 🎯 `H(0)` se **siembra** en el equilibrio de la marea actual: `records[0]` = nivel *ahora*.
+- 🕒 Todo el pipeline corre en **America/Bogota** (tzdata); `/predecir` devuelve `hora_inicio_h`.
+- 🗺️ **20 zonas críticas** resuelven su propia `H(t)` con 6 parámetros físicos cada una → `run_zones_simulation`.
 
-Todo el pipeline temporal corre en **America/Bogota** (dependencia `tzdata` para
-Windows/CI): `t=0` es *ahora* en Cartagena, no las 00:00 del día. La lluvia, la
-marea y las ventanas de pronóstico se alinean a ese instante real, y `/predecir`
-devuelve `hora_inicio_h` (0–23, America/Bogota) para que el frontend ancle las
-etiquetas del eje temporal a la hora real del reloj (`setHoraInicio` en
-`app/lib/api.ts`).
+**Umbrales de riesgo:** `< 30 cm` Normal · `30–59` Alerta · `60–99` Emergencia · `≥ 100` Crítico.
 
-Umbrales de riesgo: `< 30cm` Normal · `30–59cm` Alerta · `60–99cm` Emergencia · `≥ 100cm` Crítico.
+> 🧮 Validación cruzada: en `/ciencia`, la solución analítica (convolución de
+> Duhamel) se contrasta con la numérica paso a paso (RK4) **100% en el navegador**.
 
-## Seguridad (OWASP Top 10)
+---
 
-- **Auth**: header `X-StormPrint-Key`, comparado en tiempo constante contra un
-  hash SHA-256 salado. Cubre `/predict`, `/history` y `/weather`.
-  `/predecir`, `/predicciones`, `/health`, `/notifications` y `/notify/*` son
-  públicos y dependen de rate limiting + validación estricta.
-- **Rate limiting**: `slowapi`, 10 peticiones/min por IP en `/api/v1/predict`;
-  30/min en predecir, health y notificaciones; 10/min en suscripciones.
-- **Validación**: Pydantic V2 con límites estrictos en cada campo numérico
-  (ej. `storm_width` → `rain_duration_h`, clamps físicos 30/60/100).
-- **Errores sanitizados**: en producción, cualquier excepción no controlada
-  responde `500` genérico sin trazas internas.
-- **Headers**: CSP, HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`,
-  `Referrer-Policy`, `Permissions-Policy`.
-- **CORS**: lista blanca explícita vía `STORMPRINT_ALLOWED_ORIGINS`.
-- **Archivos sensibles**: el middleware Edge (`app/middleware.ts`) responde
-  `404` para `notifications.json`, `subscriptions.json`, `*.db`, `*.log` y `.env`;
-  los caches y suscripciones se gitignorean.
-- **Credenciales admin**: `generate_admin_credentials` / `verify_admin_credentials`
-  en `security.py` usan PBKDF2-HMAC-SHA256 (100k iteraciones) con salt por usuario.
-
-## API
-
-```
-POST /api/v1/predecir       Predicción pública 0–168h (meteo Open-Meteo o manual)
-POST /api/v1/predict        Simulación legacy manual (requiere API key)
-GET  /api/v1/health         Healthcheck ampliado (DB, caches, uptime)
-GET  /api/v1/weather        Clima en vivo (requiere API key)
-GET  /api/v1/history        Historial de simulaciones (requiere API key)
-GET  /api/v1/predicciones   Últimas predicciones guardadas
-GET  /api/v1/notifications  Historial de alertas + métricas
-POST /api/v1/notify/subscribe|unsubscribe   Suscripción por email
-GET  /api/v1/notify/status  Estado del canal de alertas
-```
-
-La UI de `/alertas` consume notificaciones + estado del canal y permite
-suscribirse por correo; `/ciencia` ofrece un laboratorio didáctico (método
-RK4 y simulador 3D por zona) ejecutado 100% en el navegador.
-
-### Campos clave de la respuesta de `/predecir`
-
-- `hora_inicio_h` — hora del reloj (0–23, America/Bogota) que corresponde a
-  `records[0]`/`series[0]` (t=0 = «ahora»), para anclar el eje temporal de la UI.
-- `nivel_actual_cm` — lectura estimada en t=0 (nivel real de la marea sembrado
-  como condición inicial), ya no el arranque en 0 de un transitorio artificial.
-- `meteorologia_resumen.temperatura_actual_c` — temperatura del instante exacto
-  (bloque `current` de Open-Meteo), usada por los monitores del panel.
-- `fuente_meteo` — `"open-meteo"` si la simulación usó datos reales o
-  `"manual"` cuando se alimentó del deslizador (sin fingir datos que no existen).
-- `proxima_pleamar` y `marea_origen` — pleamar próxima y origen de la serie de
-  marea (`tide_service`, Open-Meteo Marine) para los avisos del dashboard.
-
-## Desarrollo local
+## 🚀 Desarrollo local
 
 ```bash
 # Backend
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-pip install pytest        # solo para correr los tests
-cp .env.example .env      # completar STORMPRINT_API_KEY
+pip install pytest                 # solo para correr los tests
+cp .env.example .env               # completar STORMPRINT_API_KEY
 
-npm run backend           # uvicorn api.index:app --reload --port 8000
-npm test                  # python -m pytest tests -q
-npm run typecheck         # tsc --noEmit
-npm run lint              # next lint
+npm run backend                    # uvicorn api.index:app --reload --port 8000
+npm test                           # python -m pytest tests -q
+npm run typecheck                  # tsc --noEmit
+npm run lint                       # next lint
 
 # Frontend (otra terminal)
 npm install
 npm run dev
 ```
 
-Durante desarrollo local, `next.config.js` ya reenvía `/api/v1/*` hacia
-`http://localhost:8000`; en `vercel dev`/producción lo resuelve `vercel.json`.
+> Durante el desarrollo, `next.config.js` reenvía `/api/v1/*` → `http://localhost:8000`.
 
-## Despliegue en Vercel
+---
 
-1. Configura las variables de entorno del `.env.example` en el dashboard de
-   Vercel (Project Settings → Environment Variables). Las **críticas** son:
-   - `STORMPRINT_API_KEY` y `NEXT_PUBLIC_STORMPRINT_API_KEY` (deben coincidir).
-   - `STORMPRINT_KEY_SALT` (sal estática de la key).
-   - `STORMPRINT_ALLOWED_ORIGINS` (dominios permitidos por CORS; si no se define,
-     la app también acepta automáticamente el `VERCEL_URL` activo).
-2. `vercel --prod`. `vercel.json` unifica el build de Next.js con la función
-   serverless Python (`api/index.py`, runtime `python3.12`).
-3. **Persistencia de datos**:
-   - Si defines `DATABASE_URL` (p. ej. Neon/Postgres/Turso con driver `asyncpg`),
-     el historial y las predicciones se guardan en esa base **persistente**.
-   - Si no, se usa SQLite en `/tmp/stormprint.db` (efímero entre invocaciones en
-     Vercel). **Esto NO tira la app**: caches, notificaciones y suscripciones usan
-     escritura atómica (`api/storage.py`) y ante fallo se degradan sin romper nada.
-   - Para que el historial y las alertas perduren entre deploys, configura
-     `DATABASE_URL` con la URL connection del proveedor desiderado.
+## 🗺️ Panel en Vivo · Modelo 3D
 
-## Modelo 3D
+El corazón visual es **`CesiumMap.tsx`** (Cesium, lazy-load): globo con imagery y
+elevación de ArcGIS, pins **agrupados por clustering** (`CustomDataSource`),
+columnas territoriales animadas por `H(t)`, capa de calor interpolada y HUD de nivel.
 
-El visor 3D principal es `CesiumMap.tsx` (Cesium, lazy-load en el Panel en vivo):
-globo con imagery ArcGIS World Imagery + elevación ArcGIS, 20 zonas críticas de
-Manga con pins y círculos de influencia, columnas territoriales animadas por
-`H(t)`, capa de calor y HUD de nivel.
+- 🧭 **Línea temporal** pegada bajo el mapa: arrastrá la hora y el agua se mueve.
+- 📱 **Dashboard móvil** (`DashboardMovil.tsx`): barra «AHORA», mapa a pantalla completa, controles ≥ 44 px.
+- 🎮 **Simulador 3D por zona** (`ZonaFlood3D.tsx`): Three.js + react-three-fiber.
+- 📉 **Recharts**: gráfico de proyección, comparador de escenarios, historial.
 
-### Capas base y hosts permitidos (importante en Vercel)
+> ⚠️ **CSP y tiles (importante en Vercel):** el mapa carga tiles en runtime; la CSP
+> debe permitir `server.arcgisonline.com`, `*.tile.openstreetmap.org` y `*.cartocdn.com`
+> en `img-src`/`connect-src`, más `elevation3d.arcgis.com` y `api.open-meteo.com`.
+> Se define **dos veces** (`next.config.js` y `vercel.json`) — mantenerlas en sync;
+> los workers de Cesium necesitan `worker-src 'self' blob:` (`CESIUM_BASE_URL=/cesium`).
 
-El mapa usa tiles cargados en tiempo de ejecución (fetch/XHR), por lo que la
-**CSP debe permitir los hosts de imagery y terreno**. Si se bloquean, el globo
-queda en blanco (no se ve ni el mapa normal ni el de calor, que se dibuja sobre
-él). La CSP se define **dos veces**: en `next.config.js` (desarrollo/`next start`)
-y en `vercel.json` (producción en Vercel, que sobreescribe la de Next). Hay que
-mantenerlas sincronizadas:
+---
 
-- `img-src`: `https://server.arcgisonline.com`, `https://*.tile.openstreetmap.org`,
-  `https://tile.openstreetmap.org` (subdominio raíz, sin comodín), `https://*.cartocdn.com`.
-- `connect-src` (tiles vía fetch): los mismos hosts de arriba + `https://elevation3d.arcgis.com`
-  para el terreno 3D de ArcGIS y `https://api.open-meteo.com` para el clima.
-- `worker-src`: `'self' blob:` (workers de Cesium servidos desde `/cesium/Workers`).
+## 🔌 API
 
-Los assets estáticos de Cesium se sirven desde `public/cesium` bajo `CESIUM_BASE_URL=/cesium`
-(Assets, ThirdParty, Widgets y Workers). Si un proveedor de tiles falla repetidamente,
-`CesiumMap` hace *failover* automático a OpenStreetMap para que el visor nunca quede en blanco.
+```
+POST /api/v1/predecir        Predicción pública 0–168h (Open-Meteo o manual)
+POST /api/v1/predict         Simulación legacy manual (requiere API key)
+GET  /api/v1/health          Healthcheck ampliado (DB, caches, uptime)
+GET  /api/v1/weather         Clima en vivo (requiere API key)
+GET  /api/v1/history         Historial de simulaciones (requiere API key)
+GET  /api/v1/predicciones    Últimas predicciones guardadas
+GET  /api/v1/notifications   Historial de alertas + métricas
+POST /api/v1/notify/subscribe|unsubscribe   Suscripción por email
+GET  /api/v1/notify/status   Estado del canal de alertas
+```
+
+Campos clave de `/predecir`: `hora_inicio_h`, `nivel_actual_cm`, `fuente_meteo`,
+`proxima_pleamar` y los `factores_dominantes` (lluvia/marea/viento).
+
+---
+
+## 🔐 Seguridad (OWASP Top 10)
+
+- **Auth** — header `X-StormPrint-Key`, comparación en tiempo constante (SHA-256 salado).
+- **Rate limiting** — `slowapi`: 10/min `/predict`; 30/min públicos; 10/min suscripciones.
+- **Validación** — Pydantic V2 con límites físicos estrictos en cada campo.
+- **Errores sanitizados** — sin trazas internas en producción.
+- **Headers** — CSP, HSTS, `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`.
+- **CORS** — lista blanca explícita (`STORMPRINT_ALLOWED_ORIGINS`).
+- **Seguridad Edge** — `app/middleware.ts` responde `404` a `*.db`, `*.log`, `.env`, caches, suscripciones.
+- **Credenciales admin** — PBKDF2-HMAC-SHA256 (100k iteraciones), salt por usuario.
+
+---
+
+## ☁️ Despliegue en Vercel
+
+1. Configura las variables de `.env.example` (críticas: `STORMPRINT_API_KEY`,
+   `NEXT_PUBLIC_STORMPRINT_API_KEY`, `STORMPRINT_KEY_SALT`, `STORMPRINT_ALLOWED_ORIGINS`).
+2. `vercel --prod` — `vercel.json` unifica Next.js + la función Python (`@vercel/python`).
+3. **Persistencia** — sin `DATABASE_URL` usa SQLite efímero en `/tmp` (la app se degrada
+   **sin romperse**: caches/notificaciones usan escritura atómica). Para historial y
+   alertas persistentes configura Postgres/Neon/Turso vía `DATABASE_URL`.
+
+---
+
+<div align="center">
+
+**Hecho con 🌧️ para Cartagena de Indias** · [Tecnologías](TECNOLOGIAS.md) · [Cambios](CHANGELOG.md)
+
+</div>

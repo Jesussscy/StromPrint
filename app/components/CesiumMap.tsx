@@ -37,14 +37,16 @@ interface CesiumMapProps {
 }
 
 // Rectangulo geografico del barrio Manga, Cartagena (lat/lng bounds)
+// Barrio real entre la Bahia de Cartagena (oeste, lon ~-75.548) y la
+// Cienaga de Las Quintas (este, lon ~-75.523), calles 24-29 / carreras 21-27.
 const MANGA_BOUNDS = {
-  west: -75.5238,
-  south: 10.3922,
-  east: -75.5085,
-  north: 10.4098,
+  west: -75.5495,
+  south: 10.4045,
+  east: -75.521,
+  north: 10.4235,
 };
 
-const MANGA_CENTER = { lat: 10.401, lng: -75.51615 };
+const MANGA_CENTER = { lat: 10.414, lng: -75.5348 };
 
 // Margen (en grados) alrededor de Manga: el usuario puede moverse y orbitar
 // dentro de esta zona sin molestias, pero si el centro de la vista sale de

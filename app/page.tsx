@@ -705,11 +705,16 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
         </motion.button>
       </div>
 
+      {/* ═══ FILA 2.5: LÍNEA TEMPORAL (pegada bajo el mapa) ═══ */}
+      <div className="ord-4">
+        <TimelineSlider puntos={prediccion?.puntos ?? []} currentHour={currentHour} onScrub={handleScrub} isPlaying={isPlaying} onTogglePlay={onTogglePlay} />
+      </div>
+
       {/* Botón "Simular tormenta" (solo móvil: fijo debajo del mapa, no flotante) */}
       <motion.button
         whileTap={{ scale: 0.97 }}
         onClick={onToggleStorm}
-        className={`md:hidden w-full rounded-xl px-6 py-4 font-mono text-xs uppercase tracking-wider transition-all duration-300 min-h-[48px] ord-4 ${
+        className={`md:hidden w-full rounded-xl px-6 py-4 font-mono text-xs uppercase tracking-wider transition-all duration-300 min-h-[48px] ${
           stormMode
             ? "glass-glow text-risk-emergency border-risk-emergency/30"
             : "glass-glow text-cyan"
@@ -867,9 +872,6 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
           {sonido ? "Sonido" : "Silencio"}
         </button>
       </div>
-
-      {/* ═══ TIMELINE ═══ */}
-      <TimelineSlider puntos={prediccion?.puntos ?? []} currentHour={currentHour} onScrub={handleScrub} isPlaying={isPlaying} onTogglePlay={onTogglePlay} />
 
       {/* ═══ PRONÓSTICO POR DÍA ═══ */}
       {daySummaries.length > 0 && (

@@ -348,16 +348,18 @@ export default function DashboardMovil({
         )}
       </motion.button>
 
-      {/* ═══ GRÁFICO + TIMELINE ═══ */}
+      {/* ═══ LÍNEA TEMPORAL (pegada bajo el mapa + tormenta) ═══ */}
+      <TimelineSlider
+        puntos={prediccion?.puntos ?? []}
+        currentHour={currentHour}
+        onScrub={onScrub}
+        isPlaying={isPlaying}
+        onTogglePlay={onTogglePlay}
+      />
+
+      {/* ═══ GRÁFICO ═══ */}
       <div>
         <ProjectionChart puntos={prediccion?.puntos ?? []} currentHour={currentHour} />
-        <TimelineSlider
-          puntos={prediccion?.puntos ?? []}
-          currentHour={currentHour}
-          onScrub={onScrub}
-          isPlaying={isPlaying}
-          onTogglePlay={onTogglePlay}
-        />
       </div>
 
       {/* ═══ SIMULACIÓN 3D POR ZONA ═══ */}

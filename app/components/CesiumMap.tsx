@@ -388,9 +388,81 @@ export default function CesiumMap({
         });
 
         // ── Texturas en caché ─────────────────────────────────────────
-        // Pines por nivel de riesgo
+        // Pines por nivel de riesgo (más pequeños para no saturar el mapa)
         const pinTex: Record<NivelRiesgo, any> = {} as any;
-        ORDEN_RIESGO.forEach((n) => { pinTex[n] = pinTexture(RIESGO_META[n].color, 64); });
+        ORDEN_RIESGO.forEach((n) => { pinTex[n] = pinTexture(RIESGO_META[n].color, 48); });
+
+        // ── Clustering de marcadores ──────────────────────────────────
+        // Los pines viven en un CustomDataSource (Cesium solo agrupa ahí):
+        // con la cámara alejada se funden en un círculo con el nº de zonas y
+        // al hacer clic se expande volando al punto medio del grupo.
+        const zonasDS = new Cesium.CustomDataSource("zonas-criticas");
+        zonasDS.clustering.enabled = true;
+        zonasDS.clustering.pixelRange = 45;
+        zonasDS.clustering.minimumClusterSize = 2;
+        zonasDS.clustering.show = true;
+        viewer.dataSources.add(zonasDS);
+
+        // Bola de cluster: anillo cian con núcleo oscuro (neon, coherente con
+        // el HUD). El número se superpone con una label propia.
+        const clusterBolaTex = (() => {
+          const size = 96;
+          const canvas = document.createElement("canvas");
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return canvas;
+          const r = size / 2;
+          const glow = ctx.createRadialGradient(r, r, 0, r, r, r);
+          glow.addColorStop(0, "rgba(0,229,255,0.08)");
+          glow.addColorStop(0.55, "rgba(0,229,255,0.28)");
+          glow.addColorStop(0.78, "rgba(0,229,255,0.55)");
+          glow.addColorStop(1, "rgba(0,229,255,0)");
+          ctx.fillStyle = glow;
+          ctx.fillRect(0, 0, size, size);
+          ctx.beginPath();
+          ctx.arc(r, r, r * 0.62, 0, Math.PI * 2);
+          ctx.strokeStyle = "rgba(0,229,255,0.9)";
+          ctx.lineWidth = size * 0.045;
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(r, r, r * 0.5, 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(8,16,30,0.9)";
+          ctx.fill();
+          return canvas;
+        })();
+
+        // Mapa entidad-cluster -> zonas que lo componen (para el click-expand).
+        const clusterAgregados = new Map<any, ZonaManga[]>();
+        zonasDS.clustering.clusterEvent.addEventListener((entities: any[], cluster: any) => {
+          const n = entities.length;
+          const tam = 44 + Math.sqrt(n) * 8;
+          cluster.billboard = new Cesium.BillboardGraphics({
+            image: clusterBolaTex,
+            width: tam,
+            height: tam,
+            color: Cesium.Color.WHITE,
+            verticalOrigin: Cesium.VerticalOrigin.CENTER,
+            disableDepthTestDistance: Number.POSITIVE_INFINITY,
+          });
+          cluster.label = new Cesium.LabelGraphics({
+            text: `${n}`,
+            font: "Bold 17px Exo, sans-serif",
+            fillColor: Cesium.Color.WHITE,
+            outlineColor: Cesium.Color.fromCssColorString("#0B1220"),
+            outlineWidth: 6,
+            style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+            verticalOrigin: Cesium.VerticalOrigin.CENTER,
+            horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+            disableDepthTestDistance: Number.POSITIVE_INFINITY,
+          });
+          const zonas = entities
+            .map((e) => e.properties?.zonaCriticaId?.getValue())
+            .filter((zid: any) => zid != null)
+            .map((zid: any) => ZONAS_MANGA.find((z) => z.id === zid))
+            .filter((z): z is ZonaManga => !!z);
+          clusterAgregados.set(cluster, zonas);
+        });
 
         // ── 20 Zonas críticas: marcadores + círculo de influencia ────
         const zonasLayer: Record<string, any> = {};
@@ -415,22 +487,22 @@ export default function CesiumMap({
               // permitir contornos (evita el warning de outlines en terreno 3D)
               height: 0,
               material: new Cesium.ColorMaterialProperty(
-                Cesium.Color.fromCssColorString(RIESGO_META[nivelBase].color).withAlpha(0.1)
+                Cesium.Color.fromCssColorString(RIESGO_META[nivelBase].color).withAlpha(0.07)
               ),
               outline: true,
-              outlineColor: Cesium.Color.fromCssColorString(RIESGO_META[nivelBase].color).withAlpha(0.3),
+              outlineColor: Cesium.Color.fromCssColorString(RIESGO_META[nivelBase].color).withAlpha(0.22),
               outlineWidth: 1,
             },
             properties: { zonaCriticaId: zona.id, tipo: "influencia" },
           });
 
-          // Marcador (pin)
-          const marker = viewer.entities.add({
+          // Marcador (pin) — en zonasDS para que participe en el clustering.
+          const marker = zonasDS.entities.add({
             position: new Cesium.ConstantPositionProperty(pos),
             billboard: {
               image: pinTex[nivelBase],
-              width: 54,
-              height: 70,
+              width: 40,
+              height: 52,
               color: Cesium.Color.WHITE,
               verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
               heightReference: Cesium.HeightReference.NONE,
@@ -478,6 +550,17 @@ export default function CesiumMap({
               destination: Cesium.Cartesian3.fromDegrees(lng, lat, 900),
               duration: duracionVuelo(1),
             });
+          } else if (Cesium.defined(picked) && picked.id && clusterAgregados.has(picked.id)) {
+            // Clic en un cluster: volar al centro del grupo para "expandirlo" en
+            // pines individuales (al acercarse el clustering se disuelve solo).
+            const zonasCluster = clusterAgregados.get(picked.id)!;
+            if (zonasCluster.length > 0) {
+              const puntos = zonasCluster.map((z) =>
+                Cesium.Cartesian3.fromDegrees(z.coordenadas[1], z.coordenadas[0], 2 + (z.altura_critica / 100) * 28)
+              );
+              const bs = Cesium.BoundingSphere.fromPoints(puntos);
+              viewer.camera.flyTo({ destination: bs, duration: duracionVuelo(1) });
+            }
           } else {
             setSelectedZona(null);
             onSelectZonaRef.current?.(null);
@@ -494,11 +577,16 @@ export default function CesiumMap({
           }
           const picked = viewer.scene.pick(movement.endPosition);
           let zona: ZonaManga | null = null;
-          if (Cesium.defined(picked) && picked.id && picked.id.properties) {
-            const zid = picked.id.properties.zonaCriticaId?.getValue();
-            if (zid != null) zona = ZONAS_MANGA.find((z) => z.id === zid) ?? null;
+          let cluster: any = null;
+          if (Cesium.defined(picked) && picked.id) {
+            if (picked.id.properties) {
+              const zid = picked.id.properties.zonaCriticaId?.getValue();
+              if (zid != null) zona = ZONAS_MANGA.find((z) => z.id === zid) ?? null;
+            } else if (clusterAgregados.has(picked.id)) {
+              cluster = picked.id;
+            }
           }
-          viewer.scene.canvas.style.cursor = zona ? "pointer" : "grab";
+          viewer.scene.canvas.style.cursor = zona || cluster ? "pointer" : "grab";
           if (tooltipRef.current) {
             if (zona) {
               const viva = vivaDe(zona);
@@ -509,6 +597,13 @@ export default function CesiumMap({
               tooltipRef.current.style.display = "block";
               tooltipRef.current.style.borderColor = RIESGO_META[riesgo].color;
               tooltipRef.current.innerHTML = `<span class="font-bold">${zona.nombre}</span> · <span style="color:${RIESGO_META[riesgo].color}">${nivelZ.toFixed(1)} cm</span>`;
+            } else if (cluster) {
+              const nZonas = clusterAgregados.get(cluster)?.length ?? 0;
+              tooltipRef.current.style.left = `${movement.endPosition.x + 14}px`;
+              tooltipRef.current.style.top = `${movement.endPosition.y + 14}px`;
+              tooltipRef.current.style.display = "block";
+              tooltipRef.current.style.borderColor = "#00E5FF";
+              tooltipRef.current.innerHTML = `<span class="font-bold">${nZonas} zonas</span> · <span style="color:#00E5FF">clic para expandir</span>`;
             } else {
               tooltipRef.current.style.display = "none";
             }
@@ -631,15 +726,15 @@ export default function CesiumMap({
 
       if (cambio) {
         marker.billboard.image = pinTex[riesgoVivoZ];
-        const baseSize = 50 + meta.peso * 10;
+        const baseSize = 38 + meta.peso * 8;
         marker.billboard.width = baseSize;
         marker.billboard.height = baseSize * 1.35;
 
         if (influencia) {
           influencia.ellipse.material.color.setValue(
-            Cesium.Color.fromCssColorString(meta.color).withAlpha(0.22)
+            Cesium.Color.fromCssColorString(meta.color).withAlpha(0.15)
           );
-          influencia.ellipse.outlineColor = Cesium.Color.fromCssColorString(meta.color).withAlpha(0.32);
+          influencia.ellipse.outlineColor = Cesium.Color.fromCssColorString(meta.color).withAlpha(0.22);
         }
       }
     });

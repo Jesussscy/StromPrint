@@ -40,6 +40,13 @@ import {
 } from "@/app/lib/api";
 import { ZONAS_MANGA } from "@/app/lib/zonasManga";
 import {
+  nivelDinamicoZona,
+  riesgoVivo,
+  zonaVivaDesdePrediccion,
+  ZONAS_PARAMETROS,
+  type ZonaViva,
+} from "@/app/lib/zonasManga";
+import {
   exportPrediccionCSV,
   exportPrediccionJSON,
   copiarResumen,
@@ -456,6 +463,33 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
     );
   }, [prediccion, currentHour]);
 
+  // Estado VIVO por zona: usa la simulación INDEPENDIENTE de cada zona
+  // (prediccion.zonas) si el backend la provee; si no, deriva de la global.
+  const zonasVivas = useMemo<Map<number, ZonaViva>>(() => {
+    const map = new Map<number, ZonaViva>();
+    const nivelGlobal = activePunto?.nivel_agua_cm ?? 0;
+    const nivelMaxGlobal = prediccion?.nivel_maximo_cm ?? 100;
+    for (const zona of ZONAS_MANGA) {
+      const parametros = ZONAS_PARAMETROS[zona.id];
+      const zonaPred = prediccion?.zonas?.find((z) => z.id === zona.id);
+      if (zonaPred) {
+        map.set(zona.id, {
+          ...zonaVivaDesdePrediccion(zonaPred, currentHour),
+          parametros,
+        });
+      } else {
+        map.set(zona.id, {
+          nivel: nivelDinamicoZona(zona, nivelGlobal, nivelMaxGlobal),
+          riesgo: riesgoVivo(zona, nivelGlobal, nivelMaxGlobal),
+          nivel_maximo: nivelMaxGlobal,
+          hora_pico: prediccion?.hora_pico,
+          parametros,
+        });
+      }
+    }
+    return map;
+  }, [prediccion, currentHour, activePunto]);
+
   const daySummaries = useMemo(() => prediccion ? computeDaySummaries(prediccion.puntos) : [], [prediccion]);
 
   // ── Alertas sonoras al cruzar umbrales de riesgo ─────────────────────────
@@ -585,6 +619,7 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
           <CesiumMap
             nivelAguaCm={activePunto?.nivel_agua_cm ?? 0}
             nivelMaximoCm={prediccion?.nivel_maximo_cm ?? 100}
+            zonasVivas={zonasVivas}
             focusZonaId={zonaEnfocada}
             onSelectZona={onSelectZona}
             horaLocal={Math.floor(currentHour) % 24}
@@ -624,6 +659,7 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
       <ZonasMangaPanel
         nivelAguaCm={activePunto?.nivel_agua_cm ?? 0}
         nivelMaximoCm={prediccion?.nivel_maximo_cm ?? 100}
+        zonasVivas={zonasVivas}
         selectedId={zonaEnfocada}
         onSelect={onSelectZona}
       />
@@ -634,6 +670,7 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
           zona={zonaSeleccionada}
           nivelAguaCm={activePunto?.nivel_agua_cm ?? 0}
           nivelMaximoCm={prediccion?.nivel_maximo_cm ?? 100}
+          zonasVivas={zonasVivas}
           horaLocal={Math.floor(currentHour) % 24}
           onClose={() => onSelectZona(null)}
         />

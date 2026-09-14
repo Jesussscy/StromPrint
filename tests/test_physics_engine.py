@@ -140,3 +140,35 @@ def test_initial_level_cero_sin_serie():
     assert initial_level(p) == 0.0
     run = run_simulation(duration_hours=24.0, storm_intensity=0.0, mean_sea_level=0.0)
     assert run[0]["water_level_cm"] == 0.0
+
+
+def test_run_zones_simulation_una_corrida_por_zona():
+    """Cada zona se simula con sus 6 parametros propios (20 corridas H(t))."""
+    from api.zonas import PARAMETROS_ZONAS
+    from api.physics_engine import run_zones_simulation
+
+    zonas = list(PARAMETROS_ZONAS.values())
+    assert len(zonas) == 20
+
+    result = run_zones_simulation(
+        duration_hours=72.0,
+        storm_peak_hour=24.0,
+        storm_intensity=40.0,
+        mean_sea_level=8.0,
+    )
+
+    assert len(result) == len(zonas)
+    assert {z["id"] for z in result} == set(PARAMETROS_ZONAS.keys())
+    for z in result:
+        assert len(z["puntos"]) == 72
+        assert z["nivel_actual_cm"] >= 0.0
+        assert z["nivel_maximo_cm"] >= z["nivel_actual_cm"]
+        assert 0.0 <= z["hora_pico"] <= 72.0
+        assert all(p["nivel_agua_cm"] >= 0.0 for p in z["puntos"])
+        assert all(p["estado"] in ("Normal", "Alerta", "Emergencia", "Critico") for p in z["puntos"])
+
+    # La zona baja + mal drenaje (Callejón Dandy) debe inundar mas que la
+    # zona alta + buen drenaje (Carrera 26 × Calle 27) en la misma tormenta.
+    dandy = next(z for z in result if z["id"] == 6)
+    mit = next(z for z in result if z["id"] == 16)
+    assert dandy["nivel_maximo_cm"] > mit["nivel_maximo_cm"]

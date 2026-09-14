@@ -42,6 +42,7 @@ from .database import (
 from .physics_engine import (
     PhysicalParameters,
     run_simulation,
+    run_zones_simulation,
 )
 from .notification_service import notification_service
 from .security import (
@@ -255,6 +256,41 @@ class MeteorologiaResumen(BaseModel):
     temperatura_actual_c: float = 28.0
 
 
+# ---------------------------------------------------------------------------
+# Pydantic schemas — Prediccion INDIVIDUAL por zona critica
+# ---------------------------------------------------------------------------
+class ZonaPrediccPunto(BaseModel):
+    tiempo_hora: int
+    nivel_agua_cm: float
+    estado: Literal["Normal", "Alerta", "Emergencia", "Critico"]
+    velocidad_cambio: float = 0.0
+    f_lluvia: float = 0.0
+    f_marea: float = 0.0
+    f_viento: float = 0.0
+    rain_intensity: float = 0.0
+    tide_level: float = 0.0
+    drainage_efficiency: float = 1.0
+
+
+class ZonaPrediccion(BaseModel):
+    """Simulacion independiente de una zona con sus 6 parametros propios."""
+
+    id: int
+    nombre: str
+    altura_base_m: float
+    drenaje: Literal["bajo", "medio", "alto"]
+    rigidez_suelo: Literal["blando", "medio", "duro"]
+    exposicion_marea_pct: float
+    exposicion_lluvia_pct: float
+    exposicion_viento_pct: float
+    nivel_actual_cm: float
+    nivel_maximo_cm: float
+    hora_pico: float
+    riesgo_actual: Literal["Normal", "Alerta", "Emergencia", "Critico"]
+    riesgo_pico: Literal["Normal", "Alerta", "Emergencia", "Critico"]
+    puntos: list[ZonaPrediccPunto]
+
+
 class PrediccionResponse(BaseModel):
     territorio: str = "Manga, Cartagena de Indias"
     horas_pronostico: int
@@ -278,6 +314,8 @@ class PrediccionResponse(BaseModel):
     # Hora del reloj (0-23, America/Bogota) que corresponde a t=0 ('ahora').
     # Permite al frontend anclar las etiquetas del eje temporal a la hora real.
     hora_inicio_h: int = 0
+    # Simulacion individual por cada zona critica (6 parametros por zona).
+    zonas: list[ZonaPrediccion] = Field(default_factory=list)
 
 
 class InfraResponse(BaseModel):
@@ -599,6 +637,19 @@ async def predecir(
             params=params,
         )
 
+        # 3b. Simulacion INDEPENDIENTE por zona critica: cada zona resuelve su
+        # propio H(t) con sus 6 parametros fisicos (bajura, drenaje, rigidez y
+        # exposiciones a marea/lluvia/viento).
+        storm_peak = weather_data.get("storm_peak_hour", payload.horas_pronostico * 0.25)
+        zonas_result = run_zones_simulation(
+            duration_hours=float(payload.horas_pronostico),
+            storm_peak_hour=storm_peak,
+            storm_intensity=weather_data.get("storm_intensity", 0.0),
+            mean_sea_level=weather_data.get("mean_sea_level", 8.0),
+            base_params=params,
+        )
+        zonas_pred = [ZonaPrediccion(**z) for z in zonas_result]
+
         # 4. Mapear a puntos de prediccion
         puntos = []
         for r in records:
@@ -740,6 +791,7 @@ async def predecir(
             proxima_pleamar=proxima_pleamar,
             factores_dominantes=factores,
             hora_inicio_h=hora_inicio_bogota(),
+            zonas=zonas_pred,
         )
 
     except ValueError as exc:

@@ -94,6 +94,41 @@ export interface MeteorologiaResumen {
   temperatura_actual_c?: number;
 }
 
+// --- Predicción individual por zona crítica (simulación per-zona) ---
+
+export type EstadoZona = "Normal" | "Alerta" | "Emergencia" | "Critico";
+
+export interface ZonaPrediccPunto {
+  tiempo_hora: number;
+  nivel_agua_cm: number;
+  estado: EstadoZona;
+  velocidad_cambio: number;
+  f_lluvia: number;
+  f_marea: number;
+  f_viento: number;
+  rain_intensity: number;
+  tide_level: number;
+  drainage_efficiency: number;
+}
+
+export interface ZonaPrediccion {
+  /** id de la zona en ZONAS_MANGA. */
+  id: number;
+  nombre: string;
+  altura_base_m: number;
+  drenaje: "bajo" | "medio" | "alto";
+  rigidez_suelo: "blando" | "medio" | "duro";
+  exposicion_marea_pct: number;
+  exposicion_lluvia_pct: number;
+  exposicion_viento_pct: number;
+  nivel_actual_cm: number;
+  nivel_maximo_cm: number;
+  hora_pico: number;
+  riesgo_actual: EstadoZona;
+  riesgo_pico: EstadoZona;
+  puntos: ZonaPrediccPunto[];
+}
+
 export interface PrediccionResponse {
   territorio: string;
   horas_pronostico: number;
@@ -118,6 +153,11 @@ export interface PrediccionResponse {
    * etiquetas del eje temporal muestren la hora correcta del dia.
    */
   hora_inicio_h?: number;
+  /**
+   * Simulación independiente por cada zona crítica (6 parámetros físicos
+   * propios por zona). Ausente en predicciones antiguas sin datos per-zona.
+   */
+  zonas?: ZonaPrediccion[];
 }
 
 export interface DiaPronostico {

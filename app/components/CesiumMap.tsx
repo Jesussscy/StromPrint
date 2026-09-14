@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import "cesium/Build/Cesium/Widgets/widgets.css";
 import {
   ZONAS_MANGA,
@@ -12,16 +12,18 @@ import {
   riesgoVivo,
   type ZonaManga,
   type NivelRiesgo,
+  type ZonaViva,
 } from "@/app/lib/zonasManga";
 import { riscoColorEstilo, clasificarNivel as clasificarNivelCentral, colorDeNivelCm } from "@/app/lib/riesgo";
 import { pinTexture } from "@/app/lib/cesiumTextures";
-import { FloodRenderer } from "@/app/lib/floodRenderer";
 import { MeteoRenderer } from "@/app/lib/meteoRenderer";
 import HeatmapView from "@/app/components/HeatmapView";
 
 interface CesiumMapProps {
   nivelAguaCm?: number;
   nivelMaximoCm?: number;
+  /** Estado vivo por zona (simulación INDIVIDUAL por zona del backend). */
+  zonasVivas?: Map<number, ZonaViva>;
   focusZonaId?: number | null;
   onSelectZona?: (zona: ZonaManga | null) => void;
   horaLocal?: number;
@@ -81,6 +83,7 @@ function dentroDeMangaConMargen(longitudeDeg: number, latitudeDeg: number): bool
 export default function CesiumMap({
   nivelAguaCm = 0,
   nivelMaximoCm = 100,
+  zonasVivas,
   focusZonaId = null,
   onSelectZona,
   horaLocal = 12,
@@ -92,7 +95,6 @@ export default function CesiumMap({
 }: CesiumMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<{ viewer: any; destroy: () => void } | null>(null);
-  const floodRendererRef = useRef<FloodRenderer | null>(null);
   const meteoRendererRef = useRef<MeteoRenderer | null>(null);
   const cesiumRef = useRef<any>(null);
   const screenSpaceHandlerRef = useRef<{ destroy: () => void } | null>(null);
@@ -122,7 +124,6 @@ export default function CesiumMap({
   const [capas, setCapas] = useState({
     zonas: true,
     etiquetas: true,
-    agua: true,
     lluvia: true,
     viento: true,
     mareas: true,
@@ -144,6 +145,8 @@ export default function CesiumMap({
   const selectedZonaRef = useRef<ZonaManga | null>(null);
   const onSelectZonaRef = useRef(onSelectZona);
   const nivelMaximoRef = useRef(nivelMaximoCm);
+  const nivelAguaRef = useRef(nivelAguaCm);
+  const zonasVivasRef = useRef<Map<number, ZonaViva> | undefined>(zonasVivas);
   const midiendoRef = useRef(false);
   const rutaRef = useRef<{ lng: number; lat: number }[]>([]);
   const rutaLineaRef = useRef<any>(null);
@@ -154,8 +157,16 @@ export default function CesiumMap({
 
   useEffect(() => { onSelectZonaRef.current = onSelectZona; }, [onSelectZona]);
   useEffect(() => { nivelMaximoRef.current = nivelMaximoCm; }, [nivelMaximoCm]);
+  useEffect(() => { nivelAguaRef.current = nivelAguaCm; }, [nivelAguaCm]);
+  useEffect(() => { zonasVivasRef.current = zonasVivas; }, [zonasVivas]);
   useEffect(() => { midiendoRef.current = midiendo; }, [midiendo]);
   useEffect(() => { relieve3DRef.current = relieve3D; }, [relieve3D]);
+
+  // Estado vivo de una zona: prefiere la simulación INDIVIDUAL (per-zona);
+  // si falta, deriva del nivel global de la predicción.
+  const vivaDe = useCallback((zona: ZonaManga): ZonaViva | undefined => {
+    return zonasVivasRef.current?.get(zona.id);
+  }, []);
 
   // Reloj en hora local de Cartagena (UTC-5) para el HUD del visor.
   useEffect(() => {
@@ -460,8 +471,9 @@ export default function CesiumMap({
           viewer.scene.canvas.style.cursor = zona ? "pointer" : "grab";
           if (tooltipRef.current) {
             if (zona) {
-              const nivelZ = nivelDinamicoZona(zona, aguaActualRef.current, nivelMaximoRef.current);
-              const riesgo = riesgoVivo(zona, aguaActualRef.current, nivelMaximoRef.current);
+              const viva = vivaDe(zona);
+              const nivelZ = viva ? viva.nivel : nivelDinamicoZona(zona, nivelAguaRef.current, nivelMaximoRef.current);
+              const riesgo = viva ? viva.riesgo : riesgoVivo(zona, nivelAguaRef.current, nivelMaximoRef.current);
               tooltipRef.current.style.left = `${movement.endPosition.x + 14}px`;
               tooltipRef.current.style.top = `${movement.endPosition.y + 14}px`;
               tooltipRef.current.style.display = "block";
@@ -486,15 +498,6 @@ export default function CesiumMap({
         (viewerRef.current as any).volverAMangaFn = volverAManga;
         screenSpaceHandlerRef.current = handler;
         hoverHandlerRef.current = hoverHandler;
-
-        // ── Inundacion animada fluyendo por las calles ──────────────────
-        const floodRenderer = new FloodRenderer(Cesium, viewer, {
-          bounds: MANGA_BOUNDS,
-          isTouch: isTouchDevice,
-        });
-        floodRenderer.update({ nivelCm: 0, velCmH: 0, storm: false });
-        floodRendererRef.current = floodRenderer;
-        (viewerRef.current as any).floodRenderer = floodRenderer;
 
         // ── Meteorologia visual: lluvia, viento y oleaje ─────────────────
         const meteoRenderer = new MeteoRenderer(Cesium, viewer, {
@@ -536,8 +539,6 @@ export default function CesiumMap({
         medicionHandlerRef.current.destroy();
         medicionHandlerRef.current = null;
       }
-      floodRendererRef.current?.dispose();
-      floodRendererRef.current = null;
       meteoRendererRef.current?.dispose();
       meteoRendererRef.current = null;
       terrenoProviderRef.current = null;
@@ -549,15 +550,11 @@ export default function CesiumMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [retryKey]);
 
-  // ── Animador: agua + zonas críticas en vivo ────────────────────────────
-  const objetivoAguaRef = useRef(nivelAguaCm);
-  const aguaActualRef = useRef(nivelAguaCm);
-  const rafRef = useRef<number | null>(null);
-
+  // ── Actualización en vivo de zonas y meteo (sin animación de agua) ──────
+  // Mapa estático: el nivel no se interpola frame a frame. Al cambiar la hora
+  // del escenario se aplican directamente las posiciones, riesgos y meteo.
   useEffect(() => {
-    objetivoAguaRef.current = nivelAguaCm;
     if (!viewerRef.current || !cesiumRef.current) return;
-    if (rafRef.current) return;
 
     const Cesium = cesiumRef.current;
     const viewer = viewerRef.current.viewer;
@@ -567,120 +564,65 @@ export default function CesiumMap({
     const estadoZona = (viewerRef.current as any).estadoZona;
     if (!estadoZona) return;
 
-    const step = () => {
-      rafRef.current = null;
-      if (!viewerRef.current) return;
-      // Contador de frames para el overlay de FPS (solo en desarrollo).
-      if (process.env.NODE_ENV !== "production") fpsCountRef.current += 1;
-      const dif = objetivoAguaRef.current - aguaActualRef.current;
-      const vel = Math.abs(dif) > 0.05 ? Math.sign(dif) * Math.max(0.5, Math.abs(dif) * 0.12) : dif;
-      aguaActualRef.current += vel;
+    // Meteorologia visual sincronizada con el punto del escenario en curso.
+    const pm = puntoMeteoRef.current;
+    const met = meteorologiaRef.current;
+    const lw = liveWaterRef.current;
+    const lluvia = pm?.lluvia_mm_h ?? lw?.lluvia_mm_h ?? 0;
+    const viento = met?.viento_max_kmh ?? lw?.viento_kmh ?? 0;
+    const dir = lw?.direccion_viento_deg ?? 90 + (stormRef.current ? 45 : Math.sin(horaLocalRef.current * Math.PI / 12) * 60);
+    meteoRendererRef.current?.update({
+      lluviaMmH: lluvia,
+      vientoKmh: viento,
+      vientoDeg: dir,
+      mareaCm: pm?.marea_cm ?? 0,
+      storm: stormRef.current,
+    });
 
-      const nivel = aguaActualRef.current;
+    // Zonas críticas: se retocan los billboards/círculos cuando cambia el
+    // riesgo (imagen y tamaño), evitando re-subidas de textura.
+    ZONAS_MANGA.forEach((zona) => {
+      const viva = vivaDe(zona);
+      const nivelZona = viva ? viva.nivel : nivelDinamicoZona(zona, nivelAguaCm, nivelMaximoCm);
+      const riesgoVivoZ = viva ? viva.riesgo : riesgoVivo(zona, nivelAguaCm, nivelMaximoCm);
+      const meta = RIESGO_META[riesgoVivoZ];
+      const marker = zonasLayer[zona.id];
+      const influencia = influenciasLayer[zona.id];
+      if (!marker) return;
 
-      // Inundacion en vivo: lamina de agua + calles + flujo, guiada por H(t).
-      floodRendererRef.current?.update({
-        nivelCm: nivel,
-        velCmH: vel,
-        storm: stormRef.current,
-      });
+      const ed = estadoZona[zona.id] ?? (estadoZona[zona.id] = {});
+      const cambio = ed.riesgo !== riesgoVivoZ;
+      ed.riesgo = riesgoVivoZ;
 
-      // Meteorologia visual sincronizada con el punto del escenario en curso.
-      const pm = puntoMeteoRef.current;
-      const met = meteorologiaRef.current;
-      const lw = liveWaterRef.current;
-      const lluvia = pm?.lluvia_mm_h ?? lw?.lluvia_mm_h ?? 0;
-      const viento = met?.viento_max_kmh ?? lw?.viento_kmh ?? 0;
-      const dir = lw?.direccion_viento_deg ?? 90 + (stormRef.current ? 45 : Math.sin(horaLocalRef.current * Math.PI / 12) * 60);
-      meteoRendererRef.current?.update({
-        lluviaMmH: lluvia,
-        vientoKmh: viento,
-        vientoDeg: dir,
-        mareaCm: pm?.marea_cm ?? 0,
-        storm: stormRef.current,
-      });
+      const alturaZona = 2 + (nivelZona / 100) * 50;
+      marker.position.setValue(
+        Cesium.Cartesian3.fromDegrees(zona.coordenadas[1], zona.coordenadas[0], alturaZona)
+      );
 
-      // Zonas críticas en vivo: solo se retocan los billboards/círculos cuando
-      // cambia el riesgo (imagen y tamaño), evitando re-subidas de textura.
-      ZONAS_MANGA.forEach((zona) => {
-        const nivelZona = nivelDinamicoZona(zona, nivel, nivelMaximoCm);
-        const riesgoVivoZ = riesgoVivo(zona, nivel, nivelMaximoCm);
-        const meta = RIESGO_META[riesgoVivoZ];
-        const marker = zonasLayer[zona.id];
-        const influencia = influenciasLayer[zona.id];
-        if (!marker) return;
+      if (cambio) {
+        marker.billboard.image = pinTex[riesgoVivoZ];
+        const baseSize = 50 + meta.peso * 10;
+        marker.billboard.width = baseSize;
+        marker.billboard.height = baseSize * 1.35;
 
-        const ed = estadoZona[zona.id] ?? (estadoZona[zona.id] = {});
-        const cambio = ed.riesgo !== riesgoVivoZ;
-        ed.riesgo = riesgoVivoZ;
-
-        const alturaZona = 2 + (nivelZona / 100) * 50;
-        marker.position.setValue(
-          Cesium.Cartesian3.fromDegrees(zona.coordenadas[1], zona.coordenadas[0], alturaZona)
-        );
-
-        if (cambio) {
-          marker.billboard.image = pinTex[riesgoVivoZ];
-          const baseSize = 50 + meta.peso * 10;
-          marker.billboard.width = baseSize;
-          marker.billboard.height = baseSize * 1.35;
-
-          if (influencia) {
-            influencia.ellipse.material.color.setValue(
-              Cesium.Color.fromCssColorString(meta.color).withAlpha(0.22)
-            );
-            influencia.ellipse.outlineColor = Cesium.Color.fromCssColorString(meta.color).withAlpha(0.32);
-          }
+        if (influencia) {
+          influencia.ellipse.material.color.setValue(
+            Cesium.Color.fromCssColorString(meta.color).withAlpha(0.22)
+          );
+          influencia.ellipse.outlineColor = Cesium.Color.fromCssColorString(meta.color).withAlpha(0.32);
         }
-      });
-
-      // Con requestRenderMode, un render por tick solo si el agua se movió.
-      viewer.scene.requestRender();
-
-      const sigue = Math.abs(objetivoAguaRef.current - aguaActualRef.current) > 0.05;
-      if (sigue) {
-        // Tab oculta: el padding se vuelve inútil y quema CPU, así que se
-        // samplea a 1 Hz hasta volver a la pestaña.
-        rafRef.current = document.hidden
-          ? window.setTimeout(step, 1000)
-          : requestAnimationFrame(step);
-      } else {
-        aguaActualRef.current = objetivoAguaRef.current;
       }
-    };
+    });
 
-    const onVisibilidad = () => {
-      if (document.hidden) return;
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-        window.clearTimeout(rafRef.current);
-        rafRef.current = null;
-      }
-      if (Math.abs(objetivoAguaRef.current - aguaActualRef.current) > 0.05) {
-        rafRef.current = requestAnimationFrame(step);
-      }
-    };
-    document.addEventListener("visibilitychange", onVisibilidad);
-
-    rafRef.current = requestAnimationFrame(step);
-
-    return () => {
-      document.removeEventListener("visibilitychange", onVisibilidad);
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-        window.clearTimeout(rafRef.current);
-      }
-      rafRef.current = null;
-    };
+    viewer.scene.requestRender();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nivelAguaCm, cargando, selectedZona]);
 
-  // ── Flujo continuo del agua por las calles ──────────────────────────────
-  // A diferencia del animador de nivel (que se detiene al estabilizarse), este
-  // bucle mantiene las gotas en movimiento de forma economica (~30 fps, pausado
-  // cuando la pestana esta oculta) para que el agua "viva" incluso en planos.
+  // ── Flujo continuo de la meteorología visual ────────────────────────────
+  // Bucle económico (~30 fps, pausado cuando la pestaña está oculta) que
+  // mantiene en movimiento la lluvia, el viento y el oleaje.
   useEffect(() => {
-    if (!viewerRef.current || !floodRendererRef.current) return;
+    if (!viewerRef.current || !meteoRendererRef.current) return;
     let raf = 0;
     let last = performance.now();
     let acc = 0;
@@ -691,7 +633,6 @@ export default function CesiumMap({
       if (document.hidden) return;
       acc += dt;
       if (acc >= 0.033) {
-        floodRendererRef.current?.animate(acc);
         meteoRendererRef.current?.animate(acc);
         acc = 0;
       }
@@ -700,14 +641,7 @@ export default function CesiumMap({
     return () => cancelAnimationFrame(raf);
   }, [cargando]);
 
-  // Toggle de la capa de agua desde el panel de capas.
-  useEffect(() => {
-    if (!viewerRef.current || !floodRendererRef.current) return;
-    floodRendererRef.current.setVisible(capas.agua);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [capas.agua, cargando]);
-
-  // Toggles de meteorologia visual (lluvia / viento / mareas).
+  // Toggles de meteorología visual (lluvia / viento / mareas).
   useEffect(() => {
     if (!meteoRendererRef.current) return;
     meteoRendererRef.current.setVisible({
@@ -1157,7 +1091,7 @@ function recentrar() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [baseMapa, cargando]);
 
-  // ── Toggles internos de capas (zonas / agua / etiquetas) ───────────────
+  // ── Toggles internos de capas (zonas / etiquetas) ─────────────────────
   useEffect(() => {
     const V: any = viewerRef.current;
     if (!V) return;
@@ -1181,7 +1115,6 @@ function recentrar() {
       else if (k === "3") recentrar();
       else if (k === "c") setPanelCapas((p) => !p);
       else if (k === "z") setCapas((c) => ({ ...c, zonas: !c.zonas }));
-      else if (k === "a") setCapas((c) => ({ ...c, agua: !c.agua }));
       else if (k === "l") setCapas((c) => ({ ...c, etiquetas: !c.etiquetas }));
       else if (k === "i") setCapas((c) => ({ ...c, lluvia: !c.lluvia }));
       else if (k === "v") setCapas((c) => ({ ...c, viento: !c.viento }));
@@ -1225,8 +1158,17 @@ function recentrar() {
   const pctGauge = Math.min(100, Math.max(0, (nivelAguaCm / escalaGauge) * 100));
   const marcasGauge = [30, 60, 100].map((t) => ({ t, x: Math.min(100, (t / escalaGauge) * 100) }));
   const zonasAlerta = ZONAS_MANGA.filter(
-    (z) => riesgoVivo(z, nivelAguaCm, nivelMaximoCm) !== "NORMAL"
+    (z) => (zonasVivas?.get(z.id)?.riesgo ?? riesgoVivo(z, nivelAguaCm, nivelMaximoCm)) !== "NORMAL"
   ).length;
+
+  // Estado vivo de la zona seleccionada (nivel/riesgo/pico propios de la zona).
+  const zonaVivaSel: ZonaViva = selectedZona
+    ? (vivaDe(selectedZona) ?? {
+        nivel: nivelDinamicoZona(selectedZona, nivelAguaCm, nivelMaximoCm),
+        riesgo: riesgoVivo(selectedZona, nivelAguaCm, nivelMaximoCm),
+        nivel_maximo: nivelMaximoCm,
+      })
+    : { nivel: 0, riesgo: "NORMAL" };
 
   return (
     <div
@@ -1248,6 +1190,7 @@ function recentrar() {
             zonas={ZONAS_MANGA}
             nivelAguaCm={nivelAguaCm}
             nivelMaximoCm={nivelMaximoCm}
+            zonasVivas={zonasVivas}
             visible={vista === "heatmap"}
             onSelectZona={setSelectedZona}
           />
@@ -1399,7 +1342,6 @@ function recentrar() {
             [
               ["zonas", "Zonas"],
               ["etiquetas", "Etiquetas"],
-              ["agua", "Agua en calles"],
               ["lluvia", "Lluvia (radar)"],
               ["viento", "Viento"],
               ["mareas", "Oleaje"],
@@ -1477,7 +1419,7 @@ function recentrar() {
             Ayuda de atajos (?)
           </button>
 
-          <p className="mt-2 text-[9px] text-slate-500">Atajos: <kbd>Z</kbd> <kbd>A</kbd> <kbd>I</kbd> <kbd>V</kbd> <kbd>W</kbd> <kbd>T</kbd> <kbd>L</kbd> <kbd>C</kbd> <kbd>R</kbd> <kbd>2</kbd> <kbd>3</kbd> <kbd>?</kbd></p>
+          <p className="mt-2 text-[9px] text-slate-500">Atajos: <kbd>Z</kbd> <kbd>I</kbd> <kbd>V</kbd> <kbd>W</kbd> <kbd>T</kbd> <kbd>L</kbd> <kbd>C</kbd> <kbd>R</kbd> <kbd>2</kbd> <kbd>3</kbd> <kbd>?</kbd></p>
         </div>
       )}
 
@@ -1692,16 +1634,27 @@ function recentrar() {
               <span className="text-slate-500">Nivel actual: </span>
               <span
                 className="font-bold font-tabular"
-                style={{ color: colorDeRiesgo(riesgoVivo(selectedZona, nivelAguaCm, nivelMaximoCm)) }}
+                style={{ color: colorDeRiesgo(zonaVivaSel.riesgo) }}
               >
-                {nivelDinamicoZona(selectedZona, nivelAguaCm, nivelMaximoCm).toFixed(1)} cm
+                {zonaVivaSel.nivel.toFixed(1)} cm
               </span>
             </p>
             <p>
               <span className="text-slate-500">Riesgo: </span>
-              <span className="font-bold uppercase" style={{ color: colorDeRiesgo(riesgoVivo(selectedZona, nivelAguaCm, nivelMaximoCm)) }}>
-                {riesgoVivo(selectedZona, nivelAguaCm, nivelMaximoCm)}
+              <span className="font-bold uppercase" style={{ color: colorDeRiesgo(zonaVivaSel.riesgo) }}>
+                {zonaVivaSel.riesgo}
               </span>
+            </p>
+            <p>
+              <span className="text-slate-500">Pico propio: </span>
+              {zonaVivaSel.hora_pico != null ? (
+                <span className="font-bold font-tabular">
+                  ≈ {zonaVivaSel.hora_pico.toFixed(0)} h ·{" "}
+                  {zonaVivaSel.nivel_maximo != null ? zonaVivaSel.nivel_maximo.toFixed(1) : "—"} cm
+                </span>
+              ) : (
+                <span className="font-bold">—</span>
+              )}
             </p>
             <p>
               <span className="text-slate-500">Amenaza: </span>
@@ -1739,7 +1692,6 @@ function recentrar() {
               <AyudaLinea k="3">Vista oblicua</AyudaLinea>
               <AyudaLinea k="C">Abrir / cerrar capas</AyudaLinea>
               <AyudaLinea k="Z">Zonas críticas</AyudaLinea>
-              <AyudaLinea k="A">Agua en calles</AyudaLinea>
               <AyudaLinea k="L">Etiquetas</AyudaLinea>
               <AyudaLinea k="I">Lluvia (radar)</AyudaLinea>
               <AyudaLinea k="V">Viento</AyudaLinea>

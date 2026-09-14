@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // StormPrint :: meteoRenderer.ts
 // Meteorologia visual sobre el mapa 3D real de Manga, complementaria a la
-// lamina de agua de floodRenderer:
+// vista de riesgo del visor:
 //   1. Lluvia: celulas de tormenta (elipses con brillo radial) que derivan por
 //      el barrio; intensidad y tinte segun lluvia_mm_h y modo tormenta.
 //   2. Viento: trazos de corriente orientados segun la direccion del viento
@@ -12,7 +12,12 @@
 // Todo respeta viewer.requestRenderMode: un solo requestRender() por tick.
 // ---------------------------------------------------------------------------
 
-import type { FloodBounds } from "@/app/lib/floodRenderer";
+export interface FloodBounds {
+  west: number;
+  south: number;
+  east: number;
+  north: number;
+}
 
 export interface MeteoRenderState {
   /** Precipitacion actual (mm/h) del punto meteorologico reproduciendose. */

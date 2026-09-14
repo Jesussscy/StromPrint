@@ -68,6 +68,8 @@ from typing import List
 import numpy as np
 from scipy.integrate import solve_ivp
 
+from .zonas import ParametrosZona, bajura_cm
+
 # ---------------------------------------------------------------------------
 # Umbrales de clasificacion de riesgo (en espanol)
 # ---------------------------------------------------------------------------
@@ -443,3 +445,133 @@ def run_simulation(
         )
 
     return records
+
+
+# ---------------------------------------------------------------------------
+# Parametros individuales por zona critica
+# ---------------------------------------------------------------------------
+def _mapa_drenaje(drenaje: str) -> float:
+    """Drenaje -> amortiguamiento c_0.
+
+    Mal drenaje (bajo) evacua lento: el agua se acumula (c pequeno).
+    Buen drenaje (alto) evacua rapido: el agua no sube (c grande).
+    """
+    return {"bajo": 0.14, "medio": 0.45, "alto": 0.80}.get(drenaje, 0.45)
+
+
+def _mapa_rigidez(rigidez: str) -> float:
+    """Rigidez del suelo -> constante de rigidez k_0.
+
+    Blando absorbe mas agua (la saca de la superficie): k grande deprime el
+    nivel. Duro (pavimento) retiene la lamina en la calle: k pequeno deja
+    subir el nivel. (Estado estacionario H = F/k.)
+    """
+    return {"blando": 0.85, "medio": 0.65, "duro": 0.42}.get(rigidez, 0.65)
+
+
+def _exposicion_gain(exposicion_pct: float, min_gain: float, max_gain: float) -> float:
+    """Mapeo lineal 0-100% de exposicion a la escala del forzamiento."""
+    pct = max(0.0, min(100.0, float(exposicion_pct)))
+    return min_gain + (max_gain - min_gain) * pct / 100.0
+
+
+def parametros_por_zona(base: PhysicalParameters, zona: ParametrosZona) -> PhysicalParameters:
+    """Deriva los parametros fisicos de una zona a partir de los globales.
+
+    Cada zona ajusta los tres factores de escala (lluvia/marea/viento) segun
+    su exposicion local y su drenaje/rigidez. El resto del escenario
+    meteorologico se hereda del experimento global.
+    """
+    return PhysicalParameters(
+        mass=base.mass,
+        damping=_mapa_drenaje(zona.drenaje),
+        stiffness=_mapa_rigidez(zona.rigidez_suelo),
+        rain_gain=_exposicion_gain(zona.exposicion_lluvia_pct, 0.8, 5.5),
+        tide_gain=_exposicion_gain(zona.exposicion_marea_pct, 0.3, 1.5),
+        wind_gain=_exposicion_gain(zona.exposicion_viento_pct, 0.2, 1.3),
+        tide_period_h=base.tide_period_h,
+        soil_humidity=base.soil_humidity,
+        consecutive_rainy_days=base.consecutive_rainy_days,
+        rain_duration_h=base.rain_duration_h,
+        wind_direction_deg=base.wind_direction_deg,
+        wind_speed_kmh=base.wind_speed_kmh,
+        mean_sea_level=base.mean_sea_level,
+        storm_peak_hour=base.storm_peak_hour,
+        storm_intensity=base.storm_intensity,
+        tide_series_cm=base.tide_series_cm,
+    )
+
+
+def _punto_zona(record: dict, bajura: float) -> dict:
+    """Un punto de la serie de una zona: nivel neto (columna real sobre el
+    terreno, bajura descontada), riesgo reclasificado y forzamientos."""
+    neto = max(0.0, record["water_level_cm"] - bajura)
+    return {
+        "tiempo_hora": int(record["hour"]),
+        "nivel_agua_cm": round(neto, 2),
+        "estado": classify_risk_spanish(neto),
+        "velocidad_cambio": round(record.get("dH_dt", 0.0), 3),
+        "f_lluvia": round(record.get("f_lluvia", 0.0), 2),
+        "f_marea": round(record.get("f_marea", 0.0), 2),
+        "f_viento": round(record.get("f_viento", 0.0), 2),
+        "rain_intensity": round(record.get("rain_intensity", 0.0), 2),
+        "tide_level": round(record.get("tide_level", 0.0), 2),
+        "drainage_efficiency": round(record.get("drainage_efficiency", 1.0), 3),
+    }
+
+
+def run_zones_simulation(
+    duration_hours: float = 72.0,
+    storm_peak_hour: float = 12.0,
+    storm_intensity: float = 25.0,
+    mean_sea_level: float = 8.0,
+    base_params: PhysicalParameters | None = None,
+    zonas: "list[ParametrosZona] | None" = None,
+) -> List[dict]:
+    """Simula la EDO UNA VEZ POR ZONA, con sus 6 parametros propios.
+
+    Cada zona resuelve su propio H(t) (misma tormenta, distinta exposicion,
+    drenaje, rigidez y cota de terreno). Devuelve, por zona, la serie neta,
+    el nivel actual/maximo, su propia hora de pico y el riesgo pico/actual.
+    """
+    if zonas is None:
+        from .zonas import PARAMETROS_ZONAS
+
+        zonas = list(PARAMETROS_ZONAS.values())
+    base = base_params or PhysicalParameters()
+
+    resultados: List[dict] = []
+    for z in zonas:
+        pz = parametros_por_zona(base, z)
+        records = run_simulation(
+            duration_hours=duration_hours,
+            resolution_hours=1.0,
+            storm_peak_hour=storm_peak_hour,
+            storm_intensity=storm_intensity,
+            mean_sea_level=mean_sea_level,
+            params=pz,
+        )
+        bajura = bajura_cm(z.altura_base_m)
+        puntos = [_punto_zona(r, bajura) for r in records]
+
+        max_point = max(puntos, key=lambda p: p["nivel_agua_cm"])
+        actual = puntos[0]
+        resultados.append(
+            {
+                "id": z.id,
+                "nombre": z.nombre,
+                "altura_base_m": z.altura_base_m,
+                "drenaje": z.drenaje,
+                "rigidez_suelo": z.rigidez_suelo,
+                "exposicion_marea_pct": z.exposicion_marea_pct,
+                "exposicion_lluvia_pct": z.exposicion_lluvia_pct,
+                "exposicion_viento_pct": z.exposicion_viento_pct,
+                "nivel_actual_cm": round(actual["nivel_agua_cm"], 2),
+                "nivel_maximo_cm": round(max_point["nivel_agua_cm"], 2),
+                "hora_pico": float(max_point["tiempo_hora"]),
+                "riesgo_actual": actual["estado"],
+                "riesgo_pico": max_point["estado"],
+                "puntos": puntos,
+            }
+        )
+    return resultados

@@ -7,6 +7,7 @@ import {
   riesgoVivo,
   nivelDinamicoZona,
   type ZonaManga,
+  type ZonaViva,
 } from "@/app/lib/zonasManga";
 
 export interface Bounds {
@@ -22,6 +23,8 @@ interface HeatmapViewProps {
   nivelAguaCm?: number;
   nivelMaximoCm?: number;
   velocidad?: number;
+  /** Estado vivo por zona (simulación INDIVIDUAL por zona del backend). */
+  zonasVivas?: Map<number, ZonaViva>;
   visible: boolean;
   onSelectZona?: (zona: ZonaManga | null) => void;
 }
@@ -82,6 +85,7 @@ export default function HeatmapView({
   nivelAguaCm = 0,
   nivelMaximoCm = 100,
   velocidad = 1,
+  zonasVivas,
   visible,
   onSelectZona,
 }: HeatmapViewProps) {
@@ -92,12 +96,17 @@ export default function HeatmapView({
   const lastNivelRef = useRef<number>(-1);
   const estadoRef = useRef({ nivelAguaCm, nivelMaximoCm, velocidad });
   estadoRef.current = { nivelAguaCm, nivelMaximoCm, velocidad };
+  const zonasVivasRef = useRef<Map<number, ZonaViva> | undefined>(zonasVivas);
+  zonasVivasRef.current = zonasVivas;
   const boundsRef = useRef(bounds);
   boundsRef.current = bounds;
   const zonasRef = useRef(zonas);
   zonasRef.current = zonas;
   const onSelectRef = useRef(onSelectZona);
   onSelectRef.current = onSelectZona;
+
+  // Estado vivo de una zona: preferido de la simulación INDIVIDUAL (per-zona).
+  const vivaDe = (z: ZonaManga): ZonaViva | undefined => zonasVivasRef.current?.get(z.id);
 
   // Estado de cámara (zoom/pan) y capas animadas.
   const [camera, setCamera] = useState({ scale: 1, tx: 0, ty: 0 });
@@ -164,9 +173,10 @@ export default function HeatmapView({
       const rH = dims.h > 0 ? dims.h : 600;
 
       const estados = zonasRef.current.map((z) => {
-        const nivelZ = nivelDinamicoZona(z, nivel, nivelMax);
+        const viva = zonasVivasRef.current?.get(z.id);
+        const nivelZ = viva ? viva.nivel : nivelDinamicoZona(z, nivel, nivelMax);
         if (nivelZ <= 0) return null;
-        const riesgo = riesgoVivo(z, nivel, nivelMax);
+        const riesgo = viva ? viva.riesgo : riesgoVivo(z, nivel, nivelMax);
         const pobl = z.poblacion_afectada ?? 50;
         const radioPx = Math.max(14, z.radio_influencia * PX_PER_M * (rW / 600));
         // sigma en grados (aprox) a partir de píxeles.
@@ -332,14 +342,16 @@ export default function HeatmapView({
       const pulsadores: { x: number; y: number; R: number; peso: number }[] = [];
       if (!reducedMotion) {
         for (const z of zonasRef.current) {
-          const nivelZ = nivelDinamicoZona(z, nivel, nivelMax);
+          const viva = zonasVivasRef.current?.get(z.id);
+          const nivelZ = viva ? viva.nivel : nivelDinamicoZona(z, nivel, nivelMax);
           if (nivelZ <= 0) continue;
           const pz = latLngToPixel(z.coordenadas[0], z.coordenadas[1], W(), H(), b);
           const R = Math.max(10, z.radio_influencia * PX_PER_M * (W() / 600));
           const fase = Math.sin(tk * 0.005 * vel + z.id * 2.1);
+          const rActual = viva ? viva.riesgo : riesgoVivo(z, nivel, nivelMax);
           const peso =
             (nivelZ / Math.max(nivelMax, 1)) *
-            (1 + 0.18 * fase * (RIESGO_META[riesgoVivo(z, nivel, nivelMax)].peso / 4));
+            (1 + 0.18 * fase * (RIESGO_META[rActual].peso / 4));
           pulsadores.push({ x: pz.x, y: pz.y, R, peso });
         }
       }
@@ -398,7 +410,8 @@ export default function HeatmapView({
       // Resplandor pulsante en zonas críticas.
       if (!reducedMotion) {
         for (const z of zonasRef.current) {
-          const riesgo = riesgoVivo(z, nivel, nivelMax);
+          const viva = zonasVivasRef.current?.get(z.id);
+          const riesgo = viva ? viva.riesgo : riesgoVivo(z, nivel, nivelMax);
           if (riesgo !== "CRITICO" && riesgo !== "EMERGENCIA") continue;
           const p = latLngToPixel(z.coordenadas[0], z.coordenadas[1], W(), H(), b);
           const R = Math.max(10, z.radio_influencia * PX_PER_M * (W() / 600));
@@ -602,13 +615,13 @@ export default function HeatmapView({
           <div className="mt-1 flex items-center gap-2">
             <span
               className="inline-block h-2 w-2 rounded-full"
-              style={{ background: RIESGO_META[riesgoVivo(zonaActiva, nivelAguaCm, nivelMaximoCm)].color }}
+              style={{ background: RIESGO_META[vivaDe(zonaActiva)?.riesgo ?? riesgoVivo(zonaActiva, nivelAguaCm, nivelMaximoCm)].color }}
             />
             <span className="font-tabular text-cyan">
-              {nivelDinamicoZona(zonaActiva, nivelAguaCm, nivelMaximoCm).toFixed(1)} cm
+              {(vivaDe(zonaActiva)?.nivel ?? nivelDinamicoZona(zonaActiva, nivelAguaCm, nivelMaximoCm)).toFixed(1)} cm
             </span>
             <span className="capitalize text-slate-300">
-              {RIESGO_META[riesgoVivo(zonaActiva, nivelAguaCm, nivelMaximoCm)].label}
+              {RIESGO_META[vivaDe(zonaActiva)?.riesgo ?? riesgoVivo(zonaActiva, nivelAguaCm, nivelMaximoCm)].label}
             </span>
           </div>
           <div className="text-slate-400">Población: {zonaActiva.poblacion_afectada ?? "—"}</div>

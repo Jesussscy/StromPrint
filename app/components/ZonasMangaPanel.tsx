@@ -10,6 +10,7 @@ import {
   riesgoVivo,
   type NivelRiesgo,
   type ZonaManga,
+  type ZonaViva,
 } from "@/app/lib/zonasManga";
 
 const FAV_STORAGE_KEY = "stormprint:zonas-favoritas";
@@ -17,6 +18,8 @@ const FAV_STORAGE_KEY = "stormprint:zonas-favoritas";
 interface ZonasMangaPanelProps {
   nivelAguaCm: number;
   nivelMaximoCm: number;
+  /** Estado vivo por zona proveniente de la simulación INDIVIDUAL (backend). */
+  zonasVivas?: Map<number, ZonaViva>;
   selectedId?: number | null;
   onSelect: (zona: ZonaManga | null) => void;
 }
@@ -37,6 +40,7 @@ function cargarFavoritos(): number[] {
 export default function ZonasMangaPanel({
   nivelAguaCm,
   nivelMaximoCm,
+  zonasVivas,
   selectedId = null,
   onSelect,
 }: ZonasMangaPanelProps) {
@@ -64,13 +68,18 @@ export default function ZonasMangaPanel({
     setFavoritas((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
 
-  // Estado vivo de cada zona según la predicción
+  // Estado vivo de cada zona según la predicción INDIVIDUAL de la zona.
+  // Si hay datos per-zona se usan; si no, se deriva del nivel global.
   const enVivo = useMemo(() => {
     return ZONAS_MANGA.map((z) => {
+      const viva = zonasVivas?.get(z.id);
+      if (viva) {
+        return { zona: z, nivel: viva.nivel, riesgo: viva.riesgo, horaPico: viva.hora_pico };
+      }
       const nivel = nivelDinamicoZona(z, nivelAguaCm, nivelMaximoCm);
-      return { zona: z, nivel, riesgo: riesgoVivo(z, nivelAguaCm, nivelMaximoCm) };
+      return { zona: z, nivel, riesgo: riesgoVivo(z, nivelAguaCm, nivelMaximoCm), horaPico: undefined };
     });
-  }, [nivelAguaCm, nivelMaximoCm]);
+  }, [nivelAguaCm, nivelMaximoCm, zonasVivas]);
 
   // Resumen por nivel
   const resumen = useMemo<Record<NivelRiesgo, number> & { activas: number }>(() => {
@@ -194,7 +203,7 @@ export default function ZonasMangaPanel({
         {filtradas.length === 0 && (
           <p className="text-center text-[11px] text-slate-500 py-6">No hay zonas con ese filtro.</p>
         )}
-        {filtradas.map(({ zona, nivel, riesgo }) => {
+        {filtradas.map(({ zona, nivel, riesgo, horaPico }) => {
           const seleccionada = selectedId === zona.id;
           const esFavorita = favoritas.includes(zona.id);
           return (
@@ -238,6 +247,11 @@ export default function ZonasMangaPanel({
                     <span className="block text-[9px] font-mono uppercase tracking-wider" style={{ color: colorDeRiesgo(riesgo) }}>
                       {RIESGO_META[riesgo].label}
                     </span>
+                    {horaPico != null && (
+                      <span className="block text-[8px] font-mono text-slate-500" title="Hora del pico propio de la zona">
+                        pico ≈ {horaPico.toFixed(0)} h
+                      </span>
+                    )}
                   </span>
                 </div>
                 {/* Progress bar */}

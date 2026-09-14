@@ -23,6 +23,7 @@ import {
   riesgoVivo,
   type NivelRiesgo,
   type ZonaManga,
+  type ZonaViva,
 } from "@/app/lib/zonasManga";
 import { colorDeNivel } from "@/app/lib/zonasManga";
 import {
@@ -38,6 +39,8 @@ interface ZonaFlood3DProps {
   zona: ZonaManga | null;
   nivelAguaCm: number;
   nivelMaximoCm: number;
+  /** Estado vivo por zona (simulación INDIVIDUAL por zona del backend). */
+  zonasVivas?: Map<number, ZonaViva>;
   horaLocal: number;
   onClose: () => void;
 }
@@ -321,16 +324,25 @@ function EscenaZona({ zona, nivelU, riesgo }: { zona: ZonaManga; nivelU: number;
 
 // ── Contenedor / HUD ────────────────────────────────────────────────────────
 
-export default function ZonaFlood3D({ zona, nivelAguaCm, nivelMaximoCm, horaLocal, onClose }: ZonaFlood3DProps) {
+export default function ZonaFlood3D({ zona, nivelAguaCm, nivelMaximoCm, zonasVivas, horaLocal, onClose }: ZonaFlood3DProps) {
   const [idxLocal, setIdxLocal] = useState<number>(zona ? ZONAS_MANGA.findIndex((z) => z.id === zona.id) : 0);
 
   const zonaActual = zona ?? ZONAS_MANGA[idxLocal];
 
-  const { nivelU, nivelCm, riesgo } = useMemo(() => {
+  const { nivelU, nivelCm, riesgo, horaPico } = useMemo(() => {
+    const viva = zonasVivas?.get(zonaActual.id);
+    if (viva) {
+      return {
+        nivelU: cmToU(viva.nivel),
+        nivelCm: viva.nivel,
+        riesgo: viva.riesgo,
+        horaPico: viva.hora_pico,
+      };
+    }
     const nivel = nivelDinamicoZona(zonaActual, nivelAguaCm, nivelMaximoCm);
     const r = riesgoVivo(zonaActual, nivelAguaCm, nivelMaximoCm);
-    return { nivelU: cmToU(nivel), nivelCm: nivel, riesgo: r };
-  }, [zonaActual, nivelAguaCm, nivelMaximoCm]);
+    return { nivelU: cmToU(nivel), nivelCm: nivel, riesgo: r, horaPico: undefined };
+  }, [zonaActual, nivelAguaCm, nivelMaximoCm, zonasVivas]);
 
   const colorAct = colorDeRiesgo(riesgo);
   const pctCritico = Math.min(100, (nivelCm / Math.max(zonaActual.altura_critica, 1)) * 100);
@@ -429,6 +441,11 @@ export default function ZonaFlood3D({ zona, nivelAguaCm, nivelMaximoCm, horaLoca
                 </div>
                 <p className="mt-1.5 text-[10px] text-slate-500 font-mono">
                   Umbral crítico: <span className="text-white">{zonaActual.altura_critica} cm</span> · Pico global ≈ {nivelMaximoCm} cm
+                  {horaPico != null && (
+                    <>
+                      {" · "}Pico zona ≈ <span className="text-white">{horaPico.toFixed(0)} h</span>
+                    </>
+                  )}
                 </p>
               </div>
 

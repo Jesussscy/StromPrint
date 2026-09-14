@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Home, LayoutDashboard, Brain, Siren, Phone, Menu, X, Bell } from "lucide-react";
+import { Home, LayoutDashboard, Brain, Siren, Phone, Menu, X } from "lucide-react";
 
 interface Tab {
   id: string;
@@ -30,16 +30,13 @@ function parseHref(href: string): { path: string; hash: string } | null {
 export default function Navbar({
   tabs = DEFAULT_TABS,
   defaultTab,
-  notificationCount = 0,
   onTabChange,
 }: {
   tabs?: Tab[];
   defaultTab?: string;
-  notificationCount?: number;
   onTabChange?: (id: string) => void;
 } = {}) {
   const [active, setActive] = useState(defaultTab || tabs[0]?.id || "");
-  const [bounce, setBounce] = useState<string | null>(null);
   const [prevActive, setPrevActive] = useState(active);
   const [menuAbierto, setMenuAbierto] = useState(false);
   const tabsRef = useRef<Map<string, HTMLButtonElement>>(new Map());
@@ -109,11 +106,9 @@ export default function Navbar({
         router.push(path || "/");
       }
     }
-    setBounce(tab.id);
     setPrevActive(active);
     setActive(tab.id);
     onTabChange?.(tab.id);
-    setTimeout(() => setBounce(null), 150);
   };
 
   return (
@@ -163,51 +158,6 @@ export default function Navbar({
           STORMPRINT
         </div>
       </div>
-
-      {/* Notificaciones (móvil): dispara el mismo evento que la barra inferior */}
-      <button
-        onClick={() => window.dispatchEvent(new CustomEvent("stormprint:open-alerts"))}
-        aria-label="Abrir alertas"
-        className="md:hidden"
-        style={{
-          position: "relative",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          width: 44,
-          height: 44,
-          borderRadius: 10,
-          border: "none",
-          background: "transparent",
-          color: "var(--text-inactive, rgba(255,255,255,0.6))",
-          cursor: "pointer",
-          WebkitTapHighlightColor: "transparent",
-          touchAction: "manipulation",
-        }}
-      >
-        <Bell size={20} />
-        {notificationCount > 0 && (
-          <span
-            style={{
-              position: "absolute",
-              top: 6,
-              right: 6,
-              minWidth: 18,
-              height: 18,
-              padding: "0 5px",
-              borderRadius: 9,
-              fontSize: 9,
-              fontWeight: 700,
-              lineHeight: "18px",
-              textAlign: "center" as const,
-              background: "var(--badge-bg, #ef4444)",
-              color: "var(--badge-text, #fff)",
-            }}
-          >
-            {notificationCount}
-          </span>
-        )}
-      </button>
 
       {/* Desktop tabs */}
       <div
@@ -268,28 +218,6 @@ export default function Navbar({
           >
             <span style={{ display: "flex", alignItems: "center" }}>{tab.icon}</span>
             <span className="hidden sm:inline">{tab.label}</span>
-            {tab.id === tabs[1]?.id && notificationCount > 0 && (
-              <span
-                style={{
-                  position: "absolute",
-                  top: 2,
-                  right: 2,
-                  minWidth: 18,
-                  height: 18,
-                  padding: "0 5px",
-                  borderRadius: 9,
-                  fontSize: 9,
-                  fontWeight: 700,
-                  lineHeight: "18px",
-                  textAlign: "center" as const,
-                  background: "var(--badge-bg, #ef4444)",
-                  color: "var(--badge-text, #fff)",
-                  animation: bounce === tab.id ? "badge-bounce 0.3s ease" : "badge-pop 0.3s ease",
-                }}
-              >
-                {notificationCount}
-              </span>
-            )}
           </button>
         ))}
 
@@ -311,20 +239,6 @@ export default function Navbar({
 
       {/* Placeholder right area */}
       <div className="hidden md:block" style={{ width: 80 }} />
-
-      {/* Keyframes injected once */}
-      <style jsx global>{`
-        @keyframes badge-pop {
-          0% { transform: scale(0); }
-          70% { transform: scale(1.15); }
-          100% { transform: scale(1); }
-        }
-        @keyframes badge-bounce {
-          0% { transform: scale(1); }
-          40% { transform: scale(1.3); }
-          100% { transform: scale(1); }
-        }
-      `}</style>
 
       {/* ── Menú lateral móvil (hamburguesa) ─────────────────────────────── */}
       <AnimatePresence>

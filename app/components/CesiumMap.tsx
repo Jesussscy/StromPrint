@@ -113,6 +113,21 @@ export default function CesiumMap({
   const [vista, setVista] = useState<"3d" | "heatmap">("3d");
   const [retryKey, setRetryKey] = useState(0);
 
+  // En móvil el HUD grande y la leyenda se colapsan por defecto para que el
+  // mapa quede despejado; en desktop se muestran completos (como antes).
+  const [hudCompacto, setHudCompacto] = useState<boolean | null>(null);
+  const [leyenda, setLeyenda] = useState<boolean | null>(null);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const aplicar = () => {
+      setHudCompacto(mq.matches);
+      setLeyenda(!mq.matches);
+    };
+    aplicar();
+    mq.addEventListener?.("change", aplicar);
+    return () => mq.removeEventListener?.("change", aplicar);
+  }, []);
+
   useEffect(() => { horaLocalRef.current = horaLocal; }, [horaLocal]);
   useEffect(() => { stormRef.current = stormMode; }, [stormMode]);
   useEffect(() => { puntoMeteoRef.current = puntoMeteo; }, [puntoMeteo]);
@@ -224,13 +239,28 @@ export default function CesiumMap({
           navigationHelpButton: false,
           infoBox: false,
           selectionIndicator: false,
+          // Atribución de Cesium desactivada: los créditos se redirigen a un
+          // contenedor fuera del DOM y se prohíbe el modo "en pantalla".
+          // La marca visual es 100% StormPrint.
           creditContainer: document.createElement("div"),
+          showCreditsOnScreen: false,
           // Render bajo demanda: Cesium solo dibuja cuando algo cambia
           // (animador o interacción), no en bucle continuo. Ahorra GPU/CPU
           // cuando el visor está estático.
           requestRenderMode: true,
           maximumRenderTimeChange: Infinity,
         });
+
+        // Refuerzo de la ocultación de créditos/logo Cesium (por si algún
+        // proveedor externo inyecta su propia atribución en pantalla).
+        try {
+          const widget: any = (viewer as any).cesiumWidget;
+          if (widget?.creditContainer) widget.creditContainer.style.display = "none";
+          const creditDisplay: any = (viewer as any)?.scene?.frameState?.creditDisplay;
+          if (creditDisplay?.container) creditDisplay.container.style.display = "none";
+        } catch (_e) {
+          /* noop */
+        }
 
         // Vigila la capa base inicial: si los tiles fracasan repetidamente
         // (p.ej. una red/ISP inyecta HTML "API KEY REQUIRED" en lugar de
@@ -1172,7 +1202,7 @@ function recentrar() {
 
   return (
     <div
-      className="relative w-full h-full min-h-[380px] sm:min-h-[560px]"
+      className="relative w-full h-full min-h-[280px] md:min-h-[560px]"
       role="region"
       aria-label={`Mapa 3D de Manga, Cartagena. Nivel ${nivelAguaCm.toFixed(1)} cm · ${clasificarNivel(nivelAguaCm)} · ${zonasAlerta} zonas en alerta. Atajos: R re-centrar, C capas, flechas recorren zonas, ? ayuda.`}
       tabIndex={0}
@@ -1301,7 +1331,7 @@ function recentrar() {
 
       {/* Panel de capas: base mapas, capas internas y vistas */}
       {panelCapas && !cargando && !error && vista === "3d" && (
-        <div className="absolute top-28 right-3 z-20 glass rounded-xl p-3 text-xs text-white w-48">
+        <div className="absolute top-28 right-3 z-20 glass rounded-xl p-3 text-xs text-white w-48 max-h-[60vh] overflow-y-auto">
           <div className="flex items-center justify-between mb-2">
             <p className="font-display font-bold text-cyan">Capas</p>
             <button
@@ -1423,7 +1453,27 @@ function recentrar() {
         </div>
       )}
 
-      {/* HUD — Nivel actual */}
+      {/* HUD — Nivel actual (colapsable; en móvil arranca compacto) */}
+      {hudCompacto ? (
+        <button
+          onClick={() => setHudCompacto(false)}
+          aria-label="Ampliar panel de nivel"
+          className="absolute top-14 left-3 z-10 glass rounded-xl pl-3 pr-2 py-2 flex items-center gap-2 max-w-[calc(100%-24px)] text-white active:scale-95 transition-transform"
+        >
+          <span
+            className="h-2 w-2 shrink-0 rounded-full"
+            style={{ background: nivelColorCached(nivelAguaCm), boxShadow: `0 0 8px ${nivelColorCached(nivelAguaCm)}` }}
+          />
+          <span className="font-mono text-[10px] uppercase tracking-widest text-cyan shrink-0">Nivel</span>
+          <span className="font-display font-bold leading-none tabular-nums">
+            {nivelAguaCm.toFixed(1)} <span className="text-[10px] text-slate-300">cm</span>
+          </span>
+          <span className="text-[10px] font-bold uppercase tracking-wider shrink-0" style={{ color: nivelColorCached(nivelAguaCm) }}>
+            {clasificarNivel(nivelAguaCm)}
+          </span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-500 ml-auto shrink-0"><polyline points="6 9 12 15 18 9" /></svg>
+        </button>
+      ) : (
       <div className="absolute top-3 left-3 z-10 glass rounded-xl px-4 py-3 text-white max-w-[240px]">
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -1449,6 +1499,13 @@ function recentrar() {
 
           {/* Brújula + resumen de alertas */}
           <div className="flex flex-col items-center shrink-0">
+            <button
+              onClick={() => setHudCompacto(true)}
+              aria-label="Reducir panel de nivel"
+              className="text-slate-500 hover:text-white transition mb-1 flex items-center justify-center min-w-[28px] min-h-[28px]"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15" /></svg>
+            </button>
             <span
               ref={brújulaRef}
               className="text-cyan/90 text-base leading-none transition-transform duration-150"
@@ -1565,6 +1622,7 @@ function recentrar() {
           </div>
         )}
       </div>
+      )}
 
       {/* Estado de la herramienta de medición */}
       {midiendo && (
@@ -1581,33 +1639,53 @@ function recentrar() {
         </div>
       )}
 
-      {/* Leyenda */}
-      <div className="absolute bottom-4 right-4 z-10 glass rounded-xl p-4 text-xs text-white">
-        <p className="font-display font-bold text-cyan mb-2">Nivel de Riesgo</p>
-        {[
-          { c: "#B000FF", l: "Crítico (≥100 cm)" },
-          { c: "#FF0055", l: "Emergencia (60-99 cm)" },
-          { c: "#FFD600", l: "Alerta (30-59 cm)" },
-          { c: "#00E5FF", l: "Normal (<30 cm)" },
-        ].map((r) => (
-          <div key={r.l} className="flex items-center gap-2 mb-1">
-            <span className="inline-block w-3 h-3 rounded" style={{ background: r.c }} />
-            <span className="text-slate-300">{r.l}</span>
+      {/* Leyenda (colapsable: se oculta tras un chip para no tapar el mapa) */}
+      {!selectedZona && (leyenda ? (
+        <div className="absolute bottom-4 right-4 z-10 glass rounded-xl p-4 text-xs text-white max-w-[210px]">
+          <div className="flex items-center justify-between mb-2">
+            <p className="font-display font-bold text-cyan">Nivel de Riesgo</p>
+            <button
+              onClick={() => setLeyenda(false)}
+              aria-label="Ocultar leyenda"
+              className="text-slate-500 hover:text-white transition-colors flex items-center justify-center min-w-[28px] min-h-[28px]"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+            </button>
           </div>
-        ))}
-        <div className="mt-2 pt-1 border-t border-cyan/10 flex items-center gap-2">
-          <span
-            className={`inline-block w-2 h-2 rounded-full ${
-              zonasAlerta > 0
-                ? "bg-risk-emergency shadow-[0_0_6px_#FF0055] animate-pulse-slow"
-                : "bg-cyan shadow-[0_0_6px_#00E5FF]"
-            }`}
-          />
-          <span className="text-slate-400">
-            {zonasAlerta > 0 ? `${zonasAlerta} zonas en alerta` : "Sin zonas en alerta"} · 20 críticas
-          </span>
+          {[
+            { c: "#B000FF", l: "Crítico (≥100 cm)" },
+            { c: "#FF0055", l: "Emergencia (60-99 cm)" },
+            { c: "#FFD600", l: "Alerta (30-59 cm)" },
+            { c: "#00E5FF", l: "Normal (<30 cm)" },
+          ].map((r) => (
+            <div key={r.l} className="flex items-center gap-2 mb-1">
+              <span className="inline-block w-3 h-3 shrink-0 rounded" style={{ background: r.c }} />
+              <span className="text-slate-300">{r.l}</span>
+            </div>
+          ))}
+          <div className="mt-2 pt-1 border-t border-cyan/10 flex items-center gap-2">
+            <span
+              className={`inline-block w-2 h-2 rounded-full shrink-0 ${
+                zonasAlerta > 0
+                  ? "bg-risk-emergency shadow-[0_0_6px_#FF0055] animate-pulse-slow"
+                  : "bg-cyan shadow-[0_0_6px_#00E5FF]"
+              }`}
+            />
+            <span className="text-slate-400">
+              {zonasAlerta > 0 ? `${zonasAlerta} zonas en alerta` : "Sin zonas en alerta"} · 20 críticas
+            </span>
+          </div>
         </div>
-      </div>
+      ) : (
+        <button
+          onClick={() => setLeyenda(true)}
+          aria-label="Mostrar leyenda de riesgo"
+          className="absolute bottom-4 right-4 z-10 glass rounded-lg px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-cyan hover:bg-cyan/10 transition flex items-center gap-1.5 min-h-[44px] min-w-[44px] justify-center"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l8 4-8 4-8-4 8-4z" /><path d="M4 10l8 4 8-4" /><path d="M4 16l8 4 8-4" /></svg>
+          Leyenda
+        </button>
+      ))}
 
       {/* Info de zona seleccionada */}
       {selectedZona && (

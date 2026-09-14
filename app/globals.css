@@ -370,7 +370,10 @@ input[type="range"]::-moz-range-thumb {
 
 .cesium-widget-credits,
 .cesium-credit-logoContainer,
-.cesium-widget-credits .cesium-credit-expand-link {
+.cesium-widget-credits .cesium-credit-expand-link,
+.cesium-credit-lightbox-overlay,
+.cesium-widget-creditToggleContainer,
+.cesium-viewer-bottom .cesium-credit-logoContainer {
   display: none !important;
 }
 
@@ -379,6 +382,43 @@ input[type="range"]::-moz-range-thumb {
 }
 
 /* ─── Mobile & Touch ────────────────────────────────────────────────── */
+
+/* Panel primero en móvil: el #panel-vivo pasa a ser la primera sección de la
+   página (panel primero, marketing después). El Hero se oculta (hidden md:block)
+   y el resto de secciones quedan detrás del panel. Desktop intacto. */
+@media (max-width: 767px) {
+  .orden-movil {
+    display: flex;
+    flex-direction: column;
+  }
+  .orden-movil > * {
+    order: 20;
+  }
+  .orden-movil #panel-vivo {
+    order: 1;
+  }
+}
+
+/* Reordenación del stack principal SOLO en móvil (mapa → gráfico → zonas).
+   En desktop el DOM mantiene su orden natural (la hoja no aplica). */
+@media (max-width: 767px) {
+  .page-stack {
+    display: flex;
+    flex-direction: column;
+  }
+  .page-stack > * {
+    order: 10;
+  }
+  .page-stack .ord-1 { order: 1; }
+  .page-stack .ord-2 { order: 2; }
+  .page-stack .ord-3 { order: 3; }
+  .page-stack .ord-4 { order: 4; }
+  .page-stack .ord-5 { order: 5; }
+  .page-stack .ord-6 { order: 6; }
+  .page-stack .ord-7 { order: 7; }
+  .page-stack .ord-8 { order: 8; }
+  .page-stack .ord-9 { order: 9; }
+}
 
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);

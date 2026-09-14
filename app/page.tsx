@@ -30,6 +30,9 @@ import MonitoringMetricsRow from "@/app/components/MonitoringMetricsRow";
 import ProjectionChart from "@/app/components/ProjectionChart";
 import NeighborhoodStatusBar from "@/app/components/NeighborhoodStatusBar";
 import Footer from "@/app/components/Footer";
+import DashboardMovil from "@/app/components/DashboardMovil";
+import { Slider } from "@/app/components/Slider";
+import { useIsMobile } from "@/app/lib/useMediaQuery";
 import {
   predecir,
   fetchWaterState,
@@ -352,6 +355,8 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
     setZonaEnfocada(z ? z.id : null);
   }, []);
 
+  const esMovil = useIsMobile();
+
   // Zona completa seleccionada (para la simulación 3D de inundación).
   const zonaSeleccionada = useMemo(
     () => (zonaEnfocada != null ? ZONAS_MANGA.find((z) => z.id === zonaEnfocada) ?? null : null),
@@ -544,11 +549,55 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
     }
   };
 
+  // Variante móvil app-like: misma fuente de datos, layout pensado para el
+  // pulgar. En desktop se usa la plantilla clásica (abajo, intacta).
+  if (esMovil) {
+    return (
+      <DashboardMovil
+        prediccion={prediccion}
+        activePunto={activePunto}
+        zonasVivas={zonasVivas}
+        zonaEnfocada={zonaEnfocada}
+        zonaSeleccionada={zonaSeleccionada}
+        currentHour={currentHour}
+        isPlaying={isPlaying}
+        isLoading={isLoading}
+        error={error}
+        stormMode={stormMode}
+        velocidad={velocidad}
+        sonido={sonido}
+        copiado={copiado}
+        lluvia={lluvia}
+        marea={marea}
+        drenaje={drenaje}
+        usarMeteo={usarMeteo}
+        liveWater={liveWater}
+        liveLatenciaMs={liveLatenciaMs}
+        onSelectZona={onSelectZona}
+        onTogglePlay={onTogglePlay}
+        onScrub={handleScrub}
+        onToggleStorm={onToggleStorm}
+        onReintentar={() => loadPrediction()}
+        onSetVelocidad={setVelocidad}
+        onToggleSonido={toggleSonido}
+        onCopiarResumen={copiarResumenPrediccion}
+        onExportCSV={() => { if (prediccion) void exportPrediccionCSV(prediccion); }}
+        onExportJSON={() => { if (prediccion) void exportPrediccionJSON(prediccion); }}
+        onIrAlInicio={irAlInicio}
+        onIrAlPico={irAlPico}
+        onSetLluvia={setLluvia}
+        onSetMarea={setMarea}
+        onSetDrenaje={setDrenaje}
+        onSetUsarMeteo={setUsarMeteo}
+      />
+    );
+  }
+
   return (
-    <div className="mx-auto max-w-7xl space-y-4">
+    <div className="mx-auto max-w-7xl space-y-4 pb-20 md:pb-12 page-stack">
 
       {/* ═══ FILA 1: HEADER + MÉTRICAS PRINCIPALES ═══ */}
-      <div>
+      <div className="ord-1">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-risk-normal animate-pulse-slow" />
@@ -577,7 +626,7 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
 
       {/* ═══ CONTROLES (colapsables) ═══ */}
       {controlesAbiertos && (
-        <div className="glass-strong rounded-2xl p-4">
+        <div className="glass-strong rounded-2xl p-4 ord-2">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-3">
             <Slider label="Lluvia" value={lluvia} onChange={setLluvia} min={0} max={50} step={0.1} unit="mm/h" color="#00F3FF" disabled={usarMeteo} />
             <Slider label="Marea" value={marea} onChange={setMarea} min={0} max={100} step={0.5} unit="cm" color="#B000FF" disabled={usarMeteo} />
@@ -603,7 +652,7 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
       )}
 
       {/* ═══ FILA 2: MAPA 3D (ANCHO COMPLETO) ═══ */}
-      <div className="glass-strong rounded-2xl h-[420px] p-1 md:h-[560px] lg:h-[600px] overflow-hidden relative hud-scanlines">
+      <div className="glass-strong rounded-2xl h-[50vh] min-h-[300px] p-0 md:h-[560px] md:p-1 lg:h-[600px] overflow-hidden relative hud-scanlines ord-3">
         <LazyMount
           placeholder={
             <div className="absolute inset-0 flex items-center justify-center bg-ocean">
@@ -631,11 +680,12 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
           />
         </LazyMount>
 
+        {/* Botón "Simular tormenta" (solo desktop, flotando sobre el mapa) */}
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={onToggleStorm}
-          className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] rounded-xl px-6 py-3 font-mono text-[11px] uppercase tracking-wider transition-all duration-300 ${
+          className={`hidden md:flex absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] rounded-xl px-6 py-3 font-mono text-[11px] uppercase tracking-wider transition-all duration-300 ${
             stormMode
               ? "glass-glow text-risk-emergency border-risk-emergency/30"
               : "glass-glow text-cyan"
@@ -655,36 +705,67 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
         </motion.button>
       </div>
 
-      {/* ═══ FILA 3: ZONAS DE RIESGO ═══ */}
-      <ZonasMangaPanel
-        nivelAguaCm={activePunto?.nivel_agua_cm ?? 0}
-        nivelMaximoCm={prediccion?.nivel_maximo_cm ?? 100}
-        zonasVivas={zonasVivas}
-        selectedId={zonaEnfocada}
-        onSelect={onSelectZona}
-      />
+      {/* Botón "Simular tormenta" (solo móvil: fijo debajo del mapa, no flotante) */}
+      <motion.button
+        whileTap={{ scale: 0.97 }}
+        onClick={onToggleStorm}
+        className={`md:hidden w-full rounded-xl px-6 py-4 font-mono text-xs uppercase tracking-wider transition-all duration-300 min-h-[48px] ord-4 ${
+          stormMode
+            ? "glass-glow text-risk-emergency border-risk-emergency/30"
+            : "glass-glow text-cyan"
+        }`}
+      >
+        {stormMode ? (
+          <span className="flex items-center justify-center gap-2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2" width="20" height="20" rx="2" /></svg>
+            Detener tormenta
+          </span>
+        ) : (
+          <span className="flex items-center justify-center gap-2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21" /></svg>
+            Simular tormenta
+          </span>
+        )}
+      </motion.button>
 
-      {/* ═══ FILA 3.5: SIMULACIÓN 3D DE INUNDACIÓN POR ZONA ═══ */}
-      {zonaSeleccionada && (
-        <ZonaFlood3D
-          zona={zonaSeleccionada}
+      {/* ═══ FILA 4: GRÁFICO DE PROYECCIÓN (detrás del mapa en móvil) ═══ */}
+      <div className="ord-5">
+        <ProjectionChart puntos={prediccion?.puntos ?? []} currentHour={currentHour} />
+      </div>
+
+      {/* ═══ FILA 3: ZONAS DE RIESGO ═══ */}
+      <div className="ord-6">
+        <ZonasMangaPanel
           nivelAguaCm={activePunto?.nivel_agua_cm ?? 0}
           nivelMaximoCm={prediccion?.nivel_maximo_cm ?? 100}
           zonasVivas={zonasVivas}
-          horaLocal={Math.floor(currentHour) % 24}
-          onClose={() => onSelectZona(null)}
+          selectedId={zonaEnfocada}
+          onSelect={onSelectZona}
         />
+      </div>
+
+      {/* ═══ FILA 3.5: SIMULACIÓN 3D DE INUNDACIÓN POR ZONA ═══ */}
+      {zonaSeleccionada && (
+        <div className="ord-7">
+          <ZonaFlood3D
+            zona={zonaSeleccionada}
+            nivelAguaCm={activePunto?.nivel_agua_cm ?? 0}
+            nivelMaximoCm={prediccion?.nivel_maximo_cm ?? 100}
+            zonasVivas={zonasVivas}
+            horaLocal={Math.floor(currentHour) % 24}
+            onClose={() => onSelectZona(null)}
+          />
+        </div>
       )}
 
-      {/* ═══ FILA 4: GRÁFICO DE PROYECCIÓN ═══ */}
-      <ProjectionChart puntos={prediccion?.puntos ?? []} currentHour={currentHour} />
-
       {/* ═══ FILA 5: ESTADO DEL BARRIO ═══ */}
-      <NeighborhoodStatusBar prediccion={prediccion} punto={activePunto} />
+      <div className="ord-8">
+        <NeighborhoodStatusBar prediccion={prediccion} punto={activePunto} />
+      </div>
 
       {/* ═══ NARRATIVA DEL MODELO ═══ */}
       {prediccion && (
-        <div className="glass rounded-2xl p-4">
+        <div className="glass rounded-2xl p-4 ord-9">
           <p className="font-mono text-[10px] uppercase tracking-widest text-slate-500 mb-2">
             Análisis del Modelo
           </p>
@@ -821,32 +902,6 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
           </button>
         </div>
       )}
-    </div>
-  );
-}
-
-function Slider({ label, value, onChange, min, max, step, unit, color, disabled }: {
-  label: string; value: number; onChange: (v: number) => void;
-  min: number; max: number; step: number; unit: string; color: string; disabled?: boolean;
-}) {
-  const pct = ((value - min) / (max - min)) * 100;
-  return (
-    <div className={disabled ? "opacity-40 pointer-events-none select-none" : ""}>
-      <div className="flex justify-between items-center mb-1.5">
-        <span className="font-mono text-[10px] uppercase tracking-wider text-slate-500">{label}</span>
-        <span className="font-mono text-xs font-tabular" style={{ color }}>{value.toFixed(step < 1 ? 1 : 0)} {unit}</span>
-      </div>
-      <input
-        type="range"
-        min={min} max={max} step={step}
-        value={value}
-        onChange={(e) => onChange(parseFloat(e.target.value))}
-        className="w-full h-6 slider-cyber"
-        style={{
-          background: `linear-gradient(to right, ${color} 0%, ${color} ${pct}%, rgba(255,255,255,0.08) ${pct}%, rgba(255,255,255,0.08) 100%)`,
-          boxShadow: disabled ? "none" : `0 0 12px ${color}33`,
-        }}
-      />
     </div>
   );
 }
@@ -1075,14 +1130,18 @@ export default function LandingPage() {
         </div>
       )}
 
-      <main id="contenido">
-        <HeroSection />
+      <main id="contenido" className="orden-movil">
+        {/* Hero: en móvil queda oculto (el panel en vivo pasa a ser la primera
+            experiencia; la marca ya está en el navbar). Desktop intacto. */}
+        <div className="hidden md:block">
+          <HeroSection />
+        </div>
         <ProblemSection />
         <HowItWorksSection />
         <DataSourceSection />
 
-      {/* Panel en Vivo */}
-      <section id="panel-vivo" className="relative py-24 px-6">
+      {/* Panel en Vivo — primero en móvil (panel primero, marketing después) */}
+      <section id="panel-vivo" className="relative py-10 px-6 md:py-24">
         <div className="mx-auto max-w-7xl mb-8">
           <motion.div {...FADE} className="text-center">
             <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-cyan mb-4">Datos en vivo</p>

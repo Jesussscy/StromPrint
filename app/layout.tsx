@@ -28,7 +28,15 @@ export const metadata: Metadata = {
   title: "STORM//PRINT — Monitoreo de Inundaciones | Barrio Manga, Cartagena",
   description:
     "Sistema predictivo de inundaciones para el Barrio Manga, Cartagena de Indias. Simulación en tiempo real con datos meteorológicos, mareas y drenaje territorial.",
-  icons: { icon: "/favicon.svg" },
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/icons/icon-180.png", sizes: "180x180", type: "image/png" }],
+    shortcut: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+  },
   robots: { index: true, follow: true },
   applicationName: "STORM//PRINT",
   appleWebApp: {
@@ -53,6 +61,9 @@ export const metadata: Metadata = {
   },
   other: {
     "manifest": "/manifest.json",
+    // Standard meta instalable (Apple marcó deprecado apple-mobile-web-app-capable).
+    "mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-title": "STORM//PRINT",
   },
 };
 

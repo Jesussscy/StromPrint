@@ -1,20 +1,42 @@
 {
-  "name": "STORM//PRINT — Flood Risk Simulation",
+  "id": "/",
+  "name": "STORM//PRINT — Monitoreo de Inundaciones",
   "short_name": "StormPrint",
-  "description": "Cyber-physical flood-risk simulation platform for Barrio Manga, Cartagena, Colombia",
-  "start_url": "/",
+  "description": "Plataforma de simulación predictiva de inundaciones para el Barrio Manga, Cartagena de Indias, Colombia.",
+  "start_url": "/?utm_source=pwa",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "browser"],
   "orientation": "any",
   "theme_color": "#050A0F",
   "background_color": "#050A0F",
   "categories": ["weather", "utilities", "education"],
   "lang": "es",
+  "dir": "ltr",
   "icons": [
     {
       "src": "/favicon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "screenshots": [],
@@ -23,17 +45,17 @@
       "name": "Panel en Vivo",
       "short_name": "Panel",
       "url": "/#panel-vivo",
-      "description": "Live flood monitoring dashboard"
+      "description": "Panel de monitoreo en vivo"
     },
     {
       "name": "Alertas",
       "url": "/alertas",
-      "description": "Alert center"
+      "description": "Centro de alertas"
     },
     {
       "name": "Ciencia",
       "url": "/ciencia",
-      "description": "3D simulator and physics"
+      "description": "Simulador 3D y física"
     }
   ]
 }

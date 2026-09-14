@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Home, LayoutDashboard, Brain, Siren, Phone } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Home, LayoutDashboard, Brain, Siren, Phone, Menu, X, Bell } from "lucide-react";
 
 interface Tab {
   id: string;
@@ -40,6 +41,7 @@ export default function Navbar({
   const [active, setActive] = useState(defaultTab || tabs[0]?.id || "");
   const [bounce, setBounce] = useState<string | null>(null);
   const [prevActive, setPrevActive] = useState(active);
+  const [menuAbierto, setMenuAbierto] = useState(false);
   const tabsRef = useRef<Map<string, HTMLButtonElement>>(new Map());
   const [indicator, setIndicator] = useState({ left: 0, width: 0 });
   const [fade, setFade] = useState(true);
@@ -70,6 +72,21 @@ export default function Navbar({
     if (matching && matching.id !== active) setActive(matching.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
+
+  // Menú móvil: bloquea el scroll del body mientras está abierto y cierra con Escape.
+  useEffect(() => {
+    if (!menuAbierto) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuAbierto(false);
+    };
+    window.addEventListener("keydown", onEsc);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener("keydown", onEsc);
+    };
+  }, [menuAbierto]);
 
   const handleClick = (tab: Tab) => {
     if (tab.href) {
@@ -118,9 +135,79 @@ export default function Navbar({
         borderBottom: "1px solid var(--border, rgba(255,255,255,0.06))",
       }}
     >
-      <div style={{ fontWeight: 700, fontSize: 13, letterSpacing: "0.08em", color: "var(--text-primary, #fff)" }}>
-        STORMPRINT
+      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+        {/* Hamburguesa: abre el menú lateral en móvil */}
+        <button
+          onClick={() => setMenuAbierto(true)}
+          aria-label="Abrir menú de navegación"
+          className="md:hidden"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 44,
+            height: 44,
+            borderRadius: 10,
+            border: "none",
+            background: "transparent",
+            color: "var(--text-primary, #fff)",
+            cursor: "pointer",
+            WebkitTapHighlightColor: "transparent",
+            touchAction: "manipulation",
+          }}
+        >
+          <Menu size={22} />
+        </button>
+
+        <div style={{ fontWeight: 700, fontSize: 13, letterSpacing: "0.08em", color: "var(--text-primary, #fff)" }}>
+          STORMPRINT
+        </div>
       </div>
+
+      {/* Notificaciones (móvil): dispara el mismo evento que la barra inferior */}
+      <button
+        onClick={() => window.dispatchEvent(new CustomEvent("stormprint:open-alerts"))}
+        aria-label="Abrir alertas"
+        className="md:hidden"
+        style={{
+          position: "relative",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 44,
+          height: 44,
+          borderRadius: 10,
+          border: "none",
+          background: "transparent",
+          color: "var(--text-inactive, rgba(255,255,255,0.6))",
+          cursor: "pointer",
+          WebkitTapHighlightColor: "transparent",
+          touchAction: "manipulation",
+        }}
+      >
+        <Bell size={20} />
+        {notificationCount > 0 && (
+          <span
+            style={{
+              position: "absolute",
+              top: 6,
+              right: 6,
+              minWidth: 18,
+              height: 18,
+              padding: "0 5px",
+              borderRadius: 9,
+              fontSize: 9,
+              fontWeight: 700,
+              lineHeight: "18px",
+              textAlign: "center" as const,
+              background: "var(--badge-bg, #ef4444)",
+              color: "var(--badge-text, #fff)",
+            }}
+          >
+            {notificationCount}
+          </span>
+        )}
+      </button>
 
       {/* Desktop tabs */}
       <div
@@ -238,6 +325,110 @@ export default function Navbar({
           100% { transform: scale(1); }
         }
       `}</style>
+
+      {/* ── Menú lateral móvil (hamburguesa) ─────────────────────────────── */}
+      <AnimatePresence>
+        {menuAbierto && (
+          <>
+            {/* Fondo oscuro semitransparente: al tocarlo se cierra */}
+            <motion.div
+              key="drawer-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setMenuAbierto(false)}
+              className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm md:hidden"
+              aria-hidden="true"
+            />
+            {/* Panel lateral que se desliza desde la izquierda (80% ancho) */}
+            <motion.aside
+              key="drawer"
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", stiffness: 380, damping: 38 }}
+              className="fixed left-0 top-0 bottom-0 z-[80] flex w-[80%] max-w-[320px] flex-col bg-[#04090F]/98 md:hidden overflow-y-auto"
+              style={{ borderRight: "1px solid var(--border, rgba(255,255,255,0.08))", boxShadow: "8px 0 32px rgba(0,0,0,0.5)" }}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Menú de navegación"
+            >
+              <div
+                className="safe-area-top flex items-center justify-between px-4"
+                style={{ paddingTop: "env(safe-area-inset-top, 0px)", minHeight: 56 }}
+              >
+                <p style={{ fontWeight: 700, fontSize: 13, letterSpacing: "0.08em", color: "var(--text-primary, #fff)" }}>
+                  STORMPRINT
+                </p>
+                <button
+                  onClick={() => setMenuAbierto(false)}
+                  aria-label="Cerrar menú"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 44,
+                    height: 44,
+                    borderRadius: 10,
+                    border: "none",
+                    background: "transparent",
+                    color: "var(--text-inactive, rgba(255,255,255,0.6))",
+                    cursor: "pointer",
+                    WebkitTapHighlightColor: "transparent",
+                    touchAction: "manipulation",
+                  }}
+                >
+                  <X size={22} />
+                </button>
+              </div>
+
+              <div className="px-2 pb-8">
+                {tabs.map((tab) => {
+                  const esActivo = active === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => {
+                        handleClick(tab);
+                        setMenuAbierto(false);
+                      }}
+                      aria-current={esActivo ? "page" : undefined}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 12,
+                        width: "100%",
+                        minHeight: 48,
+                        padding: "0 14px",
+                        marginBottom: 4,
+                        borderRadius: 12,
+                        border: "none",
+                        background: esActivo ? "rgba(34,211,238,0.12)" : "transparent",
+                        color: esActivo ? "#22d3ee" : "var(--text-inactive, rgba(255,255,255,0.55))",
+                        fontSize: 14,
+                        fontWeight: 600,
+                        fontFamily: "monospace",
+                        textTransform: "uppercase" as const,
+                        letterSpacing: "0.06em",
+                        cursor: "pointer",
+                        textAlign: "left" as const,
+                        WebkitTapHighlightColor: "transparent",
+                        touchAction: "manipulation",
+                      }}
+                    >
+                      <span style={{ display: "flex", alignItems: "center", color: esActivo ? "#22d3ee" : "currentColor" }}>
+                        {tab.icon}
+                      </span>
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
     </nav>
   );
 }

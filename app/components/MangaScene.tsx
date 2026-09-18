@@ -7,47 +7,61 @@ import type { Building, MangaData } from '@/app/lib/manga/types';
 
 export type RenderQuality='high'|'balanced'|'performance';
 export interface LandscapeInstances {trees:{position:number[];height:number;kind:string;rotation:number}[];lamps:number[][]}
-interface Props {data:MangaData;buildings:boolean;vegetation:boolean;quality:RenderQuality;instances:LandscapeInstances|null;heights?:Record<string,number>;onBuilding:(b:Building)=>void;onReady:()=>void}
+interface Props {data:MangaData;buildings:boolean;vegetation:boolean;quality:RenderQuality;rainMmH?:number;instances:LandscapeInstances|null;heights?:Record<string,number>;onBuilding:(b:Building)=>void;onReady:()=>void}
 
 const noRaycast=()=>{};
-function surfaces(material:THREE.Material,facade=false) {
+function surfaces(material:THREE.Material,facade=false,ground=false,wet={value:0}) {
   const m=material.clone() as THREE.MeshStandardMaterial;
   m.side=THREE.DoubleSide;m.roughness=.85;m.metalness=0;
   // World-scale grain: stable across LODs, no unique texture per building.
   m.onBeforeCompile=shader=>{
+    shader.uniforms.mangaWet=wet;
     shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 surfacePosition; varying vec3 surfaceNormal;')
       .replace('#include <begin_vertex>','#include <begin_vertex>\nsurfacePosition=position; surfaceNormal=normal;');
     shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>
-      varying vec3 surfacePosition; varying vec3 surfaceNormal;
+      uniform float mangaWet; varying vec3 surfacePosition; varying vec3 surfaceNormal;
       float grain(vec3 p){return fract(sin(dot(p,vec3(12.9898,78.233,39.425)))*43758.5453);}`)
       .replace('#include <color_fragment>',`#include <color_fragment>
       float variation=sin(surfacePosition.x*.63+sin(surfacePosition.z*.21))*sin(surfacePosition.z*.71);
       diffuseColor.rgb*=.97+.045*variation+.025*grain(floor(surfacePosition*18.));
+      float up=smoothstep(.4,.9,abs(surfaceNormal.y));
+      diffuseColor.rgb*=1.-mangaWet*up*.22;
+      ${ground?`// Asphalt identification uses the exported mineral material color.
+      float grey=max(diffuseColor.r,max(diffuseColor.g,diffuseColor.b))-min(diffuseColor.r,min(diffuseColor.g,diffuseColor.b));
+      float asphalt=(1.-smoothstep(.015,.05,grey))*(1.-smoothstep(.09,.16,max(diffuseColor.r,max(diffuseColor.g,diffuseColor.b))));
+      float grainFade=1.-smoothstep(.025,.12,max(length(dFdx(surfacePosition)),length(dFdy(surfacePosition))));
+      float aggregate=grain(floor(surfacePosition*35.))-.5;
+      diffuseColor.rgb*=1.+asphalt*(aggregate*.32*grainFade+variation*.09);`:''}
       ${facade?`// Inferred facade only on distant LOD; close buildings retain modeled details.
       float wall=1.-smoothstep(.15,.45,abs(surfaceNormal.y));
       vec2 uv=vec2(abs(surfaceNormal.x)>.5?surfacePosition.z:surfacePosition.x,surfacePosition.y)/vec2(3.2,3.1);
       vec2 q=fract(uv);
       float pane=smoothstep(.18,.25,q.x)*(1.-smoothstep(.68,.75,q.x))*smoothstep(.28,.35,q.y)*(1.-smoothstep(.73,.80,q.y));
       float fade=1.-smoothstep(.15,.65,max(fwidth(uv.x),fwidth(uv.y)));
-      diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.19,.29,.31),pane*wall*fade*.6);`:''}`);
+      diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.19,.29,.31),pane*wall*fade*.6);`:''}`)
+      .replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>
+        roughnessFactor=mix(roughnessFactor,.3,mangaWet*smoothstep(.4,.9,abs(surfaceNormal.y)));`);
   };
-  m.customProgramCacheKey=()=> facade?'manga-facade09':'manga-surface08';
+  m.customProgramCacheKey=()=>`manga-surface11-${facade}-${ground}`;
   return m;
 }
 
-export function District({data,buildings,vegetation,quality,instances,heights,onBuilding,onReady}:Props) {
+export function District({data,buildings,vegetation,quality,rainMmH=0,instances,heights,onBuilding,onReady}:Props) {
+  const wet=useMemo(()=>({value:0}),[]);
+  // Instant visual wetness follows the selected hour; no fabricated water volume.
+  wet.value=Number.isFinite(rainMmH)?Math.min(1,Math.max(0,rainMmH)/12):0;
   const {scene}=useGLTF('/models/manga/checkpoint08/district.glb','/models/manga/draco/');
   const local=useMemo(()=>{
     const clone=scene.clone(true);const materials=new Map<string,THREE.Material>();
     clone.traverse(o=>{if(o instanceof THREE.Mesh){
       const original=o.material as THREE.Material;
-      const facade=o.userData.lod==='far',key=original.uuid+(facade?'-facade':'');
-      if(!materials.has(key))materials.set(key,surfaces(original,facade));
+      const facade=o.userData.lod==='far',ground=o.userData.lod==='ground',key=original.uuid+`-${facade}-${ground}`;
+      if(!materials.has(key))materials.set(key,surfaces(original,facade,ground,wet));
       o.material=materials.get(key)!;o.raycast=noRaycast;o.castShadow=true;o.receiveShadow=true;
       if(o.name.startsWith('Tree_')||o.userData.lod==='base'||o.userData.lod==='detail')o.visible=false;
       o.geometry.computeBoundingSphere();
     }});return clone;
-  },[scene]);
+  },[scene,wet]);
   useEffect(()=>{onReady();return()=>{const mats=new Set<THREE.Material>();local.traverse(o=>{if(o instanceof THREE.Mesh)mats.add(o.material as THREE.Material);});mats.forEach(m=>m.dispose());};},[local,onReady]);
   const groups=useMemo(()=>{
     const list: {mesh:THREE.Mesh;kind:string;center:THREE.Vector3}[]=[];

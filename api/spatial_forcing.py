@@ -8,6 +8,8 @@ class SpatialHour(BaseModel):
     hour: int
     timestamp: str
     rain_mm_h: float | None
+    precipitation_source_timestamp: str
+    interval_end: str
     wind_kmh: float | None = None
     wind_direction_deg: float | None = None
 
@@ -19,6 +21,7 @@ class SpatialForcing(BaseModel):
     step_seconds: int = 3600
     rain_units: str = 'mm/h (hourly precipitation total / 1 h)'
     spatial_support: str = 'single weather model grid point; uniform over Manga'
+    precipitation_interval: str = 'forward interval [timestamp, interval_end); precipitation reported at interval_end'
     hours: list[SpatialHour] = Field(default_factory=list)
 
 def make_spatial_forcing(hourly: list[dict], count: int, now: datetime | None = None) -> SpatialForcing:
@@ -37,8 +40,12 @@ def make_spatial_forcing(hourly: list[dict], count: int, now: datetime | None = 
         return float(v) if isinstance(v,(int,float)) and math.isfinite(v) else None
     hours=[]
     for i in range(count):
-        stamp=start+timedelta(hours=i);row=lookup.get(stamp,{})
-        rain=None if row.get('precipitation_missing',False) else finite(row.get('precipitation'))
+        stamp=start+timedelta(hours=i);end=stamp+timedelta(hours=1)
+        row=lookup.get(stamp,{})
+        # Open-Meteo precipitation is the sum of the PRECEDING hour.
+        # Source 11:00 drives the interval [10:00,11:00), not [11:00,12:00).
+        rain_row=lookup.get(end,{})
+        rain=None if rain_row.get('precipitation_missing',False) else finite(rain_row.get('precipitation'))
         if rain is not None and rain<0: rain=None
-        hours.append(SpatialHour(hour=i,timestamp=stamp.isoformat(),rain_mm_h=rain,wind_kmh=finite(row.get('wind_speed_10m')),wind_direction_deg=finite(row.get('wind_direction_10m'))))
+        hours.append(SpatialHour(hour=i,timestamp=stamp.isoformat(),interval_end=end.isoformat(),precipitation_source_timestamp=end.isoformat(),rain_mm_h=rain,wind_kmh=finite(row.get('wind_speed_10m')),wind_direction_deg=finite(row.get('wind_direction_10m'))))
     return SpatialForcing(retrieved_at=now.isoformat(),start_time=start.isoformat(),hours=hours)

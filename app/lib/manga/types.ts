@@ -19,6 +19,8 @@ export interface Scenario {
   seaHeadM: number | null; forcing?: Forcing[];
 }
 export interface WaterResult {
+  /** Volume-preserving visual levels over terrain triangles, computed in worker. */
+  levels?: number[];
   seconds: number; depth: number[]; flux: number[]; rainM3: number; lossM3: number;
   seaM3: number; storedM3: number; balanceM3: number; maxDepthM: number;
 }

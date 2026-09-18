@@ -1,4 +1,5 @@
 import { SurfaceWater } from './solver';
+import { waterLevels } from './waterSurface';
 import type { Grid, Scenario } from './types';
 let engine: SurfaceWater | null=null;
 let key='';
@@ -12,6 +13,7 @@ self.onmessage=(event: MessageEvent<{id:number;grid?:Grid;scenario:Scenario;seco
     if(!engine || key!==nextKey || seconds<engine.seconds) {engine=new SurfaceWater(cachedGrid,scenario);key=nextKey;}
     const start=performance.now();
     const result=engine.advanceTo(seconds);
+    result.levels=waterLevels(cachedGrid,result);
     self.postMessage({id,result,computeMs:performance.now()-start});
   } catch(error) { self.postMessage({id,error:error instanceof Error?error.message:'No se pudo calcular el agua.'}); }
 };

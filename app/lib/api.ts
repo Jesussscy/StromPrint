@@ -164,7 +164,8 @@ export interface PrediccionResponse {
 export interface SpatialForcing {
   source: string; kind: string; retrieved_at: string; start_time: string;
   step_seconds: number; rain_units: string; spatial_support: string;
-  hours: { hour: number; timestamp: string; rain_mm_h: number|null; wind_kmh: number|null; wind_direction_deg: number|null }[];
+  precipitation_interval?: string;
+  hours: { hour: number; timestamp: string; interval_end?:string; precipitation_source_timestamp?:string; rain_mm_h: number|null; wind_kmh: number|null; wind_direction_deg: number|null }[];
 }
 
 export interface DiaPronostico {

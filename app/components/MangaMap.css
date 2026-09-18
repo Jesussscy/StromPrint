@@ -79,6 +79,9 @@
 @media(prefers-reduced-motion:reduce){.manga-model-loading svg{animation:none}.manga-viewer *{scroll-behavior:auto!important;transition:none!important}}
 
 /* Mobile: the map owns gestures; controls become a thumb-reachable sheet. */
+.manga-zone-water{position:absolute;z-index:2;top:215px;left:24px;width:285px;padding:12px;background:#102c38ed;border:1px solid #91b5b044;border-radius:12px;font-size:12px;pointer-events:none}
+.manga-zone-water>b{display:block;margin-bottom:8px}.manga-zone-water>div{display:flex;gap:18px}.manga-zone-water strong{display:block;font-size:17px;color:#bdebf2}.manga-zone-water small{display:block;margin-top:7px;font-size:10px;line-height:1.4;color:#b4ccc9}
+@media(max-width:767px){.manga-zone-water{top:108px;left:12px;width:calc(100% - 82px);max-width:300px;padding:9px;font-size:11px}.manga-zone-water strong{font-size:15px}.manga-zone-water small{font-size:9px}.manga-zone-water small:last-child{display:none}}
 .manga-viewer canvas{user-select:none;-webkit-user-select:none}
 @media (max-width:767px){
   .manga-panel{top:auto;bottom:0;left:0;right:0;width:auto;max-height:72%;padding:16px max(16px,env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));border-radius:18px 18px 0 0;box-shadow:0 -12px 38px #00101575;touch-action:pan-y}

@@ -7,12 +7,13 @@ import { OrbitControls, useGLTF, useProgress } from '@react-three/drei';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { Layers, Home, Compass, Play, Pause, RotateCcw, X, Droplets, Building2, Search, MapPin, Sun, Sunset, Waves, Focus, ChevronRight, LoaderCircle } from 'lucide-react';
-import { ZONAS_MANGA, RIESGO_META, type ZonaManga, type ZonaViva } from '@/app/lib/zonasManga';
+import { ZONAS_MANGA, type ZonaManga, type ZonaViva } from '@/app/lib/zonasManga';
 import type { MeteorologiaResumen, PuntoPrediccion, WaterStateResponse, SpatialForcing } from '@/app/lib/api';
 import { apiScenario, insideBoundary, zoneLocal } from '@/app/lib/manga/adapter';
 import type { Building, MangaData, Scenario, WaterResult } from '@/app/lib/manga/types';
 import { District, RenderBudget, type RenderQuality, type LandscapeInstances } from './MangaScene';
 import { waterSurface } from '@/app/lib/manga/waterSurface';
+import { zoneCells, summarizeZones, waterColor } from '@/app/lib/manga/zones';
 
 interface Props {
   nivelAguaCm?: number; nivelMaximoCm?: number; zonasVivas?: Map<number,ZonaViva>;
@@ -164,7 +165,12 @@ function ModelLoading() {
 function Water({data,result,reduced,flow}:{data:MangaData;result:WaterResult|null;reduced:boolean;flow:boolean}) {
   const material=useMemo(()=>new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,uniforms:{time:{value:0}},
     vertexShader:'attribute float depth; varying vec3 pos; varying float d; void main(){pos=position;d=depth;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-    fragmentShader:'uniform float time; varying vec3 pos; varying float d; void main(){float wave=sin(pos.x*.15+time*1.7)*sin(pos.z*.19-time);vec3 a=vec3(.12,.72,.8);vec3 b=vec3(.015,.24,.65);vec3 c=mix(a,b,min(d/1.5,1.))+wave*.04;gl_FragColor=vec4(c,.68);}'
+    fragmentShader:`uniform float time; varying vec3 pos; varying float d;
+      void main(){float wave=sin(pos.x*.65+time*1.1)*sin(pos.z*.73-time*.8);
+        vec3 view=normalize(cameraPosition-pos);float fresnel=pow(1.-abs(view.y),3.);
+        vec3 c=mix(vec3(.24,.34,.32),vec3(.055,.19,.24),clamp(d/.8,0.,1.));
+        c=mix(c,vec3(.55,.70,.74),fresnel*.6)+wave*.018;
+        float edge=smoothstep(0.,.018,d);gl_FragColor=vec4(c,mix(.18,.76,clamp(d/.18,0.,1.))*edge);}`
   }),[]);
   const geometry=useMemo(()=>{
     const {positions:p,depths:d}=waterSurface(data.grid,result);
@@ -174,7 +180,7 @@ function Water({data,result,reduced,flow}:{data:MangaData;result:WaterResult|nul
     const p:number[]=[];
     if(result)data.grid.cells.forEach((c,i)=>{
       if(i%4||result.depth[i]<.01)return;const x=result.flux[i*2],y=result.flux[i*2+1],len=Math.hypot(x,y);if(len<.0001)return;
-      const dx=x/len*15,dz=-y/len*15,h=c.z+result.depth[i]+2;
+      const dx=x/len*15,dz=-y/len*15,h=(result.levels?.[i]??c.z+result.depth[i])+2;
       const end=[c.x+dx,h,-c.y+dz];p.push(c.x,h,-c.y,...end,...end,end[0]-dx*.35-dz*.25,h,end[2]-dz*.35+dx*.25,...end,end[0]-dx*.35+dz*.25,h,end[2]-dz*.35-dx*.25);
     });
     const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));return g;
@@ -281,6 +287,7 @@ export default function MangaMap(props:Props) {
   const targetSeconds=mode==='manual'?seconds:(props.currentHour??0)*3600;
   const forcingHour=props.spatialForcing?.hours.find(hour=>hour.hour===Math.floor(props.currentHour??0));
   const forecastRain=forcingHour?.rain_mm_h??0;
+  const hasRain=mode==='manual'||(forcingHour?.rain_mm_h!=null&&Number.isFinite(forcingHour.rain_mm_h));
   const rain=mode==='manual'?(seconds<scenario.durationH*3600?scenario.rainMmH:0):forecastRain;
   useEffect(()=>{setBaseline(new URLSearchParams(location.search).get('mangaBaseline')==='1');},[]);
   useEffect(()=>{const abort=new AbortController();fetch('/models/manga/checkpoint08/instances.json',{signal:abort.signal}).then(r=>r.ok?r.json():null).then(setInstances).catch(()=>{});return()=>abort.abort();},[]);
@@ -323,6 +330,9 @@ export default function MangaMap(props:Props) {
   const zones=data?ZONAS_MANGA:[];
   const focusedZone=ZONAS_MANGA.find(z=>z.id===props.focusZonaId);
   const outsideCoverage=!!(data&&focusedZone&&!insideBoundary(...zoneLocal(...focusedZone.coordenadas),data.boundary));
+  const zoneMembership=useMemo(()=>data?zoneCells(data,ZONAS_MANGA):new Map<number,number[]>(),[data]);
+  const spatialZones=useMemo(()=>data?summarizeZones(data,zoneMembership,result):new Map(),[data,zoneMembership,result]);
+  const focusedWater=focusedZone?spatialZones.get(focusedZone.id):undefined;
   useEffect(()=>{if(props.focusZonaId!=null){setSelected(null);setBuildingFocus(null);setLayers(previous=>({...previous,zones:true}));}},[props.focusZonaId]);
   const searchResults=useMemo(()=>{
     if(!data)return [];
@@ -352,8 +362,8 @@ export default function MangaMap(props:Props) {
       <Camera view={view} focus={props.focusZonaId??null} buildingFocus={buildingFocus} data={data} reduced={reduced} street={visualMetadata?.streetCamera}/>
       {displayedBuilding&&layers.buildings&&<SelectionOutline building={displayedBuilding}/>}
       {layers.water&&<Water data={data} result={result} reduced={reduced} flow={layers.flow}/>}
-      {layers.rain&&rain>0&&<Rain data={data} intensity={rain} wind={mode==='api'?(forcingHour?.wind_kmh??0):0} direction={mode==='api'?forcingHour?.wind_direction_deg:null} quality={quality} moving={moving} reduced={reduced}/>}
-      {layers.zones&&zones.map(z=>{const [x,y]=zoneLocal(...z.coordenadas);const risk=props.zonasVivas?.get(z.id)?.riesgo??'NORMAL';return <mesh key={z.id} position={[x,35,-y]} onClick={e=>{if(e.delta>4)return;e.stopPropagation();setSelected(null);props.onSelectZona?.(z);}}><sphereGeometry args={[props.focusZonaId===z.id?15:coarsePointer?12:9,10,8]}/><meshBasicMaterial color={RIESGO_META[risk].color}/></mesh>;})}
+      {layers.rain&&hasRain&&rain>0&&<Rain data={data} intensity={rain} wind={mode==='api'?(forcingHour?.wind_kmh??0):0} direction={mode==='api'?forcingHour?.wind_direction_deg:null} quality={quality} moving={moving} reduced={reduced}/>}
+      {layers.zones&&zones.map(z=>{const [x,y]=zoneLocal(...z.coordenadas);const water=spatialZones.get(z.id);return <mesh key={z.id} position={[x,35,-y]} onClick={e=>{if(e.delta>4)return;e.stopPropagation();setSelected(null);props.onSelectZona?.(z);}}><sphereGeometry args={[props.focusZonaId===z.id?15:coarsePointer?12:9,10,8]}/><meshBasicMaterial color={waterColor(water?.meanCm)}/></mesh>;})}
       <Metrics onMetrics={(f,c,t,m)=>{setFps(f);setDrawCalls(c);setTriangles(t);setGeometryMiB(m);}} onSlow={()=>setLowResolution(true)} benchmark={benchmark} onBenchmark={setBenchmarkResult}/>
     </Canvas></GraphicsBoundary>:<div className="manga-fallback">{error??'Preparando Manga…'}{error&&<button onClick={()=>setRetry(x=>x+1)}>Reintentar</button>}</div>}
 
@@ -363,7 +373,13 @@ export default function MangaMap(props:Props) {
     <nav className="manga-views" aria-label="Vistas del barrio">{VIEWS.map(({kind,label,Icon})=><button key={kind} title={kind==='top'?'Vista superior, norte arriba':`Vista ${label.toLowerCase()}`} aria-label={`Vista ${label.toLowerCase()}`} aria-pressed={view.kind===kind&&!buildingFocus} className={view.kind===kind&&!buildingFocus?'active':''} onClick={()=>chooseView(kind)}><Icon size={14}/><span>{label}</span></button>)}</nav>
     <div className="manga-light-label" aria-hidden="true">{lightMode==='night'?'Luz nocturna':lightMode==='sunset'?'Luz de atardecer':'Luz de día'}</div>
     {searchOpen&&<aside className="manga-search" aria-label="Buscar en Manga"><div className="manga-search-field"><Search size={17}/><input ref={searchInput} value={query} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>{if(e.key==='Escape')setSearchOpen(false);if(e.key==='Enter'&&searchResults.length===1)chooseBuilding(searchResults[0]);}} placeholder="Nombre, dirección o código OSM" aria-label="Nombre, dirección o código OSM"/><button aria-label="Cerrar búsqueda" onClick={()=>setSearchOpen(false)}><X size={16}/></button></div><p>{query?'Coincidencias en el mapa':'Lugares para empezar'}</p><div className="manga-search-results">{searchResults.map(b=><button key={b.id} onClick={()=>chooseBuilding(b)}><MapPin size={16}/><span><b>{buildingName(b,visualMetadata?.buildings[b.id])}</b><small>{buildingAddress(visualMetadata?.buildings[b.id])||b.id.replace('osm-way-','OSM · ')}</small></span><ChevronRight size={15}/></button>)}</div>{!searchResults.length&&<div className="manga-search-empty">No encontramos ese edificio. Prueba un nombre más corto o selecciona su huella en el mapa.</div>}<small className="manga-search-note">Las direcciones disponibles provienen de OpenStreetMap; muchos edificios todavía no tienen una.</small></aside>}
-    <div className="manga-readings"><div><Droplets size={16}/><b>{rain.toFixed(1)}</b><span>mm/h</span></div><div><b>{result?(result.seconds/3600).toFixed(2):'0.00'}</b><span>h simuladas {busy?'· calculando…':''}</span></div><small>{mode==='api'?'Lluvia y viento: serie horaria API':'Escenario manual'} · SRTM ≈30 m</small></div>
+    <div className="manga-readings"><div><Droplets size={16}/><b>{hasRain?rain.toFixed(1):'—'}</b><span>{hasRain?'mm/h':'sin dato'}</span></div><div><b>{result?(result.seconds/3600).toFixed(2):'—'}</b><span>h calculadas {busy?`· buscando +${(targetSeconds/3600).toFixed(1)} h…`:''}</span></div><small>{mode==='api'?'Lluvia API del intervalo seleccionado':'Escenario manual'} · inicio seco · SRTM ≈30 m</small></div>
+    {focusedZone&&!selected&&!panel&&!searchOpen&&<aside className="manga-zone-water" aria-label="Agua simulada en la zona">
+      <b>{focusedZone.nombre}</b>
+      {focusedWater?<><div><span>Media <strong>{focusedWater.meanCm.toFixed(1)} cm</strong></span><span>Máx. celda <strong>{focusedWater.maxCm.toFixed(1)} cm</strong></span></div>
+        <small>{focusedWater.cells} celdas · {(focusedWater.wetAreaM2/10000).toFixed(2)} ha en celdas ≥1 cm · +{(focusedWater.seconds/3600).toFixed(1)} h{busy?' · actualizando…':''}</small></>:<p>{outsideCoverage?'Fuera de cobertura; coordenada por verificar.':busy?'Calculando el agua de esta zona…':'Sin cálculo disponible para esta hora.'}</p>}
+      <small>Acumulación del terreno en radio de {focusedZone.radio_influencia} m. Estimación espacial, distinta del indicador zonal del panel.</small>
+    </aside>}
     <div className="manga-status" aria-live="polite">{focusedZone&&<strong>{focusedZone.nombre}{outsideCoverage?' · Coordenada fuera del área modelada; ubicación por verificar.':''}</strong>}{mode==='api'?`${api.label}${freshness?` · actualización ${freshness} COT${stale?' (antigua)':''}`:' · fecha de consulta no disponible'}`:'Lluvia uniforme y condiciones manuales; los paneles externos conservan su serie.'}{simError&&<strong role="alert">{simError}</strong>}</div>
     <div className="manga-credit"><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap</a> · NASA SRTM <span>{fps} FPS</span></div>
 

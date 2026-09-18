@@ -1,5 +1,10 @@
 # Manga en StormPrint — entrega local
 
+**Entrega ligera nueva, checkpoint14:** [guía y estado del contrato 3D](CHECKPOINT14_CONTRACT.md),
+visor `/manga-3d`, GLB independiente de 27.627 triángulos con origen UTM solicitado.
+El relieve es hipotético y los hitos son proxies sin verificar; no reemplaza el solver ni
+certifica una reconstrucción exacta. El resto de este documento describe la entrega histórica.
+
 El apartado del mapa usa `MangaMap`: Three.js, React Three Fiber y un GLB local generado en **Blender 5.2.2 LTS**, versión realmente ejecutada. Se conserva el dashboard, su línea temporal, selección y paneles. No se creó ningún commit ni se publicó el proyecto.
 
 ## Archivos

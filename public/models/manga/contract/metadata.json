@@ -1,0 +1,129 @@
+{
+  "crs": "EPSG:32618",
+  "originLonLat": [
+    -75.5325,
+    10.413
+  ],
+  "originUTM": [
+    441714.8023507336,
+    1151124.753373596
+  ],
+  "units": "metres",
+  "blenderAxes": "E,N,H",
+  "gltfAxes": "E,H,-N",
+  "verticalDatum": "Hypothetical MSL from user; not surveyed or linked to EGM96",
+  "sourceSHA256": "82c665e7d8e8cb568aa1da1d981f20fe232d6b95783d719aaddd0ed4c3a96565",
+  "boundarySource": "https://www.openstreetmap.org/way/1385212852",
+  "license": "© OpenStreetMap contributors, ODbL 1.0",
+  "areaM2": 1838986.088584229,
+  "requestedAreaM2": 1350000,
+  "areaOutsideRequestedBboxM2": 11584.210747392404,
+  "bounds": [
+    -1486.6782482480048,
+    -1062.377055492252,
+    786.0010346148047,
+    720.4205042901449
+  ],
+  "waterBounds": [
+    -1586.6782482480048,
+    -1162.377055492252,
+    1360.5015792979393,
+    1152.562226628419
+  ],
+  "terrainMethod": "Inverse-distance interpolation of three user anchors; hypothetical",
+  "certified": false,
+  "hydraulicSolverCompatible": false,
+  "landmarks": [
+    {
+      "name": "Puente_Roman",
+      "lon": -75.5414,
+      "lat": 10.4182,
+      "position": [
+        -973.2011673090747,
+        576.6192326226737,
+        2.5
+      ],
+      "distanceToBoundaryM": 63.12382954355655,
+      "insideBoundary": true,
+      "provenance": "User specification; position, elevation and dimensions unverified"
+    },
+    {
+      "name": "Puente_Las_Palmas",
+      "lon": -75.5375,
+      "lat": 10.4198,
+      "position": [
+        -546.0185696472763,
+        752.8059099623933,
+        2.2
+      ],
+      "distanceToBoundaryM": 171.68203711730627,
+      "insideBoundary": false,
+      "provenance": "User specification; position, elevation and dimensions unverified"
+    },
+    {
+      "name": "Puente_Jimenez",
+      "lon": -75.533,
+      "lat": 10.419,
+      "position": [
+        -53.61355359049048,
+        663.5169972779695,
+        2.0
+      ],
+      "distanceToBoundaryM": 326.40983962278443,
+      "insideBoundary": false,
+      "provenance": "User specification; position, elevation and dimensions unverified"
+    },
+    {
+      "name": "Puente_Bazurto",
+      "lon": -75.5235,
+      "lat": 10.4105,
+      "position": [
+        984.6714974402566,
+        -278.0674982094206,
+        1.5
+      ],
+      "distanceToBoundaryM": 329.97198726982464,
+      "insideBoundary": false,
+      "provenance": "User specification; position, elevation and dimensions unverified"
+    },
+    {
+      "name": "Fortin_Pastelillo",
+      "lon": -75.5435,
+      "lat": 10.4178,
+      "position": [
+        -1203.1369220160414,
+        532.784359997604,
+        1.8
+      ],
+      "distanceToBoundaryM": 54.50519633474221,
+      "insideBoundary": false,
+      "provenance": "User specification; position, elevation and dimensions unverified"
+    },
+    {
+      "name": "Club_Nautico_Marina",
+      "lon": -75.538,
+      "lat": 10.411,
+      "position": [
+        -602.3985858358792,
+        -220.1252578443382,
+        1.2
+      ],
+      "distanceToBoundaryM": 126.92581746063244,
+      "insideBoundary": true,
+      "provenance": "User specification; position, elevation and dimensions unverified"
+    },
+    {
+      "name": "Puerto_SPRC",
+      "lon": -75.531,
+      "lat": 10.406,
+      "position": [
+        162.89198540482903,
+        -774.2707287464291,
+        2.1
+      ],
+      "distanceToBoundaryM": 115.31983278421744,
+      "insideBoundary": true,
+      "provenance": "User specification; position, elevation and dimensions unverified"
+    }
+  ]
+}

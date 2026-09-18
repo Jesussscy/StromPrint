@@ -3,8 +3,8 @@ import type { Scenario } from './types';
 
 export function apiScenario(source: SpatialForcing | null | undefined): {scenario:Scenario|null;label:string;updated:string|null} {
   if(source?.hours.length) {
-    if(source.hours.some(p=>p.rain_mm_h===null||!Number.isFinite(p.rain_mm_h))) return {scenario:null,label:'Serie meteorológica incompleta: agua no calculada',updated:source.retrieved_at};
-    return {scenario:{rainMmH:0,durationH:168,infiltrationMmH:2,drainageMmH:3,seaHeadM:null,forcing:source.hours.map(p=>({hour:p.hour,rainMmH:p.rain_mm_h!}))},label:'Open-Meteo horario · cálculo espacial exploratorio',updated:source.retrieved_at};
+    if(source.step_seconds!==3600||source.hours.some((p,i)=>p.hour!==i||p.rain_mm_h===null||!Number.isFinite(p.rain_mm_h)||p.rain_mm_h<0||p.rain_mm_h>300)) return {scenario:null,label:'Serie meteorológica incompleta o fuera de rango: agua no calculada',updated:source.retrieved_at};
+    return {scenario:{rainMmH:0,durationH:Math.min(168,source.hours.length),infiltrationMmH:2,drainageMmH:3,seaHeadM:null,forcing:source.hours.map(p=>({hour:p.hour,rainMmH:p.rain_mm_h!}))},label:'Open-Meteo horario · cálculo espacial exploratorio',updated:source.retrieved_at};
   }
   // A snapshot is not a historical series: do not extend it into a false forecast.
   return {scenario:null,label:'Sin serie meteorológica original; usa un escenario manual',updated:null};

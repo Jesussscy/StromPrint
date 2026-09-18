@@ -77,3 +77,11 @@
   .manga-heading h3 span{display:none}
 }
 @media(prefers-reduced-motion:reduce){.manga-model-loading svg{animation:none}.manga-viewer *{scroll-behavior:auto!important;transition:none!important}}
+
+/* Mobile: the map owns gestures; controls become a thumb-reachable sheet. */
+.manga-viewer canvas{user-select:none;-webkit-user-select:none}
+@media (max-width:767px){
+  .manga-panel{top:auto;bottom:0;left:0;right:0;width:auto;max-height:72%;padding:16px max(16px,env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));border-radius:18px 18px 0 0;box-shadow:0 -12px 38px #00101575;touch-action:pan-y}
+  .manga-panel-title{position:sticky;top:-16px;padding-top:10px;background:#0b222ff5;z-index:1}
+  .manga-search{touch-action:pan-y}
+}

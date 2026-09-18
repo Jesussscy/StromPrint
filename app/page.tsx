@@ -12,7 +12,6 @@ import WeatherBadge from "@/app/components/WeatherBadge";
 import ForecastDayCard from "@/app/components/ForecastDayCard";
 import ForecastChart from "@/app/components/ForecastChart";
 import CommandCenter from "@/app/components/CommandCenter";
-import RainParticles from "@/app/components/RainParticles";
 import AlertDrawer from "@/app/components/AlertDrawer";
 import AnimatedCounter from "@/app/components/AnimatedCounter";
 import SummaryDashboard from "@/app/components/SummaryDashboard";
@@ -56,7 +55,6 @@ import {
 } from "@/app/lib/export";
 import {
   playAlerta,
-  sirenaOn,
   sirenaOff,
   soundEnabled,
   setSoundEnabled,
@@ -290,7 +288,7 @@ function leerParamURL(nombre: string): string | null {
   return new URLSearchParams(window.location.search).get(nombre);
 }
 
-function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; onToggleStorm: () => void }) {
+function DashboardEmbedded() {
   const [prediccion, setPrediccion] = useState<PrediccionResponse | null>(null);
   const [currentHour, setCurrentHour] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -353,6 +351,9 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
 
   const onSelectZona = useCallback((z: { id: number } | null) => {
     setZonaEnfocada(z ? z.id : null);
+    if (z) document.querySelector<HTMLElement>('[aria-label="Modelo 3D del barrio Manga"]')?.scrollIntoView({
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center',
+    });
   }, []);
 
   const esMovil = useIsMobile();
@@ -512,16 +513,6 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
   }, [activePunto, sonido]);
 
   // Sirena de dos tonos mientras dura la tormenta simulada.
-  useEffect(() => {
-    if (!sonido) {
-      sirenaOff();
-      return;
-    }
-    if (stormMode) sirenaOn();
-    else sirenaOff();
-    return () => sirenaOff();
-  }, [stormMode, sonido]);
-
   const toggleSonido = () => {
     const nv = !sonido;
     setSonido(nv);
@@ -563,7 +554,6 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
         isPlaying={isPlaying}
         isLoading={isLoading}
         error={error}
-        stormMode={stormMode}
         velocidad={velocidad}
         sonido={sonido}
         copiado={copiado}
@@ -576,7 +566,6 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
         onSelectZona={onSelectZona}
         onTogglePlay={onTogglePlay}
         onScrub={handleScrub}
-        onToggleStorm={onToggleStorm}
         onReintentar={() => loadPrediction()}
         onSetVelocidad={setVelocidad}
         onToggleSonido={toggleSonido}
@@ -672,7 +661,6 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
             focusZonaId={zonaEnfocada}
             onSelectZona={onSelectZona}
             horaLocal={Math.floor(currentHour) % 24}
-            stormMode={stormMode}
             puntoMeteo={activePunto}
               forecastPoints={prediccion?.puntos}
               spatialForcing={prediccion?.forzamiento_espacial}
@@ -684,58 +672,12 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
           />
         </LazyMount>
 
-        {/* Botón "Simular tormenta" (solo desktop, flotando sobre el mapa) */}
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={onToggleStorm}
-          className={`hidden md:flex absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] rounded-xl px-6 py-3 font-mono text-[11px] uppercase tracking-wider transition-all duration-300 ${
-            stormMode
-              ? "glass-glow text-risk-emergency border-risk-emergency/30"
-              : "glass-glow text-cyan"
-          }`}
-        >
-          {stormMode ? (
-            <span className="flex items-center gap-2">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2" width="20" height="20" rx="2" /></svg>
-              Detener tormenta
-            </span>
-          ) : (
-            <span className="flex items-center gap-2">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21" /></svg>
-              Simular tormenta
-            </span>
-          )}
-        </motion.button>
       </div>
 
       {/* ═══ FILA 2.5: LÍNEA TEMPORAL (pegada bajo el mapa) ═══ */}
       <div className="ord-4">
         <TimelineSlider puntos={prediccion?.puntos ?? []} currentHour={currentHour} onScrub={handleScrub} isPlaying={isPlaying} onTogglePlay={onTogglePlay} />
       </div>
-
-      {/* Botón "Simular tormenta" (solo móvil: fijo debajo del mapa, no flotante) */}
-      <motion.button
-        whileTap={{ scale: 0.97 }}
-        onClick={onToggleStorm}
-        className={`md:hidden w-full rounded-xl px-6 py-4 font-mono text-xs uppercase tracking-wider transition-all duration-300 min-h-[48px] ${
-          stormMode
-            ? "glass-glow text-risk-emergency border-risk-emergency/30"
-            : "glass-glow text-cyan"
-        }`}
-      >
-        {stormMode ? (
-          <span className="flex items-center justify-center gap-2">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2" width="20" height="20" rx="2" /></svg>
-            Detener tormenta
-          </span>
-        ) : (
-          <span className="flex items-center justify-center gap-2">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21" /></svg>
-            Simular tormenta
-          </span>
-        )}
-      </motion.button>
 
       {/* ═══ FILA 4: GRÁFICO DE PROYECCIÓN (detrás del mapa en móvil) ═══ */}
       <div className="ord-5">
@@ -1071,7 +1013,6 @@ export default function LandingPage() {
   const [prediccion, setPrediccion] = useState<PrediccionResponse | null>(null);
   const [cargandoPrediccion, setCargandoPrediccion] = useState(true);
   const [errorPrediccion, setErrorPrediccion] = useState<string | null>(null);
-  const [stormMode, setStormMode] = useState(false);
 
   const cargarPrediccion = useCallback(() => {
     setCargandoPrediccion(true);
@@ -1105,7 +1046,6 @@ export default function LandingPage() {
       <Navbar />
       <CursorTracker />
       <NotificationBanner />
-      <RainParticles active={stormMode} intensity={stormMode ? 0.8 : 0} />
       <AlertDrawer
         nivelAguaCm={prediccion?.nivel_actual_cm}
         nivelMaximo={prediccion?.nivel_maximo_cm}
@@ -1159,7 +1099,7 @@ export default function LandingPage() {
             </p>
           </motion.div>
         </div>
-        <DashboardEmbedded stormMode={stormMode} onToggleStorm={() => setStormMode((s) => !s)} />
+        <DashboardEmbedded />
       </section>
 
       <ForecastSection puntos={prediccion?.puntos ?? []} onSeleccionarPunto={onSeleccionarPunto} />

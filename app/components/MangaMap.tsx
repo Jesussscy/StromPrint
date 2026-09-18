@@ -12,11 +12,12 @@ import type { MeteorologiaResumen, PuntoPrediccion, WaterStateResponse, SpatialF
 import { apiScenario, insideBoundary, zoneLocal } from '@/app/lib/manga/adapter';
 import type { Building, MangaData, Scenario, WaterResult } from '@/app/lib/manga/types';
 import { District, RenderBudget, type RenderQuality, type LandscapeInstances } from './MangaScene';
+import { waterSurface } from '@/app/lib/manga/waterSurface';
 
 interface Props {
   nivelAguaCm?: number; nivelMaximoCm?: number; zonasVivas?: Map<number,ZonaViva>;
   focusZonaId?: number|null; onSelectZona?: (zona:ZonaManga|null)=>void; horaLocal?: number;
-  stormMode?: boolean; puntoMeteo?: {lluvia_mm_h?:number;marea_cm?:number}|null;
+  puntoMeteo?: {lluvia_mm_h?:number;marea_cm?:number}|null;
   meteorologia?: MeteorologiaResumen|null; liveWater?: WaterStateResponse|null; liveLatenciaMs?:number|null;
   forecastPoints?: PuntoPrediccion[]; currentHour?:number; sourceLabel?:string;
   spatialForcing?: SpatialForcing|null;
@@ -109,9 +110,14 @@ function Camera({view,focus,buildingFocus,data,reduced,street}:{view:CameraView;
   },[move,view,size.width,size.height,data,street]);
   useEffect(()=>{
     if(focus===null)return;const z=ZONAS_MANGA.find(z=>z.id===focus);if(!z)return;
-    const [x,y]=zoneLocal(...z.coordenadas);if(!insideBoundary(x,y,data.boundary))return;
-    move([x+350,480,-y+450],[x,0,-y]);
-  },[move,focus,data]);
+    // Preserve legacy coordinates, including points outside the model coverage.
+    // The UI flags their unverified location instead of silently ignoring taps.
+    const [x,y]=zoneLocal(...z.coordenadas);
+    // A zone selection is a destination, especially on a phone: keep it close
+    // enough to identify streets instead of returning to the full district.
+    const compact=size.width<768,reach=compact?150:350,altitude=compact?210:480;
+    move([x+reach,altitude,-y+reach],[x,0,-y]);
+  },[move,focus,data,size.width]);
   useEffect(()=>{
     if(!buildingFocus)return;
     const b=buildingFocus.building,[x,y,z]=buildingCenter(b),points=b.rings[0];
@@ -127,7 +133,7 @@ function Camera({view,focus,buildingFocus,data,reduced,street}:{view:CameraView;
   });
   // The street target follows an uphill road. Allow its slightly upward gaze;
   // the aerial limit otherwise raises the camera and prevents arrival.
-  return <OrbitControls ref={ref} makeDefault minDistance={12} maxDistance={8000} maxPolarAngle={view.kind==='urban'?Math.PI*.53:Math.PI*.485} enableDamping={!reduced} dampingFactor={.1} onStart={()=>{destination.current=null;}} touches={{ONE:THREE.TOUCH.ROTATE,TWO:THREE.TOUCH.DOLLY_PAN}} />;
+  return <OrbitControls ref={ref} makeDefault minDistance={12} maxDistance={8000} maxPolarAngle={view.kind==='urban'?Math.PI*.53:Math.PI*.485} enableDamping={!reduced} dampingFactor={size.width<768?.14:.1} rotateSpeed={size.width<768?.72:1} zoomSpeed={size.width<768?.82:1} panSpeed={size.width<768?.8:1} onStart={()=>{destination.current=null;}} touches={{ONE:THREE.TOUCH.ROTATE,TWO:THREE.TOUCH.DOLLY_PAN}} />;
 }
 
 function Lighting({mode,lowResolution,layers,modelRevision}:{mode:LightMode;lowResolution:boolean;layers:LayersState;modelRevision:number}) {
@@ -161,11 +167,7 @@ function Water({data,result,reduced,flow}:{data:MangaData;result:WaterResult|nul
     fragmentShader:'uniform float time; varying vec3 pos; varying float d; void main(){float wave=sin(pos.x*.15+time*1.7)*sin(pos.z*.19-time);vec3 a=vec3(.12,.72,.8);vec3 b=vec3(.015,.24,.65);vec3 c=mix(a,b,min(d/1.5,1.))+wave*.04;gl_FragColor=vec4(c,.68);}'
   }),[]);
   const geometry=useMemo(()=>{
-    const p:number[]=[],d:number[]=[];
-    if(result)data.grid.cells.forEach((c,i)=>{
-      const depth=result.depth[i];if(depth<.003)return;
-      for(const t of c.triangles)for(const v of t){p.push(v[0],v[2]+depth+.035,-v[1]);d.push(depth);}
-    });
+    const {positions:p,depths:d}=waterSurface(data.grid,result);
     const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setAttribute('depth',new THREE.Float32BufferAttribute(d,1));return g;
   },[data,result]);
   const arrows=useMemo(()=>{
@@ -182,22 +184,43 @@ function Water({data,result,reduced,flow}:{data:MangaData;result:WaterResult|nul
   return <group><mesh geometry={geometry} material={material} />{flow&&<lineSegments geometry={arrows}><lineBasicMaterial color="#c2fbef" transparent opacity={.65}/></lineSegments>}</group>;
 }
 
-function Rain({data,intensity,wind,reduced}:{data:MangaData;intensity:number;wind:number;reduced:boolean}) {
-  const ref=useRef<THREE.LineSegments>(null);
-  const count=Math.min(1000,Math.ceil(intensity*10));
-  const geometry=useMemo(()=>{const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(count*6),3));return g;},[count]);
-  useEffect(()=>()=>geometry.dispose(),[geometry]);
-  useFrame(({clock})=>{
-    if(!ref.current || reduced)return;
-    const attr=geometry.getAttribute('position') as THREE.BufferAttribute;
-    const t=clock.elapsedTime;
+function Rain({data,intensity,wind,direction,quality,moving,reduced}:{data:MangaData;intensity:number;wind:number;direction:number|null|undefined;quality:RenderQuality;moving:boolean;reduced:boolean}) {
+  // The API reports mm/h. Density follows that rate, while the quality budget
+  // limits CPU updates during a gesture rather than turning rain into a loop.
+  const budget=quality==='high'?900:quality==='balanced'?560:300;
+  const count=Math.min(budget,moving?Math.ceil(budget*.55):budget,Math.max(48,Math.ceil(72+intensity*9)));
+  const geometry=useMemo(()=>{
+    const p:number[]=[],seeds:number[]=[],ends:number[]=[];
     for(let i=0;i<count;i++){
-      const cell=data.grid.cells[(i*139)%data.grid.cells.length],height=cell.z+((i*53-t*230)%320+320)%320;
-      const x=cell.x+Math.sin(i*17)*12,z=-cell.y+Math.cos(i*7)*12;
-      attr.setXYZ(i*2,x,height,z);attr.setXYZ(i*2+1,x-wind*.05,height+12,z+1.5);
-    }attr.needsUpdate=true;
+      const cell=data.grid.cells[(i*139)%data.grid.cells.length];
+      for(let end=0;end<2;end++){
+        p.push(cell.x+Math.sin(i*17)*12,cell.z,-cell.y+Math.cos(i*7)*12);
+        seeds.push((i*53)%280);ends.push(end);
+      }
+    }
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));
+    g.setAttribute('seed',new THREE.Float32BufferAttribute(seeds,1));g.setAttribute('endpoint',new THREE.Float32BufferAttribute(ends,1));return g;
+  },[count,data]);
+  const material=useMemo(()=>new THREE.ShaderMaterial({transparent:true,depthWrite:false,
+    uniforms:{time:{value:0},drift:{value:new THREE.Vector2()},opacity:{value:.45}},
+    vertexShader:`attribute float seed; attribute float endpoint; uniform float time; uniform vec2 drift;
+      void main(){float age=mod(time+seed/9.,280./9.);vec3 p=position;
+        p.y+=280.-age*9.+endpoint*1.8;
+        p.xz+=drift*(age-endpoint*.2);
+        gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,
+    fragmentShader:'uniform float opacity; void main(){gl_FragColor=vec4(.72,.83,.86,opacity);}'
+  }),[]);
+  useEffect(()=>()=>geometry.dispose(),[geometry]);
+  useEffect(()=>()=>material.dispose(),[material]);
+  useEffect(()=>{
+    // Meteorological direction is where wind comes FROM; scene north is -Z.
+    const rad=(direction??0)*Math.PI/180,speed=Number.isFinite(wind)?Math.max(0,wind)/3.6:0;
+    material.uniforms.drift.value.set(-Math.sin(rad)*speed,Math.cos(rad)*speed);
+  },[material,wind,direction]);
+  useFrame(({clock})=>{
+    if(!reduced)material.uniforms.time.value=clock.elapsedTime;
   });
-  return reduced?null:<lineSegments ref={ref} geometry={geometry} frustumCulled={false}><lineBasicMaterial color="#b1e9ef" transparent opacity={.35} depthWrite={false}/></lineSegments>;
+  return reduced?null:<lineSegments geometry={geometry} material={material} frustumCulled={false}/>;
 }
 
 function Metrics({onMetrics,onSlow,benchmark,onBenchmark}:{onMetrics:(fps:number,calls:number,triangles:number,memory:number)=>void;onSlow:()=>void;benchmark:number;onBenchmark:(s:string)=>void}) {
@@ -230,7 +253,7 @@ export default function MangaMap(props:Props) {
   const [selected,setSelected]=useState<Building|null>(null),[reduced,setReduced]=useState(false);
   const [fps,setFps]=useState(0),[drawCalls,setDrawCalls]=useState(0),[computeMs,setComputeMs]=useState(0);
   const [lowResolution,setLowResolution]=useState(false);
-  const [quality,setQuality]=useState<RenderQuality>('balanced'),[moving,setMoving]=useState(false);
+  const [quality,setQuality]=useState<RenderQuality>('balanced'),[moving,setMoving]=useState(false),[coarsePointer,setCoarsePointer]=useState(false);
   const [baseline,setBaseline]=useState(false),[benchmark,setBenchmark]=useState(0),[benchmarkResult,setBenchmarkResult]=useState('');
   const [triangles,setTriangles]=useState(0),[geometryMiB,setGeometryMiB]=useState(0);
   const [instances,setInstances]=useState<LandscapeInstances|null>(null);
@@ -244,11 +267,19 @@ export default function MangaMap(props:Props) {
   const [query,setQuery]=useState(''),[searchOpen,setSearchOpen]=useState(false);
   const searchInput=useRef<HTMLInputElement>(null);
   const worker=useRef<Worker|null>(null),requestId=useRef(0);
+  const sentGrid=useRef<MangaData['grid']|null>(null);
   const pending=useRef<{id:number;grid:MangaData['grid'];scenario:Scenario;seconds:number}|null>(null),running=useRef(false);
+  const dispatchSimulation=useCallback((message:NonNullable<typeof pending.current>)=>{
+    if(!worker.current)return;
+    // Transfer the large terrain once per worker, not on every timeline tick.
+    const {grid,...request}=message;
+    worker.current.postMessage({...request,...(sentGrid.current!==grid?{grid}:{})});
+    sentGrid.current=grid;running.current=true;
+  },[]);
   const api=useMemo(()=>apiScenario(props.spatialForcing),[props.spatialForcing]);
   const activeScenario=mode==='manual'?scenario:api.scenario;
   const targetSeconds=mode==='manual'?seconds:(props.currentHour??0)*3600;
-  const forcingHour=props.spatialForcing?.hours[Math.floor(props.currentHour??0)];
+  const forcingHour=props.spatialForcing?.hours.find(hour=>hour.hour===Math.floor(props.currentHour??0));
   const forecastRain=forcingHour?.rain_mm_h??0;
   const rain=mode==='manual'?(seconds<scenario.durationH*3600?scenario.rainMmH:0):forecastRain;
   useEffect(()=>{setBaseline(new URLSearchParams(location.search).get('mangaBaseline')==='1');},[]);
@@ -269,27 +300,30 @@ export default function MangaMap(props:Props) {
     return()=>abort.abort();
   },[retry]);
   useEffect(()=>{if(searchOpen)searchInput.current?.focus();},[searchOpen]);
+  useEffect(()=>{const q=matchMedia('(pointer: coarse)');const update=()=>{setCoarsePointer(q.matches);setQuality(current=>q.matches&&current==='balanced'?'performance':current);};update();q.addEventListener('change',update);return()=>q.removeEventListener('change',update);},[]);
   useEffect(()=>{const q=matchMedia('(prefers-reduced-motion: reduce)');const change=()=>setReduced(q.matches);change();q.addEventListener('change',change);return()=>q.removeEventListener('change',change);},[]);
-  useEffect(()=>{if(props.stormMode){setMode('manual');setSeconds(0);setScenario(PRESETS['Lluvia intensa']);setPlaying(!reduced);}else{setPlaying(false);setMode('api');}},[props.stormMode,reduced]);
   useEffect(()=>{
     const w=new Worker(new URL('../lib/manga/water.worker.ts',import.meta.url));worker.current=w;
     w.onmessage=({data:reply})=>{
       running.current=false;
       if(reply.id===requestId.current){setBusy(false);setResult(reply.result??null);setSimError(reply.error??null);setComputeMs(reply.computeMs??0);if(reply.error)setPlaying(false);}
-      if(pending.current){running.current=true;w.postMessage(pending.current);pending.current=null;}
+      if(pending.current){dispatchSimulation(pending.current);pending.current=null;}
     };
     w.onerror=()=>{setBusy(false);setSimError('El cálculo se interrumpió. Reintenta el visor.');setPlaying(false);};
-    return()=>{w.terminate();worker.current=null;running.current=false;pending.current=null;};
-  },[retry]);
+    return()=>{w.terminate();worker.current=null;sentGrid.current=null;running.current=false;pending.current=null;};
+  },[retry,dispatchSimulation]);
   useEffect(()=>{
     setSimError(null);
     const id=++requestId.current;
     if(!data||!activeScenario||!worker.current){pending.current=null;setResult(null);setBusy(false);return;}
     const message={id,grid:data.grid,scenario:activeScenario,seconds:targetSeconds};setBusy(true);
-    if(running.current)pending.current=message;else{running.current=true;worker.current.postMessage(message);}
-  },[data,activeScenario,targetSeconds,retry]);
+    if(running.current)pending.current=message;else dispatchSimulation(message);
+  },[data,activeScenario,targetSeconds,retry,dispatchSimulation]);
   useEffect(()=>{if(!playing||mode!=='manual')return;let last=performance.now();const id=setInterval(()=>{const now=performance.now(),dt=(now-last)/1000;last=now;setSeconds(t=>{const next=Math.min(86400,t+dt*speed);if(next===86400)setPlaying(false);return next;});},200);return()=>clearInterval(id);},[playing,speed,mode]);
-  const zones=useMemo(()=>data?ZONAS_MANGA.filter(z=>insideBoundary(...zoneLocal(...z.coordenadas),data.boundary)):[],[data]);
+  const zones=data?ZONAS_MANGA:[];
+  const focusedZone=ZONAS_MANGA.find(z=>z.id===props.focusZonaId);
+  const outsideCoverage=!!(data&&focusedZone&&!insideBoundary(...zoneLocal(...focusedZone.coordenadas),data.boundary));
+  useEffect(()=>{if(props.focusZonaId!=null){setSelected(null);setBuildingFocus(null);setLayers(previous=>({...previous,zones:true}));}},[props.focusZonaId]);
   const searchResults=useMemo(()=>{
     if(!data)return [];
     const term=normalized(query);
@@ -299,7 +333,6 @@ export default function MangaMap(props:Props) {
   const selectedVisual=selected?visualMetadata?.buildings[selected.id]:undefined;
   const visualHeights=useMemo(()=>visualMetadata?Object.fromEntries(Object.entries(visualMetadata.buildings).flatMap(([id,value])=>typeof value.visualHeightM==='number'&&Number.isFinite(value.visualHeightM)?[[id,value.visualHeightM]]:[])):undefined,[visualMetadata]);
   const displayedBuilding=useMemo(()=>selected?visualBuilding(selected,selectedVisual):null,[selected,selectedVisual]);
-  const invalidFocus=props.focusZonaId!=null&&!zones.some(z=>z.id===props.focusZonaId);
   const selectedCell=useMemo(()=>{
     if(!data||!selected)return null;const x=selected.rings[0][0][0],y=selected.rings[0][0][1];let idx=0,best=Infinity;
     data.grid.cells.forEach((c,i)=>{const d=(c.x-x)**2+(c.y-y)**2;if(d<best){idx=i;best=d;}});return idx;
@@ -319,8 +352,8 @@ export default function MangaMap(props:Props) {
       <Camera view={view} focus={props.focusZonaId??null} buildingFocus={buildingFocus} data={data} reduced={reduced} street={visualMetadata?.streetCamera}/>
       {displayedBuilding&&layers.buildings&&<SelectionOutline building={displayedBuilding}/>}
       {layers.water&&<Water data={data} result={result} reduced={reduced} flow={layers.flow}/>}
-      {layers.rain&&rain>0&&<Rain data={data} intensity={rain} wind={mode==='api'?(forcingHour?.wind_kmh??0):0} reduced={reduced}/>}
-      {layers.zones&&zones.map(z=>{const [x,y]=zoneLocal(...z.coordenadas);const risk=props.zonasVivas?.get(z.id)?.riesgo??'NORMAL';return <mesh key={z.id} position={[x,35,-y]} onClick={e=>{if(e.delta>4)return;e.stopPropagation();setSelected(null);props.onSelectZona?.(z);}}><sphereGeometry args={[props.focusZonaId===z.id?13:9,10,8]}/><meshBasicMaterial color={RIESGO_META[risk].color}/></mesh>;})}
+      {layers.rain&&rain>0&&<Rain data={data} intensity={rain} wind={mode==='api'?(forcingHour?.wind_kmh??0):0} direction={mode==='api'?forcingHour?.wind_direction_deg:null} quality={quality} moving={moving} reduced={reduced}/>}
+      {layers.zones&&zones.map(z=>{const [x,y]=zoneLocal(...z.coordenadas);const risk=props.zonasVivas?.get(z.id)?.riesgo??'NORMAL';return <mesh key={z.id} position={[x,35,-y]} onClick={e=>{if(e.delta>4)return;e.stopPropagation();setSelected(null);props.onSelectZona?.(z);}}><sphereGeometry args={[props.focusZonaId===z.id?15:coarsePointer?12:9,10,8]}/><meshBasicMaterial color={RIESGO_META[risk].color}/></mesh>;})}
       <Metrics onMetrics={(f,c,t,m)=>{setFps(f);setDrawCalls(c);setTriangles(t);setGeometryMiB(m);}} onSlow={()=>setLowResolution(true)} benchmark={benchmark} onBenchmark={setBenchmarkResult}/>
     </Canvas></GraphicsBoundary>:<div className="manga-fallback">{error??'Preparando Manga…'}{error&&<button onClick={()=>setRetry(x=>x+1)}>Reintentar</button>}</div>}
 
@@ -330,8 +363,8 @@ export default function MangaMap(props:Props) {
     <nav className="manga-views" aria-label="Vistas del barrio">{VIEWS.map(({kind,label,Icon})=><button key={kind} title={kind==='top'?'Vista superior, norte arriba':`Vista ${label.toLowerCase()}`} aria-label={`Vista ${label.toLowerCase()}`} aria-pressed={view.kind===kind&&!buildingFocus} className={view.kind===kind&&!buildingFocus?'active':''} onClick={()=>chooseView(kind)}><Icon size={14}/><span>{label}</span></button>)}</nav>
     <div className="manga-light-label" aria-hidden="true">{lightMode==='night'?'Luz nocturna':lightMode==='sunset'?'Luz de atardecer':'Luz de día'}</div>
     {searchOpen&&<aside className="manga-search" aria-label="Buscar en Manga"><div className="manga-search-field"><Search size={17}/><input ref={searchInput} value={query} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>{if(e.key==='Escape')setSearchOpen(false);if(e.key==='Enter'&&searchResults.length===1)chooseBuilding(searchResults[0]);}} placeholder="Nombre, dirección o código OSM" aria-label="Nombre, dirección o código OSM"/><button aria-label="Cerrar búsqueda" onClick={()=>setSearchOpen(false)}><X size={16}/></button></div><p>{query?'Coincidencias en el mapa':'Lugares para empezar'}</p><div className="manga-search-results">{searchResults.map(b=><button key={b.id} onClick={()=>chooseBuilding(b)}><MapPin size={16}/><span><b>{buildingName(b,visualMetadata?.buildings[b.id])}</b><small>{buildingAddress(visualMetadata?.buildings[b.id])||b.id.replace('osm-way-','OSM · ')}</small></span><ChevronRight size={15}/></button>)}</div>{!searchResults.length&&<div className="manga-search-empty">No encontramos ese edificio. Prueba un nombre más corto o selecciona su huella en el mapa.</div>}<small className="manga-search-note">Las direcciones disponibles provienen de OpenStreetMap; muchos edificios todavía no tienen una.</small></aside>}
-    <div className="manga-readings"><div><Droplets size={16}/><b>{rain.toFixed(1)}</b><span>mm/h</span></div><div><b>{result?(result.seconds/3600).toFixed(2):'0.00'}</b><span>h simuladas {busy?'· calculando…':''}</span></div><small>SRTM ≈30 m · agua sin calibrar</small></div>
-    <div className="manga-status">{mode==='api'?`${api.label}${freshness?` · actualización ${freshness} COT${stale?' (antigua)':''}`:' · fecha de consulta no disponible'}`:'Lluvia uniforme y condiciones manuales; los paneles externos conservan su serie.'}{simError&&<strong role="alert">{simError}</strong>}{invalidFocus&&<strong>La coordenada de esta zona está fuera de Manga y requiere revisión.</strong>}</div>
+    <div className="manga-readings"><div><Droplets size={16}/><b>{rain.toFixed(1)}</b><span>mm/h</span></div><div><b>{result?(result.seconds/3600).toFixed(2):'0.00'}</b><span>h simuladas {busy?'· calculando…':''}</span></div><small>{mode==='api'?'Lluvia y viento: serie horaria API':'Escenario manual'} · SRTM ≈30 m</small></div>
+    <div className="manga-status" aria-live="polite">{focusedZone&&<strong>{focusedZone.nombre}{outsideCoverage?' · Coordenada fuera del área modelada; ubicación por verificar.':''}</strong>}{mode==='api'?`${api.label}${freshness?` · actualización ${freshness} COT${stale?' (antigua)':''}`:' · fecha de consulta no disponible'}`:'Lluvia uniforme y condiciones manuales; los paneles externos conservan su serie.'}{simError&&<strong role="alert">{simError}</strong>}</div>
     <div className="manga-credit"><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap</a> · NASA SRTM <span>{fps} FPS</span></div>
 
     {selected&&displayedBuilding&&<div className="manga-selection" aria-label="Edificio seleccionado">
@@ -351,7 +384,7 @@ export default function MangaMap(props:Props) {
     {panel&&<aside className="manga-panel" aria-label="Controles del modelo"><div className="manga-panel-title"><b>Explorar Manga</b><button aria-label="Cerrar controles" onClick={()=>setPanel(false)}><X size={18}/></button></div>
       <label>Calidad visual<select value={quality} onChange={e=>{setQuality(e.target.value as RenderQuality);setLowResolution(false);}}><option value="high">Alta</option><option value="balanced">Equilibrada</option><option value="performance">Rendimiento</option></select></label>
       <label>Iluminación<select value={lightMode} onChange={e=>setLightMode(e.target.value as LightMode)}><option value="day">Día caribeño</option><option value="sunset">Atardecer</option><option value="night">Noche</option></select></label>
-      <p className="manga-note">El detalle se adapta a la distancia. Jardines y mobiliario aproximados; relieve SRTM original.</p>
+      <p className="manga-note">{coarsePointer?'Modo móvil activo: prioridad a respuesta táctil. ':''}El detalle se adapta a la distancia. Jardines y mobiliario aproximados; relieve SRTM original.</p>
       <div className="manga-mode"><button className={mode==='api'?'active':''} onClick={()=>changeMode('api')}>Serie API</button><button className={mode==='manual'?'active':''} onClick={()=>changeMode('manual')}>Escenario</button></div>
       {mode==='manual'?<><label>Condición inicial<select onChange={e=>{setScenario(PRESETS[e.target.value]);setSeconds(0);setPlaying(false);}} defaultValue="Lluvia intensa">{Object.keys(PRESETS).map(p=><option key={p}>{p}</option>)}</select></label>
       {([{key:'rainMmH',label:'Lluvia (mm/h)',max:300,step:5},{key:'durationH',label:'Duración (h)',max:24,step:1},{key:'infiltrationMmH',label:'Infiltración (mm/h)',max:30,step:1},{key:'drainageMmH',label:'Drenaje (mm/h)',max:30,step:1}] as const).map(c=><label key={c.key}>{c.label}<output>{scenario[c.key]}</output><input type="range" min="0" max={c.max} step={c.step} value={scenario[c.key]} onChange={e=>updateScenario({[c.key]:Number(e.target.value)})}/></label>)}
@@ -360,7 +393,7 @@ export default function MangaMap(props:Props) {
       <p className="manga-note">La marea MSL de la API no se suma al terreno EGM96. Falta la transformación vertical local.</p>
       <div className="manga-play"><button aria-label={playing?'Pausar simulación':'Reproducir simulación'} onClick={()=>setPlaying(!playing)}>{playing?<Pause size={17}/>:<Play size={17}/>}</button><button aria-label="Reiniciar simulación" onClick={()=>{setSeconds(0);setPlaying(false);}}><RotateCcw size={17}/></button><select aria-label="Velocidad temporal" value={speed} onChange={e=>setSpeed(Number(e.target.value))}><option value={60}>1 min/s</option><option value={600}>10 min/s</option><option value={1800}>30 min/s</option></select></div>
       <label>Tiempo: {(seconds/3600).toFixed(2)} h<input type="range" min="0" max="86400" step="300" value={seconds} onChange={e=>{setPlaying(false);setSeconds(Number(e.target.value));}}/></label>
-      </>:<p className="manga-note">Usa la línea temporal bajo el mapa. Al retroceder se recalcula desde suelo seco con la misma serie. Los niveles zonales son una referencia separada.</p>}
+      </>:<p className="manga-note">La lluvia y el viento de cada hora vienen de la serie API. Al elegir una hora, el agua se recalcula desde suelo seco sobre la topografía disponible; el resultado es exploratorio, no una predicción hidráulica certificada.</p>}
       <div className="manga-layer-list">{([{key:'buildings',label:'Edificios'},{key:'vegetation',label:'Vegetación tropical'},{key:'water',label:'Agua acumulada'},{key:'rain',label:'Lluvia visual'},{key:'zones',label:'Zonas del modelo existente'},{key:'flow',label:'Dirección de escorrentía'}] as const).map(l=><label className="manga-toggle" key={l.key}><input type="checkbox" checked={layers[l.key]} onChange={()=>setLayers(s=>({...s,[l.key]:!s[l.key]}))}/>{l.label}</label>)}</div>
       <p className="manga-note">Agua: turquesa &lt; 0,3 m → azul ≥ 1,5 m. Alturas sin exageración. Marcadores: riesgo zonal de la API; no profundidad del modelo espacial.</p>
       {data&&<p className="manga-note">{data.metadata.buildings.toLocaleString('es-CO')} edificios · {(data.metadata.areaM2/1e6).toFixed(2)} km² · {ZONAS_MANGA.length-zones.length} coordenadas zonales fuera del límite. Alturas mayormente estimadas.</p>}

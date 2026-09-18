@@ -6,7 +6,8 @@ export function validateScenario(s: Scenario, seconds: number) {
   if (s.rainMmH>300 || s.durationH>168 || seconds>168*3600 || s.infiltrationMmH>100 || s.drainageMmH>100 || (s.seaHeadM!==null && (!Number.isFinite(s.seaHeadM) || s.seaHeadM < -2 || s.seaHeadM>15))) throw new Error('Fuera del rango exploratorio: lluvia 0–300 mm/h, duración 0–168 h y cota marina −2–15 m.');
   if (s.forcing) {
     if (!s.forcing.length || s.forcing[0].hour!==0) throw new Error('Serie de lluvia sin inicio en t=0.');
-    s.forcing.forEach((p,i)=>{if (!Number.isFinite(p.hour) || !Number.isFinite(p.rainMmH) || p.rainMmH<0 || p.rainMmH>300 || (i>0 && p.hour<=s.forcing![i-1].hour)) throw new Error('Serie de lluvia incompleta o fuera del rango exploratorio.');});
+    s.forcing.forEach((p,i)=>{if (p.hour!==i || !Number.isFinite(p.rainMmH) || p.rainMmH<0 || p.rainMmH>300) throw new Error('Serie de lluvia incompleta o fuera del rango exploratorio.');});
+    if(seconds>s.forcing.length*3600) throw new Error('No hay lluvia disponible para esta hora.');
   }
 }
 
@@ -33,7 +34,7 @@ export class SurfaceWater {
     let rain=hour<s.durationH?s.rainMmH:0;
     if (s.forcing) {
       let k=0; while(k+1<s.forcing.length && s.forcing[k+1].hour<=hour) k++;
-      if (hour>s.forcing[s.forcing.length-1].hour+1) throw new Error('No hay lluvia disponible para esta hora.');
+      if (hour>=s.forcing[s.forcing.length-1].hour+1) throw new Error('No hay lluvia disponible para esta hora.');
       rain=s.forcing[k].rainMmH;
     }
     this.outgoing.fill(0); this.flow.fill(0);

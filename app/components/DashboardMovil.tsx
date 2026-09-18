@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import {
@@ -66,7 +67,6 @@ export interface DashboardMovilProps {
   isPlaying: boolean;
   isLoading: boolean;
   error: string | null;
-  stormMode: boolean;
   velocidad: number;
   sonido: boolean;
   copiado: boolean;
@@ -79,7 +79,6 @@ export interface DashboardMovilProps {
   onSelectZona: (z: { id: number } | null) => void;
   onTogglePlay: () => void;
   onScrub: (h: number) => void;
-  onToggleStorm: () => void;
   onReintentar: () => void;
   onSetVelocidad: (v: number) => void;
   onToggleSonido: () => void;
@@ -103,6 +102,12 @@ const ESTADO_COLOR: Record<string, string> = {
 
 const VELOCIDADES = [0.5, 1, 2, 4];
 
+function MapViewport({full,children}:{full:boolean;children:ReactNode}) {
+  const content=<div className={full?'fixed inset-0 z-[90] bg-ocean-deep':'relative h-full overflow-hidden glass-strong rounded-2xl'}>{children}</div>;
+  // A transformed dashboard ancestor otherwise contains position:fixed.
+  return full?createPortal(content,document.body):content;
+}
+
 export default function DashboardMovil({
   prediccion,
   activePunto,
@@ -113,7 +118,6 @@ export default function DashboardMovil({
   isPlaying,
   isLoading,
   error,
-  stormMode,
   velocidad,
   sonido,
   copiado,
@@ -126,7 +130,6 @@ export default function DashboardMovil({
   onSelectZona,
   onTogglePlay,
   onScrub,
-  onToggleStorm,
   onReintentar,
   onSetVelocidad,
   onToggleSonido,
@@ -274,15 +277,9 @@ export default function DashboardMovil({
       {/* ═══ ESTADO + METEOROLOGÍA ═══ */}
       <MonitoringMetricsRow punto={activePunto} prediccion={prediccion} isLoading={isLoading} />
 
-      {/* ═══ MAPA 3D + BTN TORMENTA ═══ */}
-      <div className="relative">
-        <div
-          className={`relative overflow-hidden ${
-            mapaFull
-              ? "fixed inset-0 z-[90] rounded-none bg-ocean-deep"
-              : "glass-strong rounded-2xl h-[55vh] min-h-[320px]"
-          }`}
-        >
+      {/* ═══ MAPA 3D ═══ */}
+      <div className="relative h-[55vh] min-h-[320px]">
+        <MapViewport full={mapaFull}>
           <LazyMount
             placeholder={
               <div className="absolute inset-0 flex items-center justify-center bg-ocean">
@@ -302,7 +299,6 @@ export default function DashboardMovil({
               focusZonaId={zonaEnfocada}
               onSelectZona={onSelectZona}
               horaLocal={Math.floor(currentHour) % 24}
-              stormMode={stormMode}
               puntoMeteo={activePunto}
               forecastPoints={prediccion?.puntos}
               spatialForcing={prediccion?.forzamiento_espacial}
@@ -318,41 +314,15 @@ export default function DashboardMovil({
           <button
             onClick={() => setMapaFull((f) => !f)}
             aria-label={mapaFull ? "Salir de pantalla completa del mapa" : "Mapa a pantalla completa"}
-            className={`absolute bottom-3 z-20 glass rounded-lg px-3 py-2 font-mono text-[10px] uppercase tracking-wider text-cyan flex items-center gap-1.5 min-h-[44px] min-w-[44px] active:scale-95 transition-all duration-150 ${
-              mapaFull ? "left-3" : "left-3"
-            }`}
+            className="absolute top-[110px] right-3 z-[2] glass rounded-lg p-3 text-cyan flex items-center justify-center min-h-[44px] min-w-[44px] active:scale-95 transition-all duration-150"
           >
             {mapaFull ? <X size={14} /> : <Maximize size={14} />}
-            {mapaFull ? "Salir" : "Pantalla completa"}
+            <span className="sr-only">{mapaFull ? "Salir" : "Pantalla completa"}</span>
           </button>
-        </div>
+        </MapViewport>
       </div>
 
-      {/* Botón "Simular tormenta" a ancho completo (no flotante) */}
-      <motion.button
-        whileTap={{ scale: 0.97 }}
-        onClick={onToggleStorm}
-        aria-pressed={stormMode}
-        className={`w-full rounded-xl px-6 py-4 font-mono text-xs uppercase tracking-wider transition-all duration-300 min-h-[48px] ${
-          stormMode
-            ? "glass-glow text-risk-emergency border-risk-emergency/30"
-            : "glass-glow text-cyan"
-        }`}
-      >
-        {stormMode ? (
-          <span className="flex items-center justify-center gap-2">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2" width="20" height="20" rx="2" /></svg>
-            Detener tormenta
-          </span>
-        ) : (
-          <span className="flex items-center justify-center gap-2">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21" /></svg>
-            Simular tormenta
-          </span>
-        )}
-      </motion.button>
-
-      {/* ═══ LÍNEA TEMPORAL (pegada bajo el mapa + tormenta) ═══ */}
+      {/* ═══ LÍNEA TEMPORAL: la serie meteorológica controla el mapa ═══ */}
       <TimelineSlider
         puntos={prediccion?.puntos ?? []}
         currentHour={currentHour}

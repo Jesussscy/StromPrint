@@ -10,32 +10,40 @@ export interface LandscapeInstances {trees:{position:number[];height:number;kind
 interface Props {data:MangaData;buildings:boolean;vegetation:boolean;quality:RenderQuality;instances:LandscapeInstances|null;heights?:Record<string,number>;onBuilding:(b:Building)=>void;onReady:()=>void}
 
 const noRaycast=()=>{};
-function surfaces(material:THREE.Material) {
+function surfaces(material:THREE.Material,facade=false) {
   const m=material.clone() as THREE.MeshStandardMaterial;
   m.side=THREE.DoubleSide;m.roughness=.85;m.metalness=0;
   // World-scale grain: stable across LODs, no unique texture per building.
   m.onBeforeCompile=shader=>{
-    shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 surfacePosition;')
-      .replace('#include <begin_vertex>','#include <begin_vertex>\nsurfacePosition=position;');
+    shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 surfacePosition; varying vec3 surfaceNormal;')
+      .replace('#include <begin_vertex>','#include <begin_vertex>\nsurfacePosition=position; surfaceNormal=normal;');
     shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>
-      varying vec3 surfacePosition;
+      varying vec3 surfacePosition; varying vec3 surfaceNormal;
       float grain(vec3 p){return fract(sin(dot(p,vec3(12.9898,78.233,39.425)))*43758.5453);}`)
       .replace('#include <color_fragment>',`#include <color_fragment>
       float variation=sin(surfacePosition.x*.63+sin(surfacePosition.z*.21))*sin(surfacePosition.z*.71);
-      diffuseColor.rgb*=.97+.045*variation+.025*grain(floor(surfacePosition*18.));`);
+      diffuseColor.rgb*=.97+.045*variation+.025*grain(floor(surfacePosition*18.));
+      ${facade?`// Inferred facade only on distant LOD; close buildings retain modeled details.
+      float wall=1.-smoothstep(.15,.45,abs(surfaceNormal.y));
+      vec2 uv=vec2(abs(surfaceNormal.x)>.5?surfacePosition.z:surfacePosition.x,surfacePosition.y)/vec2(3.2,3.1);
+      vec2 q=fract(uv);
+      float pane=smoothstep(.18,.25,q.x)*(1.-smoothstep(.68,.75,q.x))*smoothstep(.28,.35,q.y)*(1.-smoothstep(.73,.80,q.y));
+      float fade=1.-smoothstep(.15,.65,max(fwidth(uv.x),fwidth(uv.y)));
+      diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.19,.29,.31),pane*wall*fade*.6);`:''}`);
   };
-  m.customProgramCacheKey=()=> 'manga-surface08';
+  m.customProgramCacheKey=()=> facade?'manga-facade09':'manga-surface08';
   return m;
 }
 
 export function District({data,buildings,vegetation,quality,instances,heights,onBuilding,onReady}:Props) {
   const {scene}=useGLTF('/models/manga/checkpoint08/district.glb','/models/manga/draco/');
   const local=useMemo(()=>{
-    const clone=scene.clone(true);const materials=new Map<THREE.Material,THREE.Material>();
+    const clone=scene.clone(true);const materials=new Map<string,THREE.Material>();
     clone.traverse(o=>{if(o instanceof THREE.Mesh){
       const original=o.material as THREE.Material;
-      if(!materials.has(original))materials.set(original,surfaces(original));
-      o.material=materials.get(original)!;o.raycast=noRaycast;o.castShadow=true;o.receiveShadow=true;
+      const facade=o.userData.lod==='far',key=original.uuid+(facade?'-facade':'');
+      if(!materials.has(key))materials.set(key,surfaces(original,facade));
+      o.material=materials.get(key)!;o.raycast=noRaycast;o.castShadow=true;o.receiveShadow=true;
       if(o.name.startsWith('Tree_')||o.userData.lod==='base'||o.userData.lod==='detail')o.visible=false;
       o.geometry.computeBoundingSphere();
     }});return clone;
@@ -115,8 +123,8 @@ export function RenderBudget({quality,onMotion}:{quality:RenderQuality;onMotion:
     if(active!==moving.current){moving.current=active;onMotion(active);}
     elapsed.current+=dt;frames.current++;
     if(elapsed.current>1.5){const fps=frames.current/elapsed.current;scale.current=THREE.MathUtils.clamp(scale.current+(fps<42?-.15:fps>57?.05:0),.6,1);elapsed.current=0;frames.current=0;}
-    const cap=quality==='high'?1.5:quality==='balanced'?1.15: .85;
-    const next=Math.round(Math.min(window.devicePixelRatio,cap)*scale.current*(active?.8:1)*20)/20;
+    const cap=quality==='high'?1.5:quality==='balanced'?1.15:.8;
+    const next=Math.round(Math.min(window.devicePixelRatio,cap)*scale.current*(active?.75:1)*20)/20;
     if(Math.abs(next-lastDpr.current)>.04){lastDpr.current=next;setDpr(next);}
     // Shadow maps refresh only after movement ends, in high quality.
     if(!active&&quality==='high')gl.shadowMap.autoUpdate=false;

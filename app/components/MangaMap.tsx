@@ -11,6 +11,7 @@ import { ZONAS_MANGA, RIESGO_META, type ZonaManga, type ZonaViva } from '@/app/l
 import type { MeteorologiaResumen, PuntoPrediccion, WaterStateResponse, SpatialForcing } from '@/app/lib/api';
 import { apiScenario, insideBoundary, zoneLocal } from '@/app/lib/manga/adapter';
 import type { Building, MangaData, Scenario, WaterResult } from '@/app/lib/manga/types';
+import { District, RenderBudget, type RenderQuality, type LandscapeInstances } from './MangaScene';
 
 interface Props {
   nivelAguaCm?: number; nivelMaximoCm?: number; zonasVivas?: Map<number,ZonaViva>;
@@ -29,7 +30,7 @@ const PRESETS: Record<string,Scenario> = {
 };
 type LayersState={buildings:boolean;vegetation:boolean;water:boolean;rain:boolean;zones:boolean;flow:boolean};
 type ViewKind='general'|'coast'|'urban'|'top';
-type LightMode='day'|'sunset';
+type LightMode='day'|'sunset'|'night';
 type CameraView={kind:ViewKind;revision:number};
 interface BuildingVisual {
   name?:string|null; sourceUrl?:string; osmId?:number; buildingType?:string;
@@ -131,11 +132,11 @@ function Camera({view,focus,buildingFocus,data,reduced,street}:{view:CameraView;
 
 function Lighting({mode,lowResolution,layers,modelRevision}:{mode:LightMode;lowResolution:boolean;layers:LayersState;modelRevision:number}) {
   const light=useRef<THREE.DirectionalLight>(null);
-  const sunset=mode==='sunset';
+  const sunset=mode==='sunset',night=mode==='night';
   useEffect(()=>{if(light.current)light.current.shadow.needsUpdate=true;},[mode,lowResolution,layers,modelRevision]);
-  return <><color attach="background" args={[sunset?'#c6c5b7':'#c5dbe1']}/><fog attach="fog" args={[sunset?'#c6c5b7':'#c5dbe1',3200,10500]}/>
-    <hemisphereLight args={[sunset?'#ffecd5':'#e6f5ff',sunset?'#727966':'#697969',.8]}/>
-    <directionalLight ref={light} position={sunset?[-1200,900,800]:[700,1800,500]} color={sunset?'#ffd1a0':'#fff8e9'} intensity={sunset?2.2:2.0} castShadow={!lowResolution} shadow-mapSize-width={2048} shadow-mapSize-height={2048} shadow-camera-left={-1800} shadow-camera-right={1800} shadow-camera-top={1500} shadow-camera-bottom={-1500} shadow-camera-near={1} shadow-camera-far={5500} shadow-bias={-.0002} shadow-normalBias={.9} shadow-autoUpdate={false}/>
+  return <><color attach="background" args={[night?'#162c48':sunset?'#d6c4ac':'#b9dce9']}/><fog attach="fog" args={[night?'#162c48':sunset?'#d6c4ac':'#b9dce9',2600,9500]}/>
+    <hemisphereLight args={[night?'#738bb6':sunset?'#ffecd5':'#e6f5ff',night?'#36435a':'#b0a78d',night?.7:1.3]}/>
+    <directionalLight ref={light} position={sunset?[-1200,900,800]:[700,1800,500]} color={night?'#adc7ff':sunset?'#ffd1a0':'#fff8e9'} intensity={night?.45:sunset?2.2:2.0} castShadow={!lowResolution} shadow-mapSize-width={2048} shadow-mapSize-height={2048} shadow-camera-left={-1800} shadow-camera-right={1800} shadow-camera-top={1500} shadow-camera-bottom={-1500} shadow-camera-near={1} shadow-camera-far={5500} shadow-bias={-.0003} shadow-normalBias={.12} shadow-autoUpdate={false}/>
   </>;
 }
 
@@ -199,10 +200,23 @@ function Rain({data,intensity,wind,reduced}:{data:MangaData;intensity:number;win
   return reduced?null:<lineSegments ref={ref} geometry={geometry} frustumCulled={false}><lineBasicMaterial color="#b1e9ef" transparent opacity={.35} depthWrite={false}/></lineSegments>;
 }
 
-function Metrics({onMetrics,onSlow}:{onMetrics:(fps:number,calls:number)=>void;onSlow:()=>void}) {
+function Metrics({onMetrics,onSlow,benchmark,onBenchmark}:{onMetrics:(fps:number,calls:number,triangles:number,memory:number)=>void;onSlow:()=>void;benchmark:number;onBenchmark:(s:string)=>void}) {
   const time=useRef(0),frames=useRef(0),slow=useRef(0);
-  const {gl}=useThree();
-  useFrame((_,dt)=>{time.current+=dt;frames.current++;if(time.current>=2){const fps=frames.current/time.current;onMetrics(Math.round(fps),gl.info.render.calls);slow.current=fps<35?slow.current+1:0;if(slow.current>=2)onSlow();time.current=0;frames.current=0;}});
+  const {gl,scene,camera,get}=useThree();
+  const moved=useRef(0);
+  const sample=useRef<number[]>([]),duration=useRef(0),active=useRef(false),triangles=useRef<number[]>([]),calls=useRef<number[]>([]);
+  useEffect(()=>{if(benchmark){sample.current=[];triangles.current=[];calls.current=[];duration.current=0;moved.current=0;active.current=true;}},[benchmark]);
+  const memory=()=>{const arrays=new Set<ArrayBufferLike>();scene.traverse(o=>{if(o instanceof THREE.Mesh){for(const a of Object.values(o.geometry.attributes) as THREE.BufferAttribute[])if(a.array)arrays.add(a.array.buffer);if(o.geometry.index)arrays.add(o.geometry.index.array.buffer);}});return [...arrays].reduce((sum,a)=>sum+a.byteLength,0)/1048576;};
+  useFrame((_,dt)=>{
+    time.current+=dt;frames.current++;
+    if(active.current){
+      const orbit=get().controls as OrbitControlsImpl|null;
+      if(orbit){const offset=camera.position.clone().sub(orbit.target);offset.applyAxisAngle(new THREE.Vector3(0,1,0),dt*.16);camera.position.copy(orbit.target).add(offset);orbit.update();moved.current+=dt*.16;}
+      duration.current+=dt;sample.current.push(dt*1000);triangles.current.push(gl.info.render.triangles);calls.current.push(gl.info.render.calls);
+      if(duration.current>=10){active.current=false;const sorted=[...sample.current].sort((a,b)=>a-b);const avg=(v:number[])=>v.reduce((a,b)=>a+b,0)/v.length;onBenchmark(JSON.stringify({seconds:+duration.current.toFixed(2),rotationRadians:+moved.current.toFixed(2),frames:sample.current.length,fps:+(sample.current.length/duration.current).toFixed(1),p95ms:+sorted[Math.floor(sorted.length*.95)].toFixed(1),triangles:Math.round(avg(triangles.current)),calls:Math.round(avg(calls.current)),geometryMiB:+memory().toFixed(1),dpr:gl.getPixelRatio()}));}
+    }
+    if(time.current>=2){const fps=frames.current/time.current;onMetrics(Math.round(fps),gl.info.render.calls,gl.info.render.triangles,memory());slow.current=fps<35?slow.current+1:0;if(slow.current>=2)onSlow();time.current=0;frames.current=0;}
+  });
   return null;
 }
 
@@ -216,8 +230,13 @@ export default function MangaMap(props:Props) {
   const [selected,setSelected]=useState<Building|null>(null),[reduced,setReduced]=useState(false);
   const [fps,setFps]=useState(0),[drawCalls,setDrawCalls]=useState(0),[computeMs,setComputeMs]=useState(0);
   const [lowResolution,setLowResolution]=useState(false);
+  const [quality,setQuality]=useState<RenderQuality>('balanced'),[moving,setMoving]=useState(false);
+  const [baseline,setBaseline]=useState(false),[benchmark,setBenchmark]=useState(0),[benchmarkResult,setBenchmarkResult]=useState('');
+  const [triangles,setTriangles]=useState(0),[geometryMiB,setGeometryMiB]=useState(0);
+  const [instances,setInstances]=useState<LandscapeInstances|null>(null);
+  const [inView,setInView]=useState(true);const section=useRef<HTMLElement>(null);
   const [view,setView]=useState<CameraView>({kind:'general',revision:0});
-  const [lightMode,setLightMode]=useState<LightMode>('sunset');
+  const [lightMode,setLightMode]=useState<LightMode>('day');
   const [buildingFocus,setBuildingFocus]=useState<{building:Building;revision:number}|null>(null);
   const [visualMetadata,setVisualMetadata]=useState<VisualMetadata|null>(null);
   const [modelRevision,setModelRevision]=useState(0);
@@ -232,6 +251,9 @@ export default function MangaMap(props:Props) {
   const forcingHour=props.spatialForcing?.hours[Math.floor(props.currentHour??0)];
   const forecastRain=forcingHour?.rain_mm_h??0;
   const rain=mode==='manual'?(seconds<scenario.durationH*3600?scenario.rainMmH:0):forecastRain;
+  useEffect(()=>{setBaseline(new URLSearchParams(location.search).get('mangaBaseline')==='1');},[]);
+  useEffect(()=>{const abort=new AbortController();fetch('/models/manga/checkpoint08/instances.json',{signal:abort.signal}).then(r=>r.ok?r.json():null).then(setInstances).catch(()=>{});return()=>abort.abort();},[]);
+  useEffect(()=>{const el=section.current;if(!el)return;let intersects=true;const update=()=>setInView(intersects&&!document.hidden);const observer=new IntersectionObserver(([entry])=>{intersects=entry.isIntersecting;update();},{rootMargin:'100px'});observer.observe(el);document.addEventListener('visibilitychange',update);return()=>{observer.disconnect();document.removeEventListener('visibilitychange',update);};},[]);
   useEffect(()=>{
     const abort=new AbortController();setError(null);
     fetch('/models/manga/manga.json',{signal:abort.signal}).then(r=>{if(!r.ok)throw new Error('Datos de Manga no disponibles');return r.json();}).then(setData).catch(e=>{if(e.name!=='AbortError')setError(e.message);});return()=>abort.abort();
@@ -275,6 +297,7 @@ export default function MangaMap(props:Props) {
     return data.buildings.filter(b=>{const v=visualMetadata?.buildings[b.id];return normalized([buildingName(b,v),buildingAddress(v),b.id].join(' ')).includes(term);}).slice(0,8);
   },[data,query,visualMetadata]);
   const selectedVisual=selected?visualMetadata?.buildings[selected.id]:undefined;
+  const visualHeights=useMemo(()=>visualMetadata?Object.fromEntries(Object.entries(visualMetadata.buildings).flatMap(([id,value])=>typeof value.visualHeightM==='number'&&Number.isFinite(value.visualHeightM)?[[id,value.visualHeightM]]:[])):undefined,[visualMetadata]);
   const displayedBuilding=useMemo(()=>selected?visualBuilding(selected,selectedVisual):null,[selected,selectedVisual]);
   const invalidFocus=props.focusZonaId!=null&&!zones.some(z=>z.id===props.focusZonaId);
   const selectedCell=useMemo(()=>{
@@ -288,23 +311,24 @@ export default function MangaMap(props:Props) {
   function chooseBuilding(building:Building){setSelected(building);focusBuilding(building);setSearchOpen(false);props.onSelectZona?.(null);}
   const freshness=api.updated?new Date(api.updated).toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',timeZone:'America/Bogota'}):null;
   const stale=api.updated?Date.now()-new Date(api.updated).getTime()>120000:false;
-  return <section className="manga-viewer" aria-label="Modelo 3D del barrio Manga">
-    {data&&!error?<GraphicsBoundary key={retry} onRetry={()=>setRetry(x=>x+1)}><Canvas shadows={!lowResolution} dpr={lowResolution?1:[1,1.5]} camera={INITIAL_CAMERA} gl={{antialias:true,alpha:false,powerPreference:'high-performance',toneMapping:THREE.ACESFilmicToneMapping}} onCreated={({gl})=>{gl.setClearColor('#c6c5b7');gl.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();setError('Se perdió el contexto gráfico. Puedes reintentar el visor.');},{once:true});}}>
-      <Lighting mode={lightMode} lowResolution={lowResolution} layers={layers} modelRevision={modelRevision}/>
-      <Suspense fallback={null}><Model data={data} layers={layers} onBuilding={setSelected} onEmpty={()=>setSelected(null)} onReady={handleModelReady}/></Suspense>
+  return <section ref={section} className="manga-viewer" aria-label="Modelo 3D del barrio Manga">
+    {data&&!error?<GraphicsBoundary key={retry} onRetry={()=>setRetry(x=>x+1)}><Canvas frameloop={inView?'always':'never'} shadows={quality==='high'&&!lowResolution&&!moving} dpr={1} camera={INITIAL_CAMERA} gl={{antialias:true,alpha:false,powerPreference:'high-performance',toneMapping:THREE.ACESFilmicToneMapping}} onCreated={({gl})=>{gl.setClearColor('#c6c5b7');gl.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();setError('Se perdió el contexto gráfico. Puedes reintentar el visor.');},{once:true});}}>
+      <Lighting mode={lightMode} lowResolution={quality!=='high'||lowResolution||moving} layers={layers} modelRevision={modelRevision}/>
+      <Suspense fallback={null}>{baseline?<Model data={data} layers={layers} onBuilding={setSelected} onEmpty={()=>setSelected(null)} onReady={handleModelReady}/>:<District data={data} buildings={layers.buildings} vegetation={layers.vegetation} quality={quality} instances={instances} heights={visualHeights} onBuilding={setSelected} onReady={handleModelReady}/>}</Suspense>
+      {!baseline&&<RenderBudget quality={lowResolution?'performance':quality} onMotion={setMoving}/>}
       <Camera view={view} focus={props.focusZonaId??null} buildingFocus={buildingFocus} data={data} reduced={reduced} street={visualMetadata?.streetCamera}/>
       {displayedBuilding&&layers.buildings&&<SelectionOutline building={displayedBuilding}/>}
       {layers.water&&<Water data={data} result={result} reduced={reduced} flow={layers.flow}/>}
       {layers.rain&&rain>0&&<Rain data={data} intensity={rain} wind={mode==='api'?(forcingHour?.wind_kmh??0):0} reduced={reduced}/>}
       {layers.zones&&zones.map(z=>{const [x,y]=zoneLocal(...z.coordenadas);const risk=props.zonasVivas?.get(z.id)?.riesgo??'NORMAL';return <mesh key={z.id} position={[x,35,-y]} onClick={e=>{if(e.delta>4)return;e.stopPropagation();setSelected(null);props.onSelectZona?.(z);}}><sphereGeometry args={[props.focusZonaId===z.id?13:9,10,8]}/><meshBasicMaterial color={RIESGO_META[risk].color}/></mesh>;})}
-      <Metrics onMetrics={(f,c)=>{setFps(f);setDrawCalls(c);}} onSlow={()=>setLowResolution(true)}/>
+      <Metrics onMetrics={(f,c,t,m)=>{setFps(f);setDrawCalls(c);setTriangles(t);setGeometryMiB(m);}} onSlow={()=>setLowResolution(true)} benchmark={benchmark} onBenchmark={setBenchmarkResult}/>
     </Canvas></GraphicsBoundary>:<div className="manga-fallback">{error??'Preparando Manga…'}{error&&<button onClick={()=>setRetry(x=>x+1)}>Reintentar</button>}</div>}
 
     <ModelLoading/>
     <div className="manga-heading"><span className="manga-eyebrow">CARTAGENA DE INDIAS</span><h3>Manga <span>tu barrio, en perspectiva</span></h3><div className={`manga-tag ${mode==='manual'?'manual':''}`}>{mode==='manual'?'ESCENARIO HIPOTÉTICO':'LLUVIA API · MODELO EXPLORATORIO'}</div></div>
     <div className="manga-tools"><button className={searchOpen?'active':''} title="Buscar un edificio" aria-label="Buscar un edificio" aria-expanded={searchOpen} onClick={()=>{setSearchOpen(!searchOpen);setPanel(false);}}><Search size={18}/></button><button title={lightMode==='sunset'?'Cambiar a luz de día':'Cambiar a atardecer'} aria-label={lightMode==='sunset'?'Cambiar a luz de día':'Cambiar a atardecer'} onClick={()=>setLightMode(m=>m==='sunset'?'day':'sunset')}>{lightMode==='sunset'?<Sunset size={18}/>:<Sun size={18}/>}</button><button className={panel?'active':''} aria-expanded={panel} title="Capas y escenarios" aria-label="Capas y escenarios" onClick={()=>{setPanel(!panel);setSearchOpen(false);}}><Layers size={18}/></button></div>
     <nav className="manga-views" aria-label="Vistas del barrio">{VIEWS.map(({kind,label,Icon})=><button key={kind} title={kind==='top'?'Vista superior, norte arriba':`Vista ${label.toLowerCase()}`} aria-label={`Vista ${label.toLowerCase()}`} aria-pressed={view.kind===kind&&!buildingFocus} className={view.kind===kind&&!buildingFocus?'active':''} onClick={()=>chooseView(kind)}><Icon size={14}/><span>{label}</span></button>)}</nav>
-    <div className="manga-light-label" aria-hidden="true">{lightMode==='sunset'?'Luz de atardecer':'Luz de día'}</div>
+    <div className="manga-light-label" aria-hidden="true">{lightMode==='night'?'Luz nocturna':lightMode==='sunset'?'Luz de atardecer':'Luz de día'}</div>
     {searchOpen&&<aside className="manga-search" aria-label="Buscar en Manga"><div className="manga-search-field"><Search size={17}/><input ref={searchInput} value={query} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>{if(e.key==='Escape')setSearchOpen(false);if(e.key==='Enter'&&searchResults.length===1)chooseBuilding(searchResults[0]);}} placeholder="Nombre, dirección o código OSM" aria-label="Nombre, dirección o código OSM"/><button aria-label="Cerrar búsqueda" onClick={()=>setSearchOpen(false)}><X size={16}/></button></div><p>{query?'Coincidencias en el mapa':'Lugares para empezar'}</p><div className="manga-search-results">{searchResults.map(b=><button key={b.id} onClick={()=>chooseBuilding(b)}><MapPin size={16}/><span><b>{buildingName(b,visualMetadata?.buildings[b.id])}</b><small>{buildingAddress(visualMetadata?.buildings[b.id])||b.id.replace('osm-way-','OSM · ')}</small></span><ChevronRight size={15}/></button>)}</div>{!searchResults.length&&<div className="manga-search-empty">No encontramos ese edificio. Prueba un nombre más corto o selecciona su huella en el mapa.</div>}<small className="manga-search-note">Las direcciones disponibles provienen de OpenStreetMap; muchos edificios todavía no tienen una.</small></aside>}
     <div className="manga-readings"><div><Droplets size={16}/><b>{rain.toFixed(1)}</b><span>mm/h</span></div><div><b>{result?(result.seconds/3600).toFixed(2):'0.00'}</b><span>h simuladas {busy?'· calculando…':''}</span></div><small>SRTM ≈30 m · agua sin calibrar</small></div>
     <div className="manga-status">{mode==='api'?`${api.label}${freshness?` · actualización ${freshness} COT${stale?' (antigua)':''}`:' · fecha de consulta no disponible'}`:'Lluvia uniforme y condiciones manuales; los paneles externos conservan su serie.'}{simError&&<strong role="alert">{simError}</strong>}{invalidFocus&&<strong>La coordenada de esta zona está fuera de Manga y requiere revisión.</strong>}</div>
@@ -325,6 +349,9 @@ export default function MangaMap(props:Props) {
     </div>}
 
     {panel&&<aside className="manga-panel" aria-label="Controles del modelo"><div className="manga-panel-title"><b>Explorar Manga</b><button aria-label="Cerrar controles" onClick={()=>setPanel(false)}><X size={18}/></button></div>
+      <label>Calidad visual<select value={quality} onChange={e=>{setQuality(e.target.value as RenderQuality);setLowResolution(false);}}><option value="high">Alta</option><option value="balanced">Equilibrada</option><option value="performance">Rendimiento</option></select></label>
+      <label>Iluminación<select value={lightMode} onChange={e=>setLightMode(e.target.value as LightMode)}><option value="day">Día caribeño</option><option value="sunset">Atardecer</option><option value="night">Noche</option></select></label>
+      <p className="manga-note">El detalle se adapta a la distancia. Jardines y mobiliario aproximados; relieve SRTM original.</p>
       <div className="manga-mode"><button className={mode==='api'?'active':''} onClick={()=>changeMode('api')}>Serie API</button><button className={mode==='manual'?'active':''} onClick={()=>changeMode('manual')}>Escenario</button></div>
       {mode==='manual'?<><label>Condición inicial<select onChange={e=>{setScenario(PRESETS[e.target.value]);setSeconds(0);setPlaying(false);}} defaultValue="Lluvia intensa">{Object.keys(PRESETS).map(p=><option key={p}>{p}</option>)}</select></label>
       {([{key:'rainMmH',label:'Lluvia (mm/h)',max:300,step:5},{key:'durationH',label:'Duración (h)',max:24,step:1},{key:'infiltrationMmH',label:'Infiltración (mm/h)',max:30,step:1},{key:'drainageMmH',label:'Drenaje (mm/h)',max:30,step:1}] as const).map(c=><label key={c.key}>{c.label}<output>{scenario[c.key]}</output><input type="range" min="0" max={c.max} step={c.step} value={scenario[c.key]} onChange={e=>updateScenario({[c.key]:Number(e.target.value)})}/></label>)}
@@ -338,7 +365,8 @@ export default function MangaMap(props:Props) {
       <p className="manga-note">Agua: turquesa &lt; 0,3 m → azul ≥ 1,5 m. Alturas sin exageración. Marcadores: riesgo zonal de la API; no profundidad del modelo espacial.</p>
       {data&&<p className="manga-note">{data.metadata.buildings.toLocaleString('es-CO')} edificios · {(data.metadata.areaM2/1e6).toFixed(2)} km² · {ZONAS_MANGA.length-zones.length} coordenadas zonales fuera del límite. Alturas mayormente estimadas.</p>}
       {result&&<dl className="manga-balance"><dt>Volumen almacenado</dt><dd>{result.storedM3.toFixed(0)} m³</dd><dt>Error de balance</dt><dd>{result.balanceM3.toExponential(1)} m³</dd><dt>Profundidad máxima de celda</dt><dd>{result.maxDepthM.toFixed(2)} m</dd></dl>}
-      <p className="manga-note">{fps} FPS · {drawCalls} llamadas de dibujo · cálculo {computeMs.toFixed(0)} ms. Un dedo rota; dos dedos desplazan y acercan. Ratón derecho desplaza.</p>
+      <p className="manga-note">{fps} FPS · {drawCalls} llamadas de dibujo · {triangles.toLocaleString('es-CO')} triángulos · geometría {geometryMiB.toFixed(1)} MiB · cálculo {computeMs.toFixed(0)} ms. Un dedo rota; dos dedos desplazan y acercan. Ratón derecho desplaza.</p>
+      <details><summary>Diagnóstico de fluidez</summary><p className="manga-note">Gira la cámara durante 10 segundos y mide el tiempo por fotograma. Memoria de geometría residente estimada; no incluye toda la memoria de GPU.</p><button onClick={()=>{setBenchmarkResult('Midiendo…');setBenchmark(v=>v+1);}}>Medir recorrido de 10 segundos</button><output aria-label="Resultado de rendimiento">{benchmarkResult}</output></details>
     </aside>}
   </section>;
 }

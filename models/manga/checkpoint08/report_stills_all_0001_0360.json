@@ -1,0 +1,126 @@
+{
+  "started_utc": "2026-09-17T19:53:42.238947+00:00",
+  "blender_version": "5.2.2 LTS",
+  "blender_executable": "C:\\Program Files\\Blender Foundation\\Blender 5.2\\blender.exe",
+  "blend_file": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\MANGA_CHECKPOINT08.blend",
+  "local_only": true,
+  "mode": "stills",
+  "status": "complete",
+  "results": [
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint08\\stills\\Aerea_General_Manga.png",
+      "camera": "Aerea_General_Manga",
+      "frame": 1,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 9.664,
+      "bytes": 1366851,
+      "engine": "CYCLES",
+      "device": "OPTIX: NVIDIA GeForce RTX 3050 Laptop GPU",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint08\\stills\\Costa_Manga.png",
+      "camera": "Costa_Manga",
+      "frame": 1,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 9.97,
+      "bytes": 1522422,
+      "engine": "CYCLES",
+      "device": "OPTIX: NVIDIA GeForce RTX 3050 Laptop GPU",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint08\\stills\\Urbana_Manga.png",
+      "camera": "Urbana_Manga",
+      "frame": 1,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 11.713,
+      "bytes": 1345288,
+      "engine": "CYCLES",
+      "device": "OPTIX: NVIDIA GeForce RTX 3050 Laptop GPU",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint08\\stills\\Lluvia_Manga.png",
+      "camera": "Lluvia_Manga",
+      "frame": 22,
+      "scenario": "lluvia_visual",
+      "status": "complete",
+      "seconds": 14.147,
+      "bytes": 1657516,
+      "engine": "CYCLES",
+      "device": "OPTIX: NVIDIA GeForce RTX 3050 Laptop GPU",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint08\\stills\\Inundacion_Exploratoria.png",
+      "camera": "Inundacion_Exploratoria",
+      "frame": 180,
+      "scenario": "inundacion_exploratoria",
+      "status": "complete",
+      "seconds": 13.496,
+      "bytes": 2185473,
+      "engine": "CYCLES",
+      "device": "OPTIX: NVIDIA GeForce RTX 3050 Laptop GPU",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint08\\stills\\Jardin_Manga.png",
+      "camera": "Jardin_Manga",
+      "frame": 1,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 13.632,
+      "bytes": 1547295,
+      "engine": "CYCLES",
+      "device": "OPTIX: NVIDIA GeForce RTX 3050 Laptop GPU",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint08\\stills\\Atardecer_Manga.png",
+      "camera": "Atardecer_Manga",
+      "frame": 1,
+      "scenario": "sunset",
+      "status": "complete",
+      "seconds": 11.94,
+      "bytes": 1356468,
+      "engine": "CYCLES",
+      "device": "OPTIX: NVIDIA GeForce RTX 3050 Laptop GPU",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint08\\stills\\Noche_Manga.png",
+      "camera": "Noche_Manga",
+      "frame": 1,
+      "scenario": "night",
+      "status": "complete",
+      "seconds": 11.683,
+      "bytes": 1077420,
+      "engine": "CYCLES",
+      "device": "OPTIX: NVIDIA GeForce RTX 3050 Laptop GPU",
+      "blender_version": "5.2.2 LTS"
+    }
+  ],
+  "notes": [
+    "Architectural materials/details are generic unless documented as verified.",
+    "Hydrology is exploratory, not a certified prediction."
+  ],
+  "settings": {
+    "engine": "CYCLES",
+    "device": "OPTIX: NVIDIA GeForce RTX 3050 Laptop GPU",
+    "samples": 64,
+    "resolution": [
+      1600,
+      900
+    ],
+    "fps": 24,
+    "threads": 8,
+    "memory_strategy": "Instanced scene, no persistent data, subdivision 1; Cycles texture limit 2048. This is not a hard VRAM cap."
+  },
+  "blend_sha256": "3e10d78238a74cd2cf970a4e4c1853000c7f580b5fcdfae8deca042a24c6e89c",
+  "elapsed_seconds": 98.113,
+  "finished_utc": "2026-09-17T19:55:20.352242+00:00"
+}

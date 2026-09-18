@@ -1,0 +1,9 @@
+{
+  "status": "PASS",
+  "decodedVertices": 4899839,
+  "sha256": "899ce923c79a8bd8e62dbac7982fb2d4f31e44f62f25b6ad83d746ddfd9e3d1f",
+  "assetBytes": 17492884,
+  "treeInstances": 458,
+  "maskToleranceM": 0.025,
+  "sourceSha256": "82c665e7d8e8cb568aa1da1d981f20fe232d6b95783d719aaddd0ed4c3a96565"
+}

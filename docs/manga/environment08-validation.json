@@ -1,0 +1,12 @@
+{
+  "sourceSha256": "82c665e7d8e8cb568aa1da1d981f20fe232d6b95783d719aaddd0ed4c3a96565",
+  "grassAreaM2": 52529.335794906816,
+  "grassTriangles": 6409,
+  "soilTriangles": 28155,
+  "lamps": 100,
+  "outsideM2": 0.0,
+  "buildingOverlapM2": 0.0,
+  "roadOverlapM2": 0.0,
+  "terrainLiftM": 0.028,
+  "note": "Grass/garden edging and street lights are inferred visual detail. Terrain elevations and hydrology unchanged."
+}

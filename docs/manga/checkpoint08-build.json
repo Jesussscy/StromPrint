@@ -1,0 +1,19 @@
+{
+  "tiles": 54,
+  "meshes": 240,
+  "trianglesByLevel": {
+    "ground": 22701,
+    "base": 678658,
+    "detail": 1650428,
+    "grass": 6409,
+    "soil": 28155,
+    "far": 25134
+  },
+  "bytes": 17492884,
+  "awnings": 370,
+  "grassTriangles": 6409,
+  "treeInstances": 458,
+  "lampInstances": 100,
+  "sourceSha256": "82c665e7d8e8cb568aa1da1d981f20fe232d6b95783d719aaddd0ed4c3a96565",
+  "note": "Vertex color surfaces avoid texture roundtrip artifacts; fine detail only in nearby tiles. Original .blend retains editable geometry and materials."
+}

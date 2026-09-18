@@ -1,0 +1,40 @@
+{
+  "status": "PASS",
+  "file": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\Manga_Recorrido_15s.mp4",
+  "decodedFrames": 360,
+  "fps": 24.0,
+  "durationSeconds": 15.0,
+  "resolution": [
+    1280,
+    720
+  ],
+  "bytes": 5110989,
+  "sha256": "1ec9a6fe12eee644b9ff66ae7fa6f57a7740b3f3c012eed02726f41049ee7542",
+  "samples": [
+    {
+      "frame": 1,
+      "pixelStdDev": 52.889
+    },
+    {
+      "frame": 120,
+      "pixelStdDev": 55.765
+    },
+    {
+      "frame": 121,
+      "pixelStdDev": 67.455
+    },
+    {
+      "frame": 240,
+      "pixelStdDev": 67.856
+    },
+    {
+      "frame": 241,
+      "pixelStdDev": 53.203
+    },
+    {
+      "frame": 360,
+      "pixelStdDev": 59.418
+    }
+  ],
+  "note": "Technical integrity only; not certification of architectural realism."
+}

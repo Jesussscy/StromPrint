@@ -1,0 +1,2950 @@
+{
+  "started_utc": "2026-09-17T14:25:01.855466+00:00",
+  "blender_version": "5.2.2 LTS",
+  "blender_executable": "C:\\Program Files\\Blender Foundation\\Blender 5.2\\blender.exe",
+  "blend_file": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\MANGA_STORMPRINT_FINAL.blend",
+  "local_only": true,
+  "mode": "animation",
+  "status": "complete",
+  "results": [
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0001.png",
+      "frame": 1,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1000734
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0002.png",
+      "frame": 2,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1002210
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0003.png",
+      "frame": 3,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1002818
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0004.png",
+      "frame": 4,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1002866
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0005.png",
+      "frame": 5,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1004586
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0006.png",
+      "frame": 6,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1004570
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0007.png",
+      "frame": 7,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1005383
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0008.png",
+      "frame": 8,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1007306
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0009.png",
+      "frame": 9,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1005432
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0010.png",
+      "frame": 10,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1009220
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0011.png",
+      "frame": 11,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1006577
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0012.png",
+      "frame": 12,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1008545
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0013.png",
+      "frame": 13,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1008145
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0014.png",
+      "frame": 14,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1009785
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0015.png",
+      "frame": 15,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1009278
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0016.png",
+      "frame": 16,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1010309
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0017.png",
+      "frame": 17,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1012482
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0018.png",
+      "frame": 18,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1011485
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0019.png",
+      "frame": 19,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1012577
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0020.png",
+      "frame": 20,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1012361
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0021.png",
+      "frame": 21,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1015240
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0022.png",
+      "frame": 22,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1014236
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0023.png",
+      "frame": 23,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1015726
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0024.png",
+      "frame": 24,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1017406
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0025.png",
+      "frame": 25,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1017937
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0026.png",
+      "frame": 26,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1017782
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0027.png",
+      "frame": 27,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1020848
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0028.png",
+      "frame": 28,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1020260
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0029.png",
+      "frame": 29,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1020449
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0030.png",
+      "frame": 30,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1020062
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0031.png",
+      "frame": 31,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1022418
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0032.png",
+      "frame": 32,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1022197
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0033.png",
+      "frame": 33,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1022408
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0034.png",
+      "frame": 34,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1025749
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0035.png",
+      "frame": 35,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1026075
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0036.png",
+      "frame": 36,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1028023
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0037.png",
+      "frame": 37,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1025929
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0038.png",
+      "frame": 38,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1029514
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0039.png",
+      "frame": 39,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1028529
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0040.png",
+      "frame": 40,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1029043
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0041.png",
+      "frame": 41,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1028297
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0042.png",
+      "frame": 42,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1030047
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0043.png",
+      "frame": 43,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1029604
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0044.png",
+      "frame": 44,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1032805
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0045.png",
+      "frame": 45,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1034288
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0046.png",
+      "frame": 46,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1036023
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0047.png",
+      "frame": 47,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1036205
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0048.png",
+      "frame": 48,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1036981
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0049.png",
+      "frame": 49,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1038742
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0050.png",
+      "frame": 50,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1038121
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0051.png",
+      "frame": 51,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1038644
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0052.png",
+      "frame": 52,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1038080
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0053.png",
+      "frame": 53,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1039130
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0054.png",
+      "frame": 54,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1040046
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0055.png",
+      "frame": 55,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1042164
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0056.png",
+      "frame": 56,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1045005
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0057.png",
+      "frame": 57,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1047773
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0058.png",
+      "frame": 58,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1048481
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0059.png",
+      "frame": 59,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1048270
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0060.png",
+      "frame": 60,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1049806
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0061.png",
+      "frame": 61,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1051570
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0062.png",
+      "frame": 62,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1051490
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0063.png",
+      "frame": 63,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1052178
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0064.png",
+      "frame": 64,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1051605
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0065.png",
+      "frame": 65,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1054321
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0066.png",
+      "frame": 66,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1055686
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0067.png",
+      "frame": 67,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1055735
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0068.png",
+      "frame": 68,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1057520
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0069.png",
+      "frame": 69,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1057219
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0070.png",
+      "frame": 70,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1056735
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0071.png",
+      "frame": 71,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1058230
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0072.png",
+      "frame": 72,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1060117
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0073.png",
+      "frame": 73,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1061868
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0074.png",
+      "frame": 74,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1059406
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0075.png",
+      "frame": 75,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1059961
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0076.png",
+      "frame": 76,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1062061
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0077.png",
+      "frame": 77,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1063052
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0078.png",
+      "frame": 78,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1065371
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0079.png",
+      "frame": 79,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1067003
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0080.png",
+      "frame": 80,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1067885
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0081.png",
+      "frame": 81,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1069322
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0082.png",
+      "frame": 82,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1070273
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0083.png",
+      "frame": 83,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1069941
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0084.png",
+      "frame": 84,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1072070
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0085.png",
+      "frame": 85,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1071912
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0086.png",
+      "frame": 86,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1075634
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0087.png",
+      "frame": 87,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1073838
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0088.png",
+      "frame": 88,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1076236
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0089.png",
+      "frame": 89,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1075563
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0090.png",
+      "frame": 90,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1078798
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0091.png",
+      "frame": 91,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1079042
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0092.png",
+      "frame": 92,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1081046
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0093.png",
+      "frame": 93,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1082716
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0094.png",
+      "frame": 94,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1083751
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0095.png",
+      "frame": 95,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1085594
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0096.png",
+      "frame": 96,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1087317
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0097.png",
+      "frame": 97,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1087019
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0098.png",
+      "frame": 98,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1088464
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0099.png",
+      "frame": 99,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1089494
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0100.png",
+      "frame": 100,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1090621
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0101.png",
+      "frame": 101,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1091418
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0102.png",
+      "frame": 102,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1093269
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0103.png",
+      "frame": 103,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1094287
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0104.png",
+      "frame": 104,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1097305
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0105.png",
+      "frame": 105,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1097679
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0106.png",
+      "frame": 106,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1101877
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0107.png",
+      "frame": 107,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1104074
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0108.png",
+      "frame": 108,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1104038
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0109.png",
+      "frame": 109,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1106076
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0110.png",
+      "frame": 110,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1108260
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0111.png",
+      "frame": 111,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1108836
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0112.png",
+      "frame": 112,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1110699
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0113.png",
+      "frame": 113,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1111527
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0114.png",
+      "frame": 114,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1114687
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0115.png",
+      "frame": 115,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1115491
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0116.png",
+      "frame": 116,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1116434
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0117.png",
+      "frame": 117,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1118753
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0118.png",
+      "frame": 118,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1119596
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0119.png",
+      "frame": 119,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1120944
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0120.png",
+      "frame": 120,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 1122210
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0121.png",
+      "frame": 121,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 826338
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0122.png",
+      "frame": 122,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 826841
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0123.png",
+      "frame": 123,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 827386
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0124.png",
+      "frame": 124,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 828181
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0125.png",
+      "frame": 125,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 827925
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0126.png",
+      "frame": 126,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 828606
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0127.png",
+      "frame": 127,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 828971
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0128.png",
+      "frame": 128,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 829166
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0129.png",
+      "frame": 129,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 829260
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0130.png",
+      "frame": 130,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 829148
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0131.png",
+      "frame": 131,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 828898
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0132.png",
+      "frame": 132,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 828598
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0133.png",
+      "frame": 133,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 829248
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0134.png",
+      "frame": 134,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 828814
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0135.png",
+      "frame": 135,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 830088
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0136.png",
+      "frame": 136,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 828905
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0137.png",
+      "frame": 137,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 829263
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0138.png",
+      "frame": 138,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 828563
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0139.png",
+      "frame": 139,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 828183
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0140.png",
+      "frame": 140,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 828084
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0141.png",
+      "frame": 141,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 828572
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0142.png",
+      "frame": 142,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 827432
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0143.png",
+      "frame": 143,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 826120
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0144.png",
+      "frame": 144,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 825079
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0145.png",
+      "frame": 145,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 825096
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0146.png",
+      "frame": 146,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 824759
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0147.png",
+      "frame": 147,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 824384
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0148.png",
+      "frame": 148,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 824586
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0149.png",
+      "frame": 149,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 824570
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0150.png",
+      "frame": 150,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 825058
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0151.png",
+      "frame": 151,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 824831
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0152.png",
+      "frame": 152,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 824544
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0153.png",
+      "frame": 153,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 824341
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0154.png",
+      "frame": 154,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 824544
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0155.png",
+      "frame": 155,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 824276
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0156.png",
+      "frame": 156,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 824102
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0157.png",
+      "frame": 157,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 824042
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0158.png",
+      "frame": 158,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 823888
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0159.png",
+      "frame": 159,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 823975
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0160.png",
+      "frame": 160,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 824406
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0161.png",
+      "frame": 161,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 824434
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0162.png",
+      "frame": 162,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 824040
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0163.png",
+      "frame": 163,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 823969
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0164.png",
+      "frame": 164,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 823065
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0165.png",
+      "frame": 165,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 823433
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0166.png",
+      "frame": 166,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 822607
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0167.png",
+      "frame": 167,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 822630
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0168.png",
+      "frame": 168,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 822841
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0169.png",
+      "frame": 169,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 822279
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0170.png",
+      "frame": 170,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 822819
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0171.png",
+      "frame": 171,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 822988
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0172.png",
+      "frame": 172,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 823338
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0173.png",
+      "frame": 173,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 823546
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0174.png",
+      "frame": 174,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 823272
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0175.png",
+      "frame": 175,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 822748
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0176.png",
+      "frame": 176,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 822119
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0177.png",
+      "frame": 177,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 822692
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0178.png",
+      "frame": 178,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 822921
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0179.png",
+      "frame": 179,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 822337
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0180.png",
+      "frame": 180,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 821844
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0181.png",
+      "frame": 181,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 821789
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0182.png",
+      "frame": 182,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 822342
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0183.png",
+      "frame": 183,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 822664
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0184.png",
+      "frame": 184,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 822331
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0185.png",
+      "frame": 185,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 822829
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0186.png",
+      "frame": 186,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 823166
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0187.png",
+      "frame": 187,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 822604
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0188.png",
+      "frame": 188,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 823391
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0189.png",
+      "frame": 189,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 823272
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0190.png",
+      "frame": 190,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 822591
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0191.png",
+      "frame": 191,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 820648
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0192.png",
+      "frame": 192,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 821093
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0193.png",
+      "frame": 193,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 821827
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0194.png",
+      "frame": 194,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 821242
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0195.png",
+      "frame": 195,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 822154
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0196.png",
+      "frame": 196,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 821900
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0197.png",
+      "frame": 197,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 822588
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0198.png",
+      "frame": 198,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 822212
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0199.png",
+      "frame": 199,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 822686
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0200.png",
+      "frame": 200,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 822003
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0201.png",
+      "frame": 201,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 822776
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0202.png",
+      "frame": 202,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 823251
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0203.png",
+      "frame": 203,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 823480
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0204.png",
+      "frame": 204,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 824266
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0205.png",
+      "frame": 205,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 823518
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0206.png",
+      "frame": 206,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 824705
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0207.png",
+      "frame": 207,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 822033
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0208.png",
+      "frame": 208,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 822331
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0209.png",
+      "frame": 209,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 822565
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0210.png",
+      "frame": 210,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 823079
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0211.png",
+      "frame": 211,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 822924
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0212.png",
+      "frame": 212,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 823667
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0213.png",
+      "frame": 213,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 823929
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0214.png",
+      "frame": 214,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 824388
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0215.png",
+      "frame": 215,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 824646
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0216.png",
+      "frame": 216,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 824476
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0217.png",
+      "frame": 217,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 825601
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0218.png",
+      "frame": 218,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 825119
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0219.png",
+      "frame": 219,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 826333
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0220.png",
+      "frame": 220,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 826199
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0221.png",
+      "frame": 221,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 826812
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0222.png",
+      "frame": 222,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 827308
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0223.png",
+      "frame": 223,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 827997
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0224.png",
+      "frame": 224,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 827095
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0225.png",
+      "frame": 225,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 827496
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0226.png",
+      "frame": 226,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 827348
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0227.png",
+      "frame": 227,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 827540
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0228.png",
+      "frame": 228,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 828563
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0229.png",
+      "frame": 229,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 827849
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0230.png",
+      "frame": 230,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 827096
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0231.png",
+      "frame": 231,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 826674
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0232.png",
+      "frame": 232,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 826696
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0233.png",
+      "frame": 233,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 826980
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0234.png",
+      "frame": 234,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 827019
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0235.png",
+      "frame": 235,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 827585
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0236.png",
+      "frame": 236,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 827190
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0237.png",
+      "frame": 237,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 826442
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0238.png",
+      "frame": 238,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 827074
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0239.png",
+      "frame": 239,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 827027
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0240.png",
+      "frame": 240,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 827087
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0241.png",
+      "frame": 241,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 988557
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0242.png",
+      "frame": 242,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 988560
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0243.png",
+      "frame": 243,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 989108
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0244.png",
+      "frame": 244,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 992068
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0245.png",
+      "frame": 245,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 989167
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0246.png",
+      "frame": 246,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 988741
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0247.png",
+      "frame": 247,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 991646
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0248.png",
+      "frame": 248,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 992058
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0249.png",
+      "frame": 249,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 993898
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0250.png",
+      "frame": 250,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 992091
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0251.png",
+      "frame": 251,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 992068
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0252.png",
+      "frame": 252,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 992789
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0253.png",
+      "frame": 253,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 991115
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0254.png",
+      "frame": 254,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 991915
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0255.png",
+      "frame": 255,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 992122
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0256.png",
+      "frame": 256,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 991655
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0257.png",
+      "frame": 257,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 994046
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0258.png",
+      "frame": 258,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 991608
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0259.png",
+      "frame": 259,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 991262
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0260.png",
+      "frame": 260,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 994388
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0261.png",
+      "frame": 261,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 994236
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0262.png",
+      "frame": 262,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 995497
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0263.png",
+      "frame": 263,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 993240
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0264.png",
+      "frame": 264,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 995036
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0265.png",
+      "frame": 265,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 996225
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0266.png",
+      "frame": 266,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 994978
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0267.png",
+      "frame": 267,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 996810
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0268.png",
+      "frame": 268,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 994965
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0269.png",
+      "frame": 269,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 993858
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0270.png",
+      "frame": 270,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 997496
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0271.png",
+      "frame": 271,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 994834
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0272.png",
+      "frame": 272,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 995553
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0273.png",
+      "frame": 273,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 997808
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0274.png",
+      "frame": 274,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 995759
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0275.png",
+      "frame": 275,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 998827
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0276.png",
+      "frame": 276,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 996722
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0277.png",
+      "frame": 277,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 994720
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0278.png",
+      "frame": 278,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 998518
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0279.png",
+      "frame": 279,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 997254
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0280.png",
+      "frame": 280,
+      "camera": "Recorrido_Manga",
+      "status": "skipped_existing",
+      "bytes": 997833
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0281.png",
+      "camera": "Recorrido_Manga",
+      "frame": 281,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 7.95,
+      "bytes": 996925,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0282.png",
+      "camera": "Recorrido_Manga",
+      "frame": 282,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 2.39,
+      "bytes": 994558,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0283.png",
+      "camera": "Recorrido_Manga",
+      "frame": 283,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 2.201,
+      "bytes": 998153,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0284.png",
+      "camera": "Recorrido_Manga",
+      "frame": 284,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.708,
+      "bytes": 996403,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0285.png",
+      "camera": "Recorrido_Manga",
+      "frame": 285,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.544,
+      "bytes": 996424,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0286.png",
+      "camera": "Recorrido_Manga",
+      "frame": 286,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.432,
+      "bytes": 999137,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0287.png",
+      "camera": "Recorrido_Manga",
+      "frame": 287,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.354,
+      "bytes": 996851,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0288.png",
+      "camera": "Recorrido_Manga",
+      "frame": 288,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.4,
+      "bytes": 999068,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0289.png",
+      "camera": "Recorrido_Manga",
+      "frame": 289,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.348,
+      "bytes": 999959,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0290.png",
+      "camera": "Recorrido_Manga",
+      "frame": 290,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.358,
+      "bytes": 995821,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0291.png",
+      "camera": "Recorrido_Manga",
+      "frame": 291,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.351,
+      "bytes": 1000092,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0292.png",
+      "camera": "Recorrido_Manga",
+      "frame": 292,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.349,
+      "bytes": 997770,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0293.png",
+      "camera": "Recorrido_Manga",
+      "frame": 293,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.339,
+      "bytes": 999536,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0294.png",
+      "camera": "Recorrido_Manga",
+      "frame": 294,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.334,
+      "bytes": 1000685,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0295.png",
+      "camera": "Recorrido_Manga",
+      "frame": 295,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.348,
+      "bytes": 997963,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0296.png",
+      "camera": "Recorrido_Manga",
+      "frame": 296,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.464,
+      "bytes": 999849,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0297.png",
+      "camera": "Recorrido_Manga",
+      "frame": 297,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.436,
+      "bytes": 1000815,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0298.png",
+      "camera": "Recorrido_Manga",
+      "frame": 298,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.359,
+      "bytes": 998502,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0299.png",
+      "camera": "Recorrido_Manga",
+      "frame": 299,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.361,
+      "bytes": 1002050,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0300.png",
+      "camera": "Recorrido_Manga",
+      "frame": 300,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.328,
+      "bytes": 999044,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0301.png",
+      "camera": "Recorrido_Manga",
+      "frame": 301,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.37,
+      "bytes": 1001369,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0302.png",
+      "camera": "Recorrido_Manga",
+      "frame": 302,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.34,
+      "bytes": 1001431,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0303.png",
+      "camera": "Recorrido_Manga",
+      "frame": 303,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.365,
+      "bytes": 998751,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0304.png",
+      "camera": "Recorrido_Manga",
+      "frame": 304,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.374,
+      "bytes": 1001003,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0305.png",
+      "camera": "Recorrido_Manga",
+      "frame": 305,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.56,
+      "bytes": 999682,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0306.png",
+      "camera": "Recorrido_Manga",
+      "frame": 306,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.436,
+      "bytes": 1001359,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0307.png",
+      "camera": "Recorrido_Manga",
+      "frame": 307,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.412,
+      "bytes": 1003133,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0308.png",
+      "camera": "Recorrido_Manga",
+      "frame": 308,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.399,
+      "bytes": 998412,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0309.png",
+      "camera": "Recorrido_Manga",
+      "frame": 309,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.373,
+      "bytes": 1002381,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0310.png",
+      "camera": "Recorrido_Manga",
+      "frame": 310,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.338,
+      "bytes": 1001966,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0311.png",
+      "camera": "Recorrido_Manga",
+      "frame": 311,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.456,
+      "bytes": 1000554,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0312.png",
+      "camera": "Recorrido_Manga",
+      "frame": 312,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.399,
+      "bytes": 1003661,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0313.png",
+      "camera": "Recorrido_Manga",
+      "frame": 313,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.355,
+      "bytes": 999187,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0314.png",
+      "camera": "Recorrido_Manga",
+      "frame": 314,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.383,
+      "bytes": 1002679,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0315.png",
+      "camera": "Recorrido_Manga",
+      "frame": 315,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.336,
+      "bytes": 1003331,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0316.png",
+      "camera": "Recorrido_Manga",
+      "frame": 316,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.362,
+      "bytes": 1000884,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0317.png",
+      "camera": "Recorrido_Manga",
+      "frame": 317,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.357,
+      "bytes": 1004442,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0318.png",
+      "camera": "Recorrido_Manga",
+      "frame": 318,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.41,
+      "bytes": 1002105,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0319.png",
+      "camera": "Recorrido_Manga",
+      "frame": 319,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.346,
+      "bytes": 1002593,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0320.png",
+      "camera": "Recorrido_Manga",
+      "frame": 320,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.44,
+      "bytes": 1005249,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0321.png",
+      "camera": "Recorrido_Manga",
+      "frame": 321,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.379,
+      "bytes": 1000930,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0322.png",
+      "camera": "Recorrido_Manga",
+      "frame": 322,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.324,
+      "bytes": 1005479,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0323.png",
+      "camera": "Recorrido_Manga",
+      "frame": 323,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.396,
+      "bytes": 1004443,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0324.png",
+      "camera": "Recorrido_Manga",
+      "frame": 324,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.443,
+      "bytes": 1003764,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0325.png",
+      "camera": "Recorrido_Manga",
+      "frame": 325,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.373,
+      "bytes": 1006070,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0326.png",
+      "camera": "Recorrido_Manga",
+      "frame": 326,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.406,
+      "bytes": 1002786,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0327.png",
+      "camera": "Recorrido_Manga",
+      "frame": 327,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.432,
+      "bytes": 1005373,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0328.png",
+      "camera": "Recorrido_Manga",
+      "frame": 328,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.476,
+      "bytes": 1005007,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0329.png",
+      "camera": "Recorrido_Manga",
+      "frame": 329,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.816,
+      "bytes": 1002772,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0330.png",
+      "camera": "Recorrido_Manga",
+      "frame": 330,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.937,
+      "bytes": 1007169,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0331.png",
+      "camera": "Recorrido_Manga",
+      "frame": 331,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.755,
+      "bytes": 1004605,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0332.png",
+      "camera": "Recorrido_Manga",
+      "frame": 332,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.739,
+      "bytes": 1004583,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0333.png",
+      "camera": "Recorrido_Manga",
+      "frame": 333,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.792,
+      "bytes": 1007592,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0334.png",
+      "camera": "Recorrido_Manga",
+      "frame": 334,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.736,
+      "bytes": 1002856,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0335.png",
+      "camera": "Recorrido_Manga",
+      "frame": 335,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.742,
+      "bytes": 1007187,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0336.png",
+      "camera": "Recorrido_Manga",
+      "frame": 336,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.761,
+      "bytes": 1005972,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0337.png",
+      "camera": "Recorrido_Manga",
+      "frame": 337,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.755,
+      "bytes": 1006453,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0338.png",
+      "camera": "Recorrido_Manga",
+      "frame": 338,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.74,
+      "bytes": 1008670,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0339.png",
+      "camera": "Recorrido_Manga",
+      "frame": 339,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.606,
+      "bytes": 1005173,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0340.png",
+      "camera": "Recorrido_Manga",
+      "frame": 340,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.737,
+      "bytes": 1008633,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0341.png",
+      "camera": "Recorrido_Manga",
+      "frame": 341,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.572,
+      "bytes": 1007684,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0342.png",
+      "camera": "Recorrido_Manga",
+      "frame": 342,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.629,
+      "bytes": 1006476,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0343.png",
+      "camera": "Recorrido_Manga",
+      "frame": 343,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.594,
+      "bytes": 1009570,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0344.png",
+      "camera": "Recorrido_Manga",
+      "frame": 344,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.63,
+      "bytes": 1007081,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0345.png",
+      "camera": "Recorrido_Manga",
+      "frame": 345,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.779,
+      "bytes": 1008676,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0346.png",
+      "camera": "Recorrido_Manga",
+      "frame": 346,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.742,
+      "bytes": 1009794,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0347.png",
+      "camera": "Recorrido_Manga",
+      "frame": 347,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.597,
+      "bytes": 1006909,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0348.png",
+      "camera": "Recorrido_Manga",
+      "frame": 348,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.651,
+      "bytes": 1010702,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0349.png",
+      "camera": "Recorrido_Manga",
+      "frame": 349,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.752,
+      "bytes": 1009226,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0350.png",
+      "camera": "Recorrido_Manga",
+      "frame": 350,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.602,
+      "bytes": 1008669,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0351.png",
+      "camera": "Recorrido_Manga",
+      "frame": 351,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.613,
+      "bytes": 1009592,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0352.png",
+      "camera": "Recorrido_Manga",
+      "frame": 352,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.634,
+      "bytes": 1006978,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0353.png",
+      "camera": "Recorrido_Manga",
+      "frame": 353,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.632,
+      "bytes": 1009801,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0354.png",
+      "camera": "Recorrido_Manga",
+      "frame": 354,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.622,
+      "bytes": 1010186,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0355.png",
+      "camera": "Recorrido_Manga",
+      "frame": 355,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.68,
+      "bytes": 1008509,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0356.png",
+      "camera": "Recorrido_Manga",
+      "frame": 356,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.608,
+      "bytes": 1012143,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0357.png",
+      "camera": "Recorrido_Manga",
+      "frame": 357,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.63,
+      "bytes": 1009348,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0358.png",
+      "camera": "Recorrido_Manga",
+      "frame": 358,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.621,
+      "bytes": 1009982,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0359.png",
+      "camera": "Recorrido_Manga",
+      "frame": 359,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.646,
+      "bytes": 1011108,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\animation\\0360.png",
+      "camera": "Recorrido_Manga",
+      "frame": 360,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 1.631,
+      "bytes": 1010089,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    }
+  ],
+  "notes": [
+    "Architectural materials/details are generic unless documented as verified.",
+    "Hydrology is exploratory, not a certified prediction."
+  ],
+  "settings": {
+    "engine": "BLENDER_EEVEE",
+    "device": "Eevee GPU (Blender graphics backend)",
+    "samples": 24,
+    "resolution": [
+      1280,
+      720
+    ],
+    "fps": 24,
+    "threads": 8,
+    "memory_strategy": "Instanced scene, no persistent data, subdivision 1; Cycles texture limit 2048. This is not a hard VRAM cap."
+  },
+  "blend_sha256": "61aa96a59d4e597eaeb0401241857b2536ea779183f30be6f386537afc4c53a5",
+  "elapsed_seconds": 137.369,
+  "finished_utc": "2026-09-17T14:27:19.225110+00:00"
+}

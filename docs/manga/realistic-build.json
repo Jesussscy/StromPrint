@@ -1,0 +1,44 @@
+{
+  "blender": "5.2.2 LTS",
+  "seconds": 75.85,
+  "gisSha256": "82c665e7d8e8cb568aa1da1d981f20fe232d6b95783d719aaddd0ed4c3a96565",
+  "editableObjects": 2109,
+  "webMeshes": 27,
+  "glbBytes": 189284440,
+  "detail": {
+    "windows": 51807,
+    "doors": 1581,
+    "parapetSegments": 7099,
+    "trees": 458,
+    "heightOverrides": 2,
+    "architecture": {
+      "profiles": {
+        "canopy": 17,
+        "modern": 394,
+        "institution": 46,
+        "loggia": 387,
+        "caribbean": 375,
+        "warehouse": 1,
+        "shutters": 401,
+        "roman": 1
+      },
+      "recessedFronts": 378,
+      "roofFaces": 9792,
+      "balconyRails": 9807,
+      "shutters": 25203,
+      "roofEquipment": 440,
+      "landmark": "Casa Román: interpretación parcial 2004"
+    }
+  },
+  "urbanCameraRoad": "Calle 26",
+  "cameras": [
+    "Aerea_General_Manga",
+    "Costa_Manga",
+    "Urbana_Manga",
+    "Lluvia_Manga",
+    "Inundacion_Exploratoria",
+    "Recorrido_Manga"
+  ],
+  "textures": "Locally generated, packed, 256px metric material maps; no remote rendering or imagery",
+  "limitations": "Facades, roof finishes, sidewalks and tree placements are generic inferred visual detail, not surveyed replica. See visual-metadata.json and docs/manga/visual-sources.md."
+}

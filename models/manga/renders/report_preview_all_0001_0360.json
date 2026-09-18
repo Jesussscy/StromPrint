@@ -1,0 +1,89 @@
+{
+  "started_utc": "2026-09-17T03:05:32.098863+00:00",
+  "blender_version": "5.2.2 LTS",
+  "blender_executable": "C:\\Program Files\\Blender Foundation\\Blender 5.2\\blender.exe",
+  "blend_file": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\MANGA_STORMPRINT_FINAL.blend",
+  "local_only": true,
+  "mode": "preview",
+  "status": "complete",
+  "results": [
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\renders\\preview\\Aerea_General_Manga.png",
+      "camera": "Aerea_General_Manga",
+      "frame": 1,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 30.548,
+      "bytes": 255648,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\renders\\preview\\Costa_Manga.png",
+      "camera": "Costa_Manga",
+      "frame": 1,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 4.66,
+      "bytes": 244260,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\renders\\preview\\Urbana_Manga.png",
+      "camera": "Urbana_Manga",
+      "frame": 1,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 2.67,
+      "bytes": 209321,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\renders\\preview\\Lluvia_Manga.png",
+      "camera": "Lluvia_Manga",
+      "frame": 22,
+      "scenario": "lluvia_visual",
+      "status": "complete",
+      "seconds": 1.489,
+      "bytes": 261352,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    },
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\renders\\preview\\Inundacion_Exploratoria.png",
+      "camera": "Inundacion_Exploratoria",
+      "frame": 180,
+      "scenario": "inundacion_exploratoria",
+      "status": "complete",
+      "seconds": 1.692,
+      "bytes": 351973,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    }
+  ],
+  "notes": [
+    "Architectural materials/details are generic unless documented as verified.",
+    "Hydrology is exploratory, not a certified prediction."
+  ],
+  "settings": {
+    "engine": "BLENDER_EEVEE",
+    "device": "Eevee GPU (Blender graphics backend)",
+    "samples": 16,
+    "resolution": [
+      640,
+      360
+    ],
+    "fps": 24,
+    "threads": 8,
+    "memory_strategy": "Instanced scene, no persistent data, subdivision 1; Cycles texture limit 2048. This is not a hard VRAM cap."
+  },
+  "elapsed_seconds": 42.922,
+  "finished_utc": "2026-09-17T03:06:15.021216+00:00"
+}

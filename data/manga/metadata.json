@@ -1,0 +1,30 @@
+{
+  "name": "Manga · Cartagena de Indias",
+  "origin": [
+    -75.5357,
+    10.41145
+  ],
+  "crs": "+proj=aeqd +lat_0=10.41145 +lon_0=-75.5357 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs +type=crs",
+  "units": "metres",
+  "blenderAxes": "X este, Y norte, Z altura",
+  "webAxes": "X este, Y altura, Z sur",
+  "verticalDatum": "SRTM EGM96; NO alineado a marea MSL",
+  "dem": "SRTM v3 30 m (superficie radar, febrero 2000), muestreo bilineal 40 m",
+  "cellSize": 40,
+  "areaM2": 1840301.9180442903,
+  "boundarySource": "https://www.openstreetmap.org/way/1385212852",
+  "comparisonIoU": 0.9398673504067672,
+  "downloadDate": "2026-09-17",
+  "buildings": 1622,
+  "roads": 775,
+  "cells": 1319,
+  "heightRange": [
+    -5.749,
+    20.825
+  ],
+  "sources": [
+    "© OpenStreetMap contributors · ODbL 1.0",
+    "NASA/USGS SRTM v3 via Open Topo Data"
+  ],
+  "mode": "Exploratorio: no calibrado, no resuelve bordillos ni drenajes reales"
+}

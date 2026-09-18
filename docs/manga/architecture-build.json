@@ -1,0 +1,18 @@
+{
+  "profiles": {
+    "canopy": 17,
+    "modern": 394,
+    "institution": 46,
+    "loggia": 387,
+    "caribbean": 375,
+    "warehouse": 1,
+    "shutters": 401,
+    "roman": 1
+  },
+  "recessedFronts": 378,
+  "roofFaces": 9792,
+  "balconyRails": 9807,
+  "shutters": 25203,
+  "roofEquipment": 440,
+  "landmark": "Casa Román: interpretación parcial 2004"
+}

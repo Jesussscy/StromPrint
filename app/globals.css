@@ -357,30 +357,6 @@ input[type="range"]::-moz-range-thumb {
   max-width: 100%;
 }
 
-/* ─── Cesium ────────────────────────────────────────────────────────────── */
-
-.cesium-viewer {
-  font-family: var(--font-body), 'Inter', 'Space Grotesk', sans-serif;
-  background: var(--ocean-deep);
-}
-
-.cesium-viewer-bottom {
-  display: none !important;
-}
-
-.cesium-widget-credits,
-.cesium-credit-logoContainer,
-.cesium-widget-credits .cesium-credit-expand-link,
-.cesium-credit-lightbox-overlay,
-.cesium-widget-creditToggleContainer,
-.cesium-viewer-bottom .cesium-credit-logoContainer {
-  display: none !important;
-}
-
-.cesium-viewer-toolbar {
-  display: none !important;
-}
-
 /* ─── Mobile & Touch ────────────────────────────────────────────────── */
 
 /* Panel primero en móvil: el #panel-vivo pasa a ser la primera sección de la

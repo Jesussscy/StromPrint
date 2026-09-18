@@ -17,7 +17,7 @@ import AlertDrawer from "@/app/components/AlertDrawer";
 import AnimatedCounter from "@/app/components/AnimatedCounter";
 import SummaryDashboard from "@/app/components/SummaryDashboard";
 import NotificationBanner from "@/app/components/NotificationBanner";
-// Cesium (WebGL) es pesado (varios MB). Se carga de forma diferida (dynamic)
+// Three.js (WebGL) es pesado (varios MB). Se carga de forma diferida (dynamic)
 // solo cuando el cliente lo monta, con ssr:false para no renderizar en el
 // servidor. En móvil además se carga apenas entra en viewport (loading lazy).
 import ZonasMangaPanel from "@/app/components/ZonasMangaPanel";
@@ -85,10 +85,10 @@ const FADE = {
   transition: { duration: 0.5 },
 };
 
-// Mapa 3D Cesium cargado de forma diferida (rendimiento móvil).
-// ssr:false evita ejecutar WebGL/cesium en el servidor; el skeleton se muestra
+// Mapa 3D Three.js cargado de forma diferida (rendimiento móvil).
+// ssr:false evita ejecutar WebGL en el servidor; el skeleton se muestra
 // mientras se descarga el bundle del visor.
-const CesiumMap = dynamic(() => import("@/app/components/CesiumMap"), {
+const MangaMap = dynamic(() => import("@/app/components/MangaMap"), {
   ssr: false,
   loading: () => (
     <div className="absolute inset-0 flex items-center justify-center bg-ocean">
@@ -665,7 +665,7 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
             </div>
           }
         >
-          <CesiumMap
+          <MangaMap
             nivelAguaCm={activePunto?.nivel_agua_cm ?? 0}
             nivelMaximoCm={prediccion?.nivel_maximo_cm ?? 100}
             zonasVivas={zonasVivas}
@@ -674,6 +674,10 @@ function DashboardEmbedded({ stormMode, onToggleStorm }: { stormMode: boolean; o
             horaLocal={Math.floor(currentHour) % 24}
             stormMode={stormMode}
             puntoMeteo={activePunto}
+              forecastPoints={prediccion?.puntos}
+              spatialForcing={prediccion?.forzamiento_espacial}
+              currentHour={currentHour}
+              sourceLabel={prediccion?.fuente_meteo}
             meteorologia={prediccion?.meteorologia_resumen ?? null}
             liveWater={liveWater}
             liveLatenciaMs={liveLatenciaMs}
@@ -989,7 +993,7 @@ function TechnologySection() {
             {[
               { label: "Estaciones + API", sub: "Sensores y Open-Meteo" },
               { label: "Modelo Analítico", sub: "Duhamel · convolución" },
-              { label: "Dashboard", sub: "React + Cesium / Leaflet" },
+              { label: "Dashboard", sub: "React + Three.js / Blender" },
             ].map((step, i) => (
               <div key={step.label} className="flex items-center gap-4">
                 <div className="text-center">

@@ -1,0 +1,31 @@
+{
+  "started_utc": "2026-09-17T14:27:22.056532+00:00",
+  "blender_version": "5.2.2 LTS",
+  "blender_executable": "C:\\Program Files\\Blender Foundation\\Blender 5.2\\blender.exe",
+  "blend_file": "",
+  "local_only": true,
+  "mode": "encode",
+  "status": "complete",
+  "results": [
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\Manga_Recorrido_15s.mp4",
+      "status": "complete",
+      "seconds": 10.365,
+      "bytes": 5110989,
+      "frames": 360,
+      "duration_seconds": 15.0,
+      "engine": "Blender VSE / bundled FFmpeg",
+      "codec": "H.264 / MP4",
+      "resolution": [
+        1280,
+        720
+      ]
+    }
+  ],
+  "notes": [
+    "Architectural materials/details are generic unless documented as verified.",
+    "Hydrology is exploratory, not a certified prediction."
+  ],
+  "elapsed_seconds": 10.51,
+  "finished_utc": "2026-09-17T14:27:32.566927+00:00"
+}

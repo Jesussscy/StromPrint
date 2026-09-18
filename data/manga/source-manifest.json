@@ -1,0 +1,134 @@
+{
+  "data\\manga\\raw\\arcgis-boundary.geojson": {
+    "bytes": 15025,
+    "sha256": "f1e8ab7736793ff94fc3b23e7e54448d75f8440fe5cd294e6288e31331d0fa71"
+  },
+  "data\\manga\\raw\\osm-boundary.json": {
+    "bytes": 118108,
+    "sha256": "8534874665b36e57b928a08f521e96d1908c63f0f5c1d1b14af0c735273a1653"
+  },
+  "data\\manga\\raw\\osm-features.json": {
+    "bytes": 1425770,
+    "sha256": "d31d5d3e533d0cc905b69908ab44d38adc7ee9ac300f13cf25ded6fe3d6bac94"
+  },
+  "data\\manga\\raw\\pemp-manga.pdf": {
+    "bytes": 3336497,
+    "sha256": "e488e6f65851ff4e0187de1ca88720a8b3b0ecd085bb59f0ad409d49016c7d68"
+  },
+  "data\\manga\\raw\\pemp-manga.png": {
+    "bytes": 1311334,
+    "sha256": "b5879e1a04a2635924ae6070f749fe219399cd469a19ed9fd35d99075c6b7602"
+  },
+  "data\\manga\\raw\\srtm-00000.json": {
+    "bytes": 9506,
+    "sha256": "21ba91754add9279f3eb468bde7baa4bcd9ee27b01130a0d72df26bf8c4765a9"
+  },
+  "data\\manga\\raw\\srtm-00100.json": {
+    "bytes": 9509,
+    "sha256": "ada4f2af5cd13e2868c3ff54f7266f2101c7210c7ffcb86a37f7e06d6ecd606f"
+  },
+  "data\\manga\\raw\\srtm-00200.json": {
+    "bytes": 9484,
+    "sha256": "317ff66d58a9630f8d1efc4f19ab0318e5a63a62029aa2ffacbcecd39d207cfb"
+  },
+  "data\\manga\\raw\\srtm-00300.json": {
+    "bytes": 9534,
+    "sha256": "8234faa4b79a2be5e09f4808d766fd41c462508da2fff772053cccada5795e91"
+  },
+  "data\\manga\\raw\\srtm-00400.json": {
+    "bytes": 9523,
+    "sha256": "059303ee8e0ec94c3e1938447cb42047b2df37b4013c633bf979794b2167c1f1"
+  },
+  "data\\manga\\raw\\srtm-00500.json": {
+    "bytes": 9505,
+    "sha256": "4231b2f6ca0abd4d5416228ed804269278c250d87123a63e239cc7e4fc16089e"
+  },
+  "data\\manga\\raw\\srtm-00600.json": {
+    "bytes": 9509,
+    "sha256": "1e33dcf081e479ad610551d9a145ac9eecfed305d2c2580062c3c4ff39e04cc7"
+  },
+  "data\\manga\\raw\\srtm-00700.json": {
+    "bytes": 9486,
+    "sha256": "df7229a8a544a039205676ae19c51ea81f9de3641dee475f4764eb9bfe0a1f4b"
+  },
+  "data\\manga\\raw\\srtm-00800.json": {
+    "bytes": 9516,
+    "sha256": "f33a0d3568b3b228da8afc4756a21b6c95f1a1c29263ef34601cc97a32aeb24d"
+  },
+  "data\\manga\\raw\\srtm-00900.json": {
+    "bytes": 9501,
+    "sha256": "aea9950565fa7b3b92ce5d7527f88693d82e727b5cd7c622bdabc00590f44353"
+  },
+  "data\\manga\\raw\\srtm-01000.json": {
+    "bytes": 9513,
+    "sha256": "5a43b9aed9a2e88033e0dbfeb5d13938368ef49b38c2c62ebd3d0cb86e682ff6"
+  },
+  "data\\manga\\raw\\srtm-01100.json": {
+    "bytes": 9509,
+    "sha256": "6db5e51080ee9a3bd3d1287ddaaa46e9e16a5466cfde2818b323618f7dd87f98"
+  },
+  "data\\manga\\raw\\srtm-01200.json": {
+    "bytes": 9511,
+    "sha256": "8266f58c2aa9fde55bc8b964053051e5ec2e2993ddd8065ba87e22c633c5aca6"
+  },
+  "data\\manga\\raw\\srtm-01300.json": {
+    "bytes": 9471,
+    "sha256": "c0c58033a714b8f80faa1b6946f5c2d974d3287963d9b6e467cc079cfb01ea6e"
+  },
+  "data\\manga\\raw\\srtm-01400.json": {
+    "bytes": 9520,
+    "sha256": "ee0e0d920223bc8fcc1eef1ff15fb623e9a29d9056ce7da7239f6f2a37ce21cb"
+  },
+  "data\\manga\\raw\\srtm-01500.json": {
+    "bytes": 9519,
+    "sha256": "90aef31cbac130ee27c6bcbc7d8242eda0454efb7d20306e5be5a804d2d4b239"
+  },
+  "data\\manga\\raw\\srtm-01600.json": {
+    "bytes": 9520,
+    "sha256": "75aaeb38d995764ac982c8af043aa55debd26d3ab118c8900100a3657792df80"
+  },
+  "data\\manga\\raw\\srtm-01700.json": {
+    "bytes": 9515,
+    "sha256": "dc6560a35d50ee152278e9c50230a0999390a4e933202fb7c28589544afd20bd"
+  },
+  "data\\manga\\raw\\srtm-01800.json": {
+    "bytes": 9483,
+    "sha256": "5d7602da02123bc69f6da8d7ee85095222d1cca7830ec3238905d65b1f366964"
+  },
+  "data\\manga\\raw\\srtm-01900.json": {
+    "bytes": 9530,
+    "sha256": "c25ed18d92f3c6670232ee6e16f098f961920d2d95cdb7336013e9d951c742b6"
+  },
+  "data\\manga\\raw\\srtm-02000.json": {
+    "bytes": 9518,
+    "sha256": "d511ac84b3b51a6b8fbcd924bdcfeb58418ed47b7ef15d304d8df3827385772e"
+  },
+  "data\\manga\\raw\\srtm-02100.json": {
+    "bytes": 9514,
+    "sha256": "348e538c739a15418e3ea5adafc520c74913518de13c3a4586a09dd850fe3aa1"
+  },
+  "data\\manga\\raw\\srtm-02200.json": {
+    "bytes": 9532,
+    "sha256": "004d2dac9f885852986e5c654bce9eeaa966276bb94f9adb5a79d91bec5875a1"
+  },
+  "data\\manga\\raw\\srtm-02300.json": {
+    "bytes": 9500,
+    "sha256": "827c0fc7c262a39923b50653bf97834a3a0bf9bbdf871ab09009e07a602d1a8e"
+  },
+  "data\\manga\\raw\\srtm-02400.json": {
+    "bytes": 9537,
+    "sha256": "5fa2c74e0b63c7835e4b5437b06bdf6bf3df7be354d01f2225876f55c64ee0e8"
+  },
+  "data\\manga\\raw\\srtm-02500.json": {
+    "bytes": 9533,
+    "sha256": "185375ae055f8ba6bf2790348d78d1ffaed3bd2ab0311168bc1e16d07603499a"
+  },
+  "data\\manga\\raw\\srtm-02600.json": {
+    "bytes": 9537,
+    "sha256": "d7cf17c1450c59f5a85d623917f2d581c6c37bec807340ae9311660591cfc3d1"
+  },
+  "data\\manga\\raw\\srtm-02700.json": {
+    "bytes": 6992,
+    "sha256": "944af104148fc37e620eeced23bf1e827d25fde30fc4cde16936d01e2dad9468"
+  }
+}

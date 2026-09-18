@@ -1,0 +1,16 @@
+{
+  "blendSha256": "61aa96a59d4e597eaeb0401241857b2536ea779183f30be6f386537afc4c53a5",
+  "settings": {
+    "engine": "BLENDER_EEVEE",
+    "device": "Eevee GPU (Blender graphics backend)",
+    "samples": 24,
+    "resolution": [
+      1280,
+      720
+    ],
+    "fps": 24,
+    "threads": 8,
+    "memory_strategy": "Instanced scene, no persistent data, subdivision 1; Cycles texture limit 2048. This is not a hard VRAM cap."
+  },
+  "rendererSha256": "060f9bb3e9456c5e4f30d32a10560f16cde7de9bd153c0368350084a01b15234"
+}

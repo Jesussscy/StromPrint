@@ -7,11 +7,10 @@
 ![python]: https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white
 ![fastapi]: https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white
 ![scipy]: https://img.shields.io/badge/SciPy-8CAAE6?style=for-the-badge&logo=scipy&logoColor=black
-![cesium]: https://img.shields.io/badge/Cesium-0E5A8A?style=for-the-badge&logo=cesium&logoColor=white
 ![three]: https://img.shields.io/badge/Three.js-000000?style=for-the-badge&logo=threedotjs&logoColor=white
 
 ![next][next] ![react][react] ![ts][ts] ![tailwind][tailwind] ![python][python]
-![fastapi][fastapi] ![scipy][scipy] ![cesium][cesium] ![three][three]
+![fastapi][fastapi] ![scipy][scipy] ![three][three]
 
 > Guía técnica de cada librería, framework y servicio: qué es, qué hace en
 > StormPrint y dónde vive en el código. Versiones tomadas de `package.json` y
@@ -24,14 +23,14 @@
 ### ⚛️ React 18.3.1 · `app/`
 Biblioteca de UI por componentes. StormPrint es 100% **`"use client"`** (SPA con
 estados locales + contexto). Componentes clave: `Navbar`, `DashboardMovil`,
-`CesiumMap`, `HeatmapView`, `SummaryDashboard`.
+`MangaMap`, `SummaryDashboard`.
 
 ### 🚀 Next.js 14.2.15 · `app/`, `next.config.js`
 Framework de React con **App Router**. Usos:
 - Rutas por carpetas: `/`, `/alertas`, `/ciencia`.
 - `app/layout.tsx`: metadatos, tema, **PWA manifest** y apple-touch-icon.
 - `app/template.tsx`: transición de página entre pestañas (framer-motion).
-- `next.config.js`: reenvío en dev de `/api/v1/*` → `127.0.0.1:8000`, `CESIUM_BASE_URL=/cesium`
+- `next.config.js`: reenvío en dev de `/api/v1/*` → `127.0.0.1:8000`
   y **Security Headers** (CSP, HSTS, X-Frame-Options, nosniff, Referrer-Policy).
 - `app/middleware.ts`: Edge middleware que responde `404` a archivos sensibles.
 
@@ -63,21 +62,11 @@ de sintaxis para el laboratorio didáctico **100% en el navegador**.
 
 ## 2. Visualización 3D
 
-### 🌍 Cesium ^1.144.0 · `app/components/CesiumMap.tsx`
-GIS 3D basado en WebGL.
-- Globo con **imagery ArcGIS World Imagery** y **elevación 3D** de ArcGIS.
-- **20 zonas críticas** de Manga: pins con ~emblema, círculos de influencia y
-  columnas territoriales animadas por `H(t)`.
-- **Clustering** de marcadores (`CustomDataSource` + `clustering.pixelRange = 45`)
-  para evitar saturar el mapa al alejar la cámara.
-- Capa de **calor interpolada** y HUD de nivel; *failover* automático de tiles a
-  OpenStreetMap si ArcGIS falla.
-- Assets servidos desde `public/cesium` (`CESIUM_BASE_URL=/cesium`) incluyendo
-  `Workers`, `Assets`, `ThirdParty` y `Widgets`.
+### MangaMap · Three.js 0.169.0 + R3F 8.17.10 + Drei 9.114.3
 
-### 🧊 Three.js 0.169.0 + @react-three/fiber 8.17.10 + drei 9.114.3 · `ZonaFlood3D.tsx`
-Recreación 3D por zona con texturas procedurales: terreno, masa de agua animada y
-perspectiva cercana al usuario para "sentir" la inundación.
+GLB local de Blender 5.2.2; geometría OSM recortada a Manga y terreno SRTM. Simulación exploratoria conservativa en un Web Worker con pasos de 10 s. Lluvia visual independiente, selección por huellas e IDs. `ZonaFlood3D` conserva un resumen de la predicción zonal sin otra escena.
+
+La API añade `forzamiento_espacial`, con la precipitación horaria original y manejo de faltantes, separada de los forzamientos de la EDO. Véase `docs/manga/README.md` para fuentes, unidades, incertidumbres y validaciones.
 
 ---
 
@@ -141,7 +130,7 @@ Soporte para formularios (suscripción/desuscripción por email en `/notify/*`).
 ### ▲ Vercel · `vercel.json`
 Despliegue unificado: build de Next.js + **función serverless Python**
 (`@vercel/python`, 1024 MB, `maxDuration: 10`) con reescrituras `/api/v1/*` → `/api`,
-cabeceras de seguridad globales y caché inmutable para `/_next/static` y `/cesium`.
+cabeceras de seguridad globales y caché inmutable para `/_next/static`.
 
 ### 📲 PWA
 `app/manifest.json` + icónos en `public/`: nombre corto/largo, tema oscuro y

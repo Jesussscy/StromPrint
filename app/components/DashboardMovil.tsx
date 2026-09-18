@@ -28,7 +28,7 @@ import LazyMount from "@/app/components/LazyMount";
 import { Slider } from "@/app/components/Slider";
 
 // Mapa 3D y simulación de inundación por zona (WebGL pesado, carga diferida).
-const CesiumMap = dynamic(() => import("@/app/components/CesiumMap"), {
+const MangaMap = dynamic(() => import("@/app/components/MangaMap"), {
   ssr: false,
   loading: () => (
     <div className="absolute inset-0 flex items-center justify-center bg-ocean">
@@ -295,7 +295,7 @@ export default function DashboardMovil({
               </div>
             }
           >
-            <CesiumMap
+            <MangaMap
               nivelAguaCm={activePunto?.nivel_agua_cm ?? 0}
               nivelMaximoCm={prediccion?.nivel_maximo_cm ?? 100}
               zonasVivas={zonasVivas}
@@ -304,6 +304,10 @@ export default function DashboardMovil({
               horaLocal={Math.floor(currentHour) % 24}
               stormMode={stormMode}
               puntoMeteo={activePunto}
+              forecastPoints={prediccion?.puntos}
+              spatialForcing={prediccion?.forzamiento_espacial}
+              currentHour={currentHour}
+              sourceLabel={prediccion?.fuente_meteo}
               meteorologia={prediccion?.meteorologia_resumen ?? null}
               liveWater={liveWater}
               liveLatenciaMs={liveLatenciaMs}

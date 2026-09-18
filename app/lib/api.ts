@@ -130,6 +130,7 @@ export interface ZonaPrediccion {
 }
 
 export interface PrediccionResponse {
+  forzamiento_espacial?: SpatialForcing | null;
   territorio: string;
   horas_pronostico: number;
   puntos: PuntoPrediccion[];
@@ -158,6 +159,12 @@ export interface PrediccionResponse {
    * propios por zona). Ausente en predicciones antiguas sin datos per-zona.
    */
   zonas?: ZonaPrediccion[];
+}
+
+export interface SpatialForcing {
+  source: string; kind: string; retrieved_at: string; start_time: string;
+  step_seconds: number; rain_units: string; spatial_support: string;
+  hours: { hour: number; timestamp: string; rain_mm_h: number|null; wind_kmh: number|null; wind_direction_deg: number|null }[];
 }
 
 export interface DiaPronostico {

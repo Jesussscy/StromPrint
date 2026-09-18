@@ -1,0 +1,105 @@
+{
+  "uncompressedBytes": 189284440,
+  "compressedBytes": 22646224,
+  "ratio": 0.1196,
+  "positionQuantizationBits": 20,
+  "webDetailSimplification": [
+    {
+      "mesh": "Manga_Edificios_Carpinteria_marfil",
+      "before": 1157998,
+      "after": 578999
+    },
+    {
+      "mesh": "Manga_Edificios_Carpinteria_oscura",
+      "before": 247158,
+      "after": 123579
+    },
+    {
+      "mesh": "Manga_Edificios_Madera_persiana",
+      "before": 239536,
+      "after": 119768
+    }
+  ],
+  "uncompressedSha256": "c6f516bea6028d61dd149f20932762179b2b8902187504397fcd2feb443e5b8b",
+  "compressedSha256": "f0383747ecb0565289730d3e98632abaf310ad8e67fc0971779da5481ca032f4",
+  "decoder": "Bundled locally from installed Three.js, no CDN requests",
+  "blender": "5.2.2 LTS",
+  "externalTextures": [
+    {
+      "uri": "textures/packed-04c745c8de447b8a.png",
+      "bytes": 90369,
+      "sha256": "04c745c8de447b8a91fa0c0edc3cd0b5d7d2750f87c9713215615034ce7a844b"
+    },
+    {
+      "uri": "textures/packed-78711ee7cadd9cab.png",
+      "bytes": 84144,
+      "sha256": "78711ee7cadd9cab7121301c060ab7ebd1326fea439e739db08744c77f163950"
+    },
+    {
+      "uri": "textures/packed-81f871ad0c96f60f.png",
+      "bytes": 86061,
+      "sha256": "81f871ad0c96f60f4104da02dc3c2f10ed5605af7b6235c5b27fb01b91502e49"
+    },
+    {
+      "uri": "textures/packed-4ea139454da5cd11.png",
+      "bytes": 87931,
+      "sha256": "4ea139454da5cd113da0c829e77f45374990c3ea61d1fd1f01d6429bea9ce048"
+    },
+    {
+      "uri": "textures/packed-eddad5d755bb6d4a.png",
+      "bytes": 87300,
+      "sha256": "eddad5d755bb6d4aa421beafe094114b4957177a5732468e06041947c8ea9e1a"
+    },
+    {
+      "uri": "textures/packed-db74ea1c20d5588b.png",
+      "bytes": 87284,
+      "sha256": "db74ea1c20d5588b73eeac384df0e7cc5447c4b0897cf58a3c48b98a30ca8f01"
+    },
+    {
+      "uri": "textures/packed-9a2611971b8837ff.png",
+      "bytes": 91703,
+      "sha256": "9a2611971b8837fffbf981e44ba9ee23243244c2d6b95973f4e1e4b8478e6d2e"
+    },
+    {
+      "uri": "textures/packed-50ba5808011b5bc1.png",
+      "bytes": 74129,
+      "sha256": "50ba5808011b5bc1d923f6d327fbdd7a7cfe294315a5c2a7b2f78f00e5528e26"
+    },
+    {
+      "uri": "textures/packed-a088de5c8049d4e2.png",
+      "bytes": 83817,
+      "sha256": "a088de5c8049d4e246d7087995952a15cd74541b8f39fbbc69f8c5e625e6baf0"
+    },
+    {
+      "uri": "textures/packed-8a65e78dc51483a0.png",
+      "bytes": 83703,
+      "sha256": "8a65e78dc51483a02c6b73cef164d4cdad5adf3bbf15211fa83d59aeb6666c64"
+    },
+    {
+      "uri": "textures/packed-3323d0c90ad8e964.png",
+      "bytes": 89279,
+      "sha256": "3323d0c90ad8e964fee64229b00bb2c7fa550bd3257fa265cbd17d97bc1cf4c3"
+    },
+    {
+      "uri": "textures/packed-c658a4f38dca3050.png",
+      "bytes": 82159,
+      "sha256": "c658a4f38dca305076e4830a8ec53b2be1d20dc67c7ed429f7494bc8ce6f7ed7"
+    },
+    {
+      "uri": "textures/packed-c1775e52da0915d6.png",
+      "bytes": 87812,
+      "sha256": "c1775e52da0915d62ac4aa1d931e5ce09980d37f3d10a9f1118f4f34f121f65b"
+    },
+    {
+      "uri": "textures/packed-663ec1bb626eb4d4.png",
+      "bytes": 71914,
+      "sha256": "663ec1bb626eb4d469fd633b7368f4540ff2125333c7c2acd4cb3ea0e5381700"
+    },
+    {
+      "uri": "textures/packed-50b690e60552394c.png",
+      "bytes": 93405,
+      "sha256": "50b690e60552394ca6efe896f8906557361586a6def637ddf952ec835b5444ce"
+    }
+  ],
+  "textureLoading": "Exact exported PNG bytes via same-origin relative URLs; existing CSP unchanged"
+}

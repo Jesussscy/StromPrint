@@ -56,6 +56,7 @@ from .security import (
     verify_api_key,
 )
 from .tide_service import tide_service
+from .spatial_forcing import SpatialForcing, make_spatial_forcing
 from .weather_service import (
     ESTADO_SOLEADO,
     ESTADO_NUBLADO,
@@ -292,6 +293,7 @@ class ZonaPrediccion(BaseModel):
 
 
 class PrediccionResponse(BaseModel):
+    forzamiento_espacial: SpatialForcing | None = None
     territorio: str = "Manga, Cartagena de Indias"
     horas_pronostico: int
     puntos: list[PuntoPrediccion]
@@ -514,6 +516,7 @@ async def predecir(
     try:
         # 1. Obtener datos meteorologicos si se solicita
         weather_data = None
+        spatial_forcing = None
         estado_meteo = ESTADO_SOLEADO
         confianza_meteo = 1.0
         fuente_meteo = "open-meteo"
@@ -539,6 +542,7 @@ async def predecir(
                 proxima_pleamar = tide_data["proxima_pleamar"]
 
             forecast = await fetch_weather_forecast(forecast_days=8)
+            spatial_forcing = make_spatial_forcing(forecast.get("hourly", []), payload.horas_pronostico)
             # En modo meteo el nivel medio del mar lo decide la meteorologia
             # (marea), NUNCA el deslizador deshabilitado del dashboard.
             nivel_msl = tide_actual_cm or 8.0
@@ -787,6 +791,7 @@ async def predecir(
             estado_label=estado_label,
             confianza_meteo=confianza_meteo,
             fuente_meteo=fuente_meteo,
+            forzamiento_espacial=spatial_forcing,
             es_dia_lluvioso=dia_lluvioso,
             proxima_pleamar=proxima_pleamar,
             factores_dominantes=factores,

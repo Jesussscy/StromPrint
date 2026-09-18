@@ -1,0 +1,177 @@
+{
+  "areaM2": 1840301.9137311452,
+  "terrainCoverageRatio": 0.9999976682058985,
+  "buildings": 1622,
+  "roads": 775,
+  "glbBytes": 22646224,
+  "decodedBytes": 144982444,
+  "dracoDecodedByBlender": true,
+  "glbMeshes": 27,
+  "exportedTriangles": 1642935,
+  "geometrySha256": "82c665e7d8e8cb568aa1da1d981f20fe232d6b95783d719aaddd0ed4c3a96565",
+  "exportedMeshes": [
+    {
+      "mesh": "Manga_Costa_Agua_Caribe",
+      "vertices": 4830,
+      "triangles": 1610,
+      "geographicMask": "coast band"
+    },
+    {
+      "mesh": "Manga_Edificios_Anden_inferido",
+      "vertices": 187376,
+      "triangles": 86940,
+      "geographicMask": "Manga"
+    },
+    {
+      "mesh": "Manga_Edificios_Cal_0",
+      "vertices": 185956,
+      "triangles": 80054,
+      "geographicMask": "Manga"
+    },
+    {
+      "mesh": "Manga_Edificios_Cal_1",
+      "vertices": 169804,
+      "triangles": 74810,
+      "geographicMask": "Manga"
+    },
+    {
+      "mesh": "Manga_Edificios_Cal_2",
+      "vertices": 198732,
+      "triangles": 86648,
+      "geographicMask": "Manga"
+    },
+    {
+      "mesh": "Manga_Edificios_Cal_3",
+      "vertices": 174592,
+      "triangles": 76334,
+      "geographicMask": "Manga"
+    },
+    {
+      "mesh": "Manga_Edificios_Cal_4",
+      "vertices": 174208,
+      "triangles": 74998,
+      "geographicMask": "Manga"
+    },
+    {
+      "mesh": "Manga_Edificios_Cal_5",
+      "vertices": 160268,
+      "triangles": 70086,
+      "geographicMask": "Manga"
+    },
+    {
+      "mesh": "Manga_Edificios_Carpinteria_marfil",
+      "vertices": 1356033,
+      "triangles": 578999,
+      "geographicMask": "Manga"
+    },
+    {
+      "mesh": "Manga_Edificios_Carpinteria_oscura",
+      "vertices": 280330,
+      "triangles": 123579,
+      "geographicMask": "Manga"
+    },
+    {
+      "mesh": "Manga_Edificios_Cubierta_0",
+      "vertices": 1824,
+      "triangles": 608,
+      "geographicMask": "Manga"
+    },
+    {
+      "mesh": "Manga_Edificios_Cubierta_1",
+      "vertices": 1533,
+      "triangles": 511,
+      "geographicMask": "Manga"
+    },
+    {
+      "mesh": "Manga_Edificios_Cubierta_2",
+      "vertices": 1740,
+      "triangles": 580,
+      "geographicMask": "Manga"
+    },
+    {
+      "mesh": "Manga_Edificios_Cubierta_3",
+      "vertices": 2004,
+      "triangles": 668,
+      "geographicMask": "Manga"
+    },
+    {
+      "mesh": "Manga_Edificios_Madera_persiana",
+      "vertices": 300228,
+      "triangles": 119768,
+      "geographicMask": "Manga"
+    },
+    {
+      "mesh": "Manga_Edificios_Teja_arcilla",
+      "vertices": 22515,
+      "triangles": 7505,
+      "geographicMask": "Manga"
+    },
+    {
+      "mesh": "Manga_Edificios_Vidrio_costero",
+      "vertices": 246690,
+      "triangles": 108754,
+      "geographicMask": "Manga"
+    },
+    {
+      "mesh": "Manga_Edificios_Zinc_costero",
+      "vertices": 21356,
+      "triangles": 10162,
+      "geographicMask": "Manga"
+    },
+    {
+      "mesh": "Manga_Terreno_Suelo_costero",
+      "vertices": 10035,
+      "triangles": 3345,
+      "geographicMask": "Manga"
+    },
+    {
+      "mesh": "Manga_Vegetacion_Cobertura_vegetal",
+      "vertices": 489,
+      "triangles": 163,
+      "geographicMask": "Manga"
+    },
+    {
+      "mesh": "Manga_Vegetacion_Follaje_0",
+      "vertices": 124946,
+      "triangles": 45160,
+      "geographicMask": "Manga"
+    },
+    {
+      "mesh": "Manga_Vegetacion_Follaje_1",
+      "vertices": 120574,
+      "triangles": 43630,
+      "geographicMask": "Manga"
+    },
+    {
+      "mesh": "Manga_Vegetacion_Follaje_2",
+      "vertices": 66195,
+      "triangles": 24049,
+      "geographicMask": "Manga"
+    },
+    {
+      "mesh": "Manga_Vegetacion_Tronco_palmera",
+      "vertices": 17752,
+      "triangles": 6412,
+      "geographicMask": "Manga"
+    },
+    {
+      "mesh": "Manga_Vias_Anden_inferido",
+      "vertices": 20589,
+      "triangles": 6863,
+      "geographicMask": "Manga"
+    },
+    {
+      "mesh": "Manga_Vias_Asfalto_mineral",
+      "vertices": 27015,
+      "triangles": 9005,
+      "geographicMask": "Manga"
+    },
+    {
+      "mesh": "Manga_Vias_Senalizacion_esquematica",
+      "vertices": 5082,
+      "triangles": 1694,
+      "geographicMask": "Manga"
+    }
+  ],
+  "checks": "Source GIS triangles inside boundary, roof coverage, GLB v2; actual exported world-space vertices within Manga / source coastal band (2.5 cm tolerance), finite attributes, valid indices, 32 meshes / 24 MiB transfer / 192 MiB decoded / 2M triangle budget."
+}

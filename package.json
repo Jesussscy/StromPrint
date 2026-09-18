@@ -2,7 +2,7 @@
   "name": "stormprint",
   "version": "3.11.0",
   "private": true,
-  "description": "StormPrint — La huella que deja cada tormenta en el territorio (Manga, Cartagena)",
+  "description": "StormPrint â€” La huella que deja cada tormenta en el territorio (Manga, Cartagena)",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -12,14 +12,14 @@
     "check": "tsc --noEmit && next lint",
     "backend": "uvicorn api.index:app --reload --host 127.0.0.1 --port 8000",
     "test": "python -m pytest tests -q",
-    "vercel-build": "next build"
+    "vercel-build": "next build",
+    "manga:validate": "node scripts/manga/validate.cjs"
   },
   "dependencies": {
     "@react-three/drei": "9.114.3",
     "@react-three/fiber": "8.17.10",
     "@types/katex": "^0.16.8",
     "@types/react-syntax-highlighter": "^15.5.13",
-    "cesium": "^1.144.0",
     "clsx": "2.1.1",
     "framer-motion": "11.11.9",
     "katex": "^0.18.4",
@@ -46,8 +46,5 @@
   },
   "engines": {
     "node": ">=18.18.0"
-  },
-  "overrides": {
-    "@spz-loader/core": "0.3.0"
   }
 }

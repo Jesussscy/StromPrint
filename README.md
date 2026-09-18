@@ -26,14 +26,13 @@ Simulación ciberfísica del riesgo de inundación en el barrio **Manga, Cartage
 ![sqlite]: https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white
 ![scipy]: https://img.shields.io/badge/SciPy-8CAAE6?style=for-the-badge&logo=scipy&logoColor=black
 
-![cesium]: https://img.shields.io/badge/Cesium_3D-0E5A8A?style=for-the-badge&logo=cesium&logoColor=white
 ![three]: https://img.shields.io/badge/Three.js-000000?style=for-the-badge&logo=threedotjs&logoColor=white
 ![recharts]: https://img.shields.io/badge/Recharts-coral?style=for-the-badge&logo=recharts&logoColor=white
 ![pwa]: https://img.shields.io/badge/PWA-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white
 
 ![vercel][vercel] ![next][next] ![react][react] ![ts][ts] ![tailwind][tailwind] ![framer][framer]
 ![python][python] ![fastapi][fastapi] ![pydantic][pydantic] ![sqlalchemy][sqlalchemy] ![sqlite][sqlite] ![scipy][scipy]
-![cesium][cesium] ![three][three] ![recharts][recharts] ![pwa][pwa]
+![three][three] ![recharts][recharts] ![pwa][pwa]
 
 </div>
 
@@ -76,14 +75,14 @@ StormPrint/
 │   ├── middleware.ts       Bloqueo Edge de archivos sensibles (404)
 │   ├── globals.css         Tema Cyber-Hydro Glassmorphism
 │   ├── lib/api.ts          Cliente HTTP tipado (timeout, dedupe, polling)
-│   └── components/         Navbar, Footer, MobileBottomNav, CesiumMap (visor 3D),
-│                           HeatmapView, DashboardMovil, WeatherStation,
+│   └── components/         Navbar, Footer, MobileBottomNav, MangaMap (visor 3D local),
+│                           MangaMap, DashboardMovil, WeatherStation,
 │                           ZonaFlood3D, ForecastDayCard, SummaryDashboard, …
 ├── tests/                  Suite pytest (umbrales, motor, notificaciones, API)
 ├── vercel.json             Unifica build Next.js + función Python serverless
 ├── requirements.txt        Backend
 ├── package.json            Frontend
-└── public/                 Assets, PWA icons, /cesium (Cesium estático)
+└── public/                 Assets, PWA icons, /models/manga (GLB y datos GIS)
 ```
 
 ---
@@ -143,20 +142,17 @@ npm run dev
 
 ## 🗺️ Panel en Vivo · Modelo 3D
 
-El corazón visual es **`CesiumMap.tsx`** (Cesium, lazy-load): globo con imagery y
-elevación de ArcGIS, pins **agrupados por clustering** (`CustomDataSource`),
-columnas territoriales animadas por `H(t)`, capa de calor interpolada y HUD de nivel.
+El visor **MangaMap.tsx** usa Three.js / React Three Fiber y el modelo local creado en **Blender 5.2.2**. Representa solo Manga, recortado con un polígono OSM contrastado con cartografía pública.
 
-- 🧭 **Línea temporal** pegada bajo el mapa: arrastrá la hora y el agua se mueve.
-- 📱 **Dashboard móvil** (`DashboardMovil.tsx`): barra «AHORA», mapa a pantalla completa, controles ≥ 44 px.
-- 🎮 **Simulador 3D por zona** (`ZonaFlood3D.tsx`): Three.js + react-three-fiber.
-- 📉 **Recharts**: gráfico de proyección, comparador de escenarios, historial.
+- Modelo editable: `models/manga/MANGA_STORMPRINT_FINAL.blend`.
+- Web: `public/models/manga/manga.glb` y datos GIS reproducibles.
+- Agua exploratoria por celdas de terreno, lluvia horaria original de API y escenarios manuales independientes.
+- Selección de edificios y zonas, capas, vista superior, controles táctiles y reproducción temporal.
+- La antigua vista por zona es ahora un resumen; no crea otra ciudad genérica.
+- [Fuentes, reproducción, pruebas y límites del modelo](docs/manga/README.md).
+- [Checkpoints de esta implementación](docs/manga/CHECKPOINT.md).
 
-> ⚠️ **CSP y tiles (importante en Vercel):** el mapa carga tiles en runtime; la CSP
-> debe permitir `server.arcgisonline.com`, `*.tile.openstreetmap.org` y `*.cartocdn.com`
-> en `img-src`/`connect-src`, más `elevation3d.arcgis.com` y `api.open-meteo.com`.
-> Se define **dos veces** (`next.config.js` y `vercel.json`) — mantenerlas en sync;
-> los workers de Cesium necesitan `worker-src 'self' blob:` (`CESIUM_BASE_URL=/cesium`).
+No es una simulación hidráulica calibrada. La topografía SRTM y las alturas estimadas no resuelven bordillos ni cada charco.
 
 ---
 

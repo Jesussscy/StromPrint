@@ -1,0 +1,10 @@
+{
+  "sourceSha256": "82c665e7d8e8cb568aa1da1d981f20fe232d6b95783d719aaddd0ed4c3a96565",
+  "sidewalkTriangles": 6863,
+  "markingTriangles": 1694,
+  "trees": 458,
+  "cameraCandidates": 137,
+  "outsideBoundaryAreaM2": 0.0,
+  "treeClearanceM": 4,
+  "note": "Only visual inferred detail: sidewalks 1.25 m, schematic markings, tropical trees inside mapped parks and clear street setbacks. No survey or drainage data."
+}

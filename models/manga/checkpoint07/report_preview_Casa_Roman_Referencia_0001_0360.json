@@ -1,0 +1,42 @@
+{
+  "started_utc": "2026-09-17T08:35:10.560272+00:00",
+  "blender_version": "5.2.2 LTS",
+  "blender_executable": "C:\\Program Files\\Blender Foundation\\Blender 5.2\\blender.exe",
+  "blend_file": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\MANGA_STORMPRINT_FINAL.blend",
+  "local_only": true,
+  "mode": "preview",
+  "status": "complete",
+  "results": [
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint07\\preview\\Casa_Roman_Referencia.png",
+      "camera": "Casa_Roman_Referencia",
+      "frame": 1,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 6.431,
+      "bytes": 906801,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    }
+  ],
+  "notes": [
+    "Architectural materials/details are generic unless documented as verified.",
+    "Hydrology is exploratory, not a certified prediction."
+  ],
+  "settings": {
+    "engine": "BLENDER_EEVEE",
+    "device": "Eevee GPU (Blender graphics backend)",
+    "samples": 16,
+    "resolution": [
+      1280,
+      720
+    ],
+    "fps": 24,
+    "threads": 8,
+    "memory_strategy": "Instanced scene, no persistent data, subdivision 1; Cycles texture limit 2048. This is not a hard VRAM cap."
+  },
+  "blend_sha256": "7ab4652d4c48ef1216b121882b3e390bb41dc91b2839676358d560bb44fa50fd",
+  "elapsed_seconds": 6.889,
+  "finished_utc": "2026-09-17T08:35:17.449505+00:00"
+}

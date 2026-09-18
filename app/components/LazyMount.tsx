@@ -13,7 +13,7 @@ interface LazyMountProps {
  * LazyMount
  * Monta `children` cuando el contenedor se acerca al viewport
  * (IntersectionObserver). Sirve para diferir el render y el bundle de
- * componentes pesados (p. ej. el visor 3D de Cesium).
+ * componentes pesados (p. ej. el visor 3D de Manga).
  *
  * Fiabilidad: el nodo observado es un div con caja real (`relative h-full`),
  * así el observador siempre recibe un rect con área > 0. Además hay un fallback

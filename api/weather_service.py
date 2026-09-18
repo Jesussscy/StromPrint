@@ -402,6 +402,8 @@ def _process_forecast(raw: Dict[str, Any]) -> Dict[str, Any]:
     for i, t in enumerate(times):
         hourly_records.append({
             "time": t,
+            # Preserve missingness for the spatial model; legacy consumers keep their defaults.
+            "precipitation_missing": i >= len(hourly.get("precipitation", [])) or hourly.get("precipitation", [])[i] is None,
             "precipitation": hourly.get("precipitation", [0.0])[i] or 0.0,
             "rain": hourly.get("rain", [0.0])[i] or 0.0,
             "temperature_2m": hourly.get("temperature_2m", [25.0])[i] or 25.0,

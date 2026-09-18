@@ -1,0 +1,9 @@
+{
+  "osmAreaM2": 1840301.9137311452,
+  "arcgisAreaM2": 1819934.256323359,
+  "osmOnlyM2": 66914.43731916968,
+  "arcgisOnlyM2": 46546.77991138499,
+  "IoU": 0.9398673472797009,
+  "maxDistanceBetweenBoundariesM": 158.10148388773013,
+  "decision": "OSM operational boundary; public ArcGIS has no official provenance/license stated; PEMP visual corroboration does not certify administrative delimitation."
+}

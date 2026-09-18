@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "scope": "Visual height estimates only; never modify manga.json, terrain, footprints or solver",
+  "reviewDate": "2026-09-17",
+  "buildings": {
+    "osm-way-200450241-0": {
+      "expectedName": "Holiday Inn Express Manga",
+      "expectedWebsiteContains": "/cartagena-de-indias/ctgcm/",
+      "heightM": 30,
+      "heightMethod": "derivada: 10 pisos documentados por IHG × 3 m (estimación visual, altura no medida)",
+      "levels": 10,
+      "levelsKind": "total-documented",
+      "metresPerLevel": 3,
+      "sourceUrl": "https://www.ihg.com/holidayinnexpress/hotels/us/es/cartagena-de-indias/ctgcm/hoteldetail/amenities",
+      "sourceTitle": "IHG · Holiday Inn Express Cartagena Manga · Servicios",
+      "evidence": "Total de pisos: 10",
+      "evidenceLocator": "En este hotel > Detalles del hotel > Información del hotel",
+      "identityEvidence": "Nombre y código de hotel ctgcm coinciden con la etiqueta website del way OSM. IHG publica dirección Carrera 27 No. 28-30, Manga.",
+      "confidence": {
+        "measured": false,
+        "levels": "documented-by-operator",
+        "facade": "unverified"
+      }
+    },
+    "osm-way-94671015-0": {
+      "expectedName": "Twins Bay",
+      "heightM": 60,
+      "heightMethod": "derivada: al menos 20 pisos documentados por FNC × 3 m (estimación visual, altura total no medida)",
+      "levels": 20,
+      "levelsKind": "minimum-documented",
+      "metresPerLevel": 3,
+      "sourceUrl": "https://federaciondecafeteros.org/static/files/directorio_dependencia_2019.pdf",
+      "sourceTitle": "Federación Nacional de Cafeteros · Directorio dependencias 2019",
+      "evidence": "Edificio Twins Bay, Piso 20",
+      "evidenceLocator": "Página 1, tabla INSPECCIONES CAFETERAS, fila CARTAGENA",
+      "identityEvidence": "Nombre Twins Bay, alias Torre Bancolombia y Calle 25 No. 24A en OSM coinciden con la dirección Calle 25 No. 24A-16 del directorio.",
+      "confidence": {
+        "measured": false,
+        "levels": "minimum-supported-by-occupant-address",
+        "facade": "unverified"
+      },
+      "limitations": "El piso de una oficina establece un mínimo documental, no el número total de pisos. La numeración, entrepisos, podio y coronación no están levantados. El directorio es de 2019; no se afirma ocupación vigente."
+    }
+  }
+}

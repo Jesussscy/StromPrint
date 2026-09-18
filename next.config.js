@@ -4,10 +4,6 @@ const nextConfig = {
   poweredByHeader: false,
   swcMinify: true,
 
-  // Cesium carga sus workers/assets desde /cesium (copia en public/cesium)
-  env: {
-    CESIUM_BASE_URL: "/cesium",
-  },
 
   async rewrites() {
     const IS_VERCEL = process.env.VERCEL === "1";
@@ -39,15 +35,6 @@ const nextConfig = {
     ];
   },
 
-  webpack: (config) => {
-    // Cesium: permitir recursos estaticos sin tratarlos como modulos JS
-    config.module.rules.push({
-      test: /\.(png|gif|jpg|jpeg|svg)$/,
-      type: "asset/resource",
-    });
-
-    return config;
-  },
 };
 
 module.exports = nextConfig;

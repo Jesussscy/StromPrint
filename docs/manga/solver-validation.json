@@ -1,0 +1,36 @@
+{
+  "date": "2026-09-17T08:33:41.572Z",
+  "checks": [
+    "dry",
+    "mass balance",
+    "nonnegative",
+    "downhill",
+    "lake symmetry",
+    "seek determinism",
+    "flat resolution 20/40/80m",
+    "drainage recession",
+    "coastal connection",
+    "range rejection",
+    "Manga extreme 24h"
+  ],
+  "computeMs": 3012.9764,
+  "cells": 1319,
+  "normal": {
+    "seconds": 14400,
+    "rainM3": 883342.9130791193,
+    "lossM3": 33314.87924321031,
+    "seaM3": 0,
+    "storedM3": 850028.033844661,
+    "balanceM3": 0.000008751987479627132,
+    "maxDepthM": 6.318060526299108
+  },
+  "extreme": {
+    "seconds": 86400,
+    "rainM3": 13250143.697622042,
+    "lossM3": 0,
+    "seaM3": -7241492.422581041,
+    "storedM3": 6008651.273739468,
+    "balanceM3": -0.0013015326112508774,
+    "maxDepthM": 14.638303057879913
+  }
+}

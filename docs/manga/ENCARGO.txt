@@ -1,0 +1,267 @@
+Actúa como especialista en desarrollo web 3D, Blender, GIS, simulación de inundaciones e interfaces táctiles. Tu tarea es crear e integrar un modelo urbano 3D realista del barrio Manga en StormPrint, sustituyendo el visor CesiumMap.
+
+UBICACIÓN Y LÍMITE OBLIGATORIO
+
+El proyecto debe representar EXCLUSIVAMENTE EL BARRIO MANGA, CARTAGENA DE INDIAS, BOLÍVAR, COLOMBIA.
+
+SOLO MANGA.
+
+No modeles toda Cartagena.
+No incluyas como parte del modelo otros barrios, el Centro Histórico, Getsemaní, Bocagrande, Pie de la Popa ni sectores vecinos.
+No utilices un globo terrestre ni un mapa mundial como escenario.
+
+Verifica el perímetro del barrio con cartografía pública confiable y úsalo como máscara para recortar todos los datos y geometrías. Un rectángulo alrededor de Manga no sustituye su límite real.
+
+Representa el borde costero y, cuando sea indispensable, una franja mínima de agua adyacente como condición de borde. Esto no autoriza ampliar el modelo urbano a otros sectores. Recorta los puentes y conexiones en el límite definido y documenta ese tratamiento.
+
+Si las fuentes discrepan sobre el perímetro, explica la diferencia y resuelve el límite con evidencia antes de generar el modelo definitivo.
+
+PROYECTO EXISTENTE
+
+Repositorio:
+C:\Users\males\OneDrive\Desktop\StromPrint
+
+Documento de referencia:
+C:\Users\males\OneDrive\Desktop\PROYECTO.docx
+
+Versión de Blender solicitada: 5.2.2.
+
+Comprueba la versión realmente disponible y la compatibilidad de scripts, materiales y exportaciones. No afirmes haber utilizado Blender 5.2.2 si no pudiste ejecutarlo. Si no está disponible, informa del bloqueo concreto sin instalar silenciosamente otra versión.
+
+Revisa las instrucciones del repositorio y el código antes de intervenir. Usa el documento como referencia de calidad geográfica y modelado; este encargo define el alcance actual.
+
+OBJETIVO FINAL
+
+Entrega conjuntamente:
+
+1. El modelo de Manga editable en Blender.
+2. Los datos y scripts necesarios para reproducirlo.
+3. Una simulación de lluvia, escorrentía, charcos e inundación, con sus supuestos explícitos.
+4. La integración interactiva dentro del apartado de StormPrint ocupado actualmente por CesiumMap.
+5. Una experiencia visual atractiva, clara y usable con ratón y pantallas táctiles.
+
+No consideres suficiente entregar renders, un video, un archivo .blend aislado o una escena web desconectada de las APIs.
+
+SUSTITUCIÓN DE CESIUMMAP
+
+Inspecciona especialmente:
+- app/components/CesiumMap.tsx
+- app/components/DashboardMovil.tsx
+- app/components/ZonaFlood3D.tsx
+- app/components/HeatmapView.tsx
+- app/lib/geoProjection.ts
+- app/lib/zonasManga.ts
+- app/lib/api.ts
+- app/page.tsx
+- api/index.py
+- api/physics_engine.py
+- package.json y package-lock.json
+- next.config.js y vercel.json
+
+Sustituye CesiumMap en escritorio y móvil por un visor local del modelo de Manga basado preferentemente en Three.js, React Three Fiber y Drei, ya presentes en el proyecto.
+
+El modelo debe ocupar el mismo apartado funcional del mapa actual y estar conectado con el estado de la aplicación.
+
+Después de integrar y verificar el reemplazo, elimina las referencias, dependencias, assets y configuración exclusivos de Cesium que hayan quedado sin uso. Comprueba antes que no sean necesarios para otras funciones.
+
+Conserva las funcionalidades existentes de predicción, selección de zonas, paneles, alertas y línea temporal que resulten aplicables. Evita mantener un segundo simulador ilustrativo que contradiga el modelo geográfico principal.
+
+MODELO GEOGRÁFICO Y REALISMO
+
+Construye Manga a partir de datos verificables:
+- Perímetro.
+- Terreno y elevaciones.
+- Costa.
+- Huellas y alturas de edificios.
+- Vías y espacios públicos.
+- Drenajes y elementos que condicionen el agua, cuando existan datos.
+
+Prioriza fuentes oficiales accesibles y utiliza otras fuentes legítimas, como OpenStreetMap, cuando sean adecuadas.
+
+No inventes calles, edificios, fachadas reconocibles, infraestructura de drenaje ni alturas supuestamente medidas.
+
+Clasifica las alturas como medidas, derivadas o estimadas. Conserva fuente, fecha y método.
+
+Usa un sistema métrico apropiado y un origen local próximo a Manga:
+- 1 unidad de Blender = 1 metro.
+- Norte geográfico conservado.
+- Transformación documentada entre coordenadas geográficas, coordenadas locales y escena web.
+- Referencia vertical identificada.
+
+Verifica alineación, distancias, alturas, costa y colocación de edificios sobre el suelo.
+
+El realismo debe proceder de geometría coherente, materiales PBR eficientes, iluminación y referencias verificadas. No sustituyas Manga por una ciudad genérica de edificios aleatorios.
+
+BLENDER Y EXPORTACIÓN
+
+Entrega un archivo principal:
+MANGA_STORMPRINT_FINAL.blend
+
+Organiza colecciones para terreno, edificios, vías, costa, agua, vegetación, iluminación y elementos auxiliares. Mantén nombres claros y recursos reproducibles.
+
+Incluye una escena de demostración de lluvia y agua en Blender con escenarios representativos y controles documentados. Diferencia lo que puede previsualizarse allí de lo que se calcula en tiempo real en la web.
+
+Exporta modelos web optimizados en GLB/glTF, divididos por sectores internos de Manga cuando sea conveniente. Conserva identificadores para selección y metadatos.
+
+No presupongas que partículas, shaders, Geometry Nodes o simulaciones de Blender funcionan automáticamente al exportar a glTF. Implementa sus equivalentes web y verifica la coherencia entre ambas representaciones.
+
+SIMULACIÓN DE LLUVIA Y AGUA
+
+Audita las APIs existentes:
+- Variables disponibles.
+- Unidades.
+- Frecuencia y antigüedad de los datos.
+- Cobertura espacial.
+- Datos observados, pronosticados o derivados.
+- Valores faltantes y fallos.
+
+Conecta la lluvia, el viento, la marea y los niveles disponibles mediante un adaptador tipado.
+
+Separa tres componentes:
+1. Lluvia visual: gotas, salpicaduras y superficies mojadas.
+2. Cálculo del agua sobre el terreno.
+3. Presentación del riesgo y resultados.
+
+Las partículas visuales no deben determinar por sí solas la cantidad de agua.
+
+Representa, en función de datos y supuestos:
+- Acumulación en depresiones.
+- Escorrentía pendiente abajo.
+- Charcos que crecen, se conectan y disminuyen.
+- Desbordamiento cuando se supera una cota.
+- Obstáculos y vías de paso.
+- Infiltración y drenaje.
+- Influencia de la marea donde exista conexión física.
+
+No uses un plano horizontal ascendente sobre todo Manga como sustituto de la simulación del terreno.
+
+IMPORTANTE SOBRE PRECISIÓN
+
+Los datos meteorológicos y los niveles por zona no bastan para conocer exactamente dónde se forma cada charco.
+
+Comprueba la resolución y precisión vertical del terreno. No afirmes resolver bordillos, canales o depresiones pequeñas si la topografía no los representa.
+
+Identifica datos faltantes y supuestos. Si faltan mediciones, entrega un modo exploratorio claramente identificado y explica sus límites.
+
+No confundas:
+- Profundidad de agua sobre el suelo.
+- Elevación de la superficie del agua.
+- Cota del terreno.
+- Nivel de marea.
+
+Alinea referencias verticales y unidades antes de combinarlas.
+
+Determina cómo utilizar las predicciones existentes sin contar dos veces la lluvia o imponer resultados incompatibles. Documenta si los niveles actuales sirven de condición, comparación o referencia.
+
+Selecciona y justifica un método numérico apropiado. Comprueba estabilidad, balance de agua, ausencia de profundidades negativas y comportamiento ante cambios de resolución.
+
+ESCENARIOS EXTREMOS
+
+Incluye escenarios manuales claramente separados del pronóstico:
+- Lluvia intensa y prolongada.
+- Suelo saturado.
+- Drenaje reducido u obstruido.
+- Marea alta.
+- Combinaciones extremas.
+
+Define rangos, unidades y límites del modelo.
+
+No recortes silenciosamente valores extremos para que la escena se vea bien. Si se excede el rango validado, indícalo.
+
+Permite pausar, reiniciar, reproducir y controlar la velocidad temporal. Define qué ocurre al retroceder en el tiempo mediante estados guardados o recálculo consistente.
+
+La simulación debe ser reproducible con los mismos parámetros y no depender de la tasa de fotogramas.
+
+INTERACCIÓN Y PRESENTACIÓN
+
+Permite:
+- Rotación, desplazamiento, acercamiento e inclinación.
+- Vista general, superior y regreso a Manga.
+- Selección de zonas y edificios.
+- Consulta de lluvia, profundidad, riesgo y hora.
+- Activar y desactivar lluvia, agua, edificios y capas informativas.
+- Alternar datos de API y escenarios manuales sin mezclarlos.
+
+No atribuyas una predicción individual validada a un edificio si los datos solo describen una zona.
+
+Diseña una interfaz clara en español, con leyendas, unidades, fecha de actualización y distinción visible entre pronóstico y escenario hipotético.
+
+Mantén legibilidad bajo lluvia intensa. Respeta preferencias de movimiento reducido.
+
+PANTALLAS TÁCTILES Y RENDIMIENTO
+
+Diseña para ratón, tabletas y pantallas táctiles grandes:
+- Gestos previsibles con uno y dos dedos.
+- Selección precisa sin activaciones accidentales al arrastrar.
+- Controles de al menos 44 × 44 píxeles CSS.
+- Ninguna función esencial dependiente de hover.
+- Manejo correcto de orientación, resolución y densidad de píxeles.
+- Ausencia de conflictos entre gestos del visor y desplazamiento de la página.
+
+El objetivo es interacción fluida y respuesta inmediata. No prometas “cero lag” en cualquier dispositivo sin mediciones.
+
+Define hardware y condiciones de prueba. Busca 60 FPS en los equipos objetivo y una degradación adaptativa usable en equipos limitados.
+
+Utiliza, según las mediciones:
+- LOD, instancias y carga progresiva.
+- Compresión de geometría y texturas.
+- Límites de resolución y partículas.
+- Workers para cálculos costosos.
+- Separación entre pasos de simulación y renderizado.
+- Liberación de memoria y recursos.
+
+Reduce detalle visual antes de alterar silenciosamente resultados físicos. Si cambia la resolución de simulación, identifica su efecto.
+
+Gestiona fallos de API, ausencia de datos, pérdida de contexto gráfico y dispositivos incompatibles con mensajes útiles.
+
+PLAN DE EJECUCIÓN
+
+Trabaja por fases verificables:
+
+1. Auditar proyecto, APIs, Blender y datos.
+2. Verificar y fijar el perímetro exclusivo de Manga.
+3. Construir una base geográfica reconocible y a escala.
+4. Entregar un primer modelo Blender y exportación web funcional.
+5. Integrar el nuevo visor en el apartado de CesiumMap.
+6. Implementar lluvia y cálculo del agua.
+7. Conectar APIs, zonas, paneles y controles temporales.
+8. Optimizar interacción táctil y escenarios extremos.
+9. Retirar Cesium y recursos obsoletos.
+10. Validar y entregar.
+
+No avances al detalle decorativo mientras la geometría, escala o integración básica sean incorrectas.
+
+Resuelve decisiones técnicas menores de forma autónoma. Si falta un dato indispensable, explica qué bloquea y continúa únicamente con trabajo independiente.
+
+VALIDACIÓN Y ENTREGA
+
+Comprueba:
+- Solo se representa Manga.
+- El .blend abre en la versión solicitada.
+- El modelo exportado carga y coincide espacialmente.
+- La selección y los controles funcionan en escritorio y táctil.
+- Las APIs actualizan la escena correctamente.
+- Charcos y flujo responden a la topografía representada.
+- Los escenarios extremos son estables o informan sus límites.
+- No se duplican viewers, eventos ni recursos al remontar componentes.
+- El proyecto supera las comprobaciones pertinentes de tipos, lint, compilación y pruebas.
+- El rendimiento está medido, indicando equipo y escenario.
+- No quedan referencias activas a CesiumMap.
+
+Entrega:
+- MANGA_STORMPRINT_FINAL.blend y recursos necesarios.
+- Modelos optimizados para la web.
+- Scripts reproducibles de preparación y exportación.
+- Integración funcional en StormPrint.
+- Fuentes, licencias, transformaciones y metadatos.
+- Documentación del método de simulación y sus límites.
+- Instrucciones para ejecutar y reproducir escenarios.
+- Resultados de validación y pendientes reales.
+
+No declares precisión hidráulica profesional sin calibración y validación suficientes.
+No declares terminada la integración porque un render se vea bien.
+No afirmes haber ejecutado pruebas o abierto Blender si no lo hiciste.
+
+El resultado debe ser Manga reconocible, geográficamente coherente, visualmente atractiva e interactiva dentro de StormPrint, con lluvia y agua vinculadas a datos y supuestos explícitos.
+
+RECUERDA: SOLO EL BARRIO MANGA, CARTAGENA DE INDIAS, COLOMBIA. NO TODA CARTAGENA.

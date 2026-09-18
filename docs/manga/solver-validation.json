@@ -1,5 +1,5 @@
 {
-  "date": "2026-09-18T11:51:56.777Z",
+  "date": "2026-09-18T18:09:42.533Z",
   "checks": [
     "dry",
     "mass balance",
@@ -13,7 +13,7 @@
     "range rejection",
     "Manga extreme 24h"
   ],
-  "computeMs": 2690.6643999999997,
+  "computeMs": 2911.5656,
   "cells": 1319,
   "normal": {
     "seconds": 14400,

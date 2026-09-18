@@ -11,10 +11,11 @@ import { ZONAS_MANGA, type ZonaManga, type ZonaViva } from '@/app/lib/zonasManga
 import type { MeteorologiaResumen, PuntoPrediccion, WaterStateResponse, SpatialForcing } from '@/app/lib/api';
 import { apiScenario, insideBoundary, zoneLocal } from '@/app/lib/manga/adapter';
 import type { Building, MangaData, Scenario, WaterResult } from '@/app/lib/manga/types';
-import { District, RenderBudget, type RenderQuality, type LandscapeInstances } from './MangaScene';
+import { District, CoverageBoundary, RenderBudget, type RenderQuality, type LandscapeInstances } from './MangaScene';
 import { waterSurface } from '@/app/lib/manga/waterSurface';
 import { zoneCells, summarizeZones, waterColor } from '@/app/lib/manga/zones';
 import { RainWeather } from './MangaRain';
+import { FORECAST_TIMELINE_EVENT } from '@/app/lib/manga/timeline';
 
 interface Props {
   nivelAguaCm?: number; nivelMaximoCm?: number; zonasVivas?: Map<number,ZonaViva>;
@@ -34,7 +35,7 @@ const PRESETS: Record<string,Scenario> = {
 type LayersState={buildings:boolean;vegetation:boolean;water:boolean;rain:boolean;zones:boolean;flow:boolean};
 type ViewKind='general'|'coast'|'urban'|'top';
 type LightMode='day'|'sunset'|'night';
-type CameraView={kind:ViewKind;revision:number};
+type CameraView={kind:ViewKind;revision:number;park?:number[]};
 interface BuildingVisual {
   name?:string|null; sourceUrl?:string; osmId?:number; buildingType?:string;
   visualHeightM?:number;visualHeightMethod?:string;visualHeightSourceUrl?:string;
@@ -86,7 +87,7 @@ function Model({data,layers,onBuilding,onEmpty,onReady}:{data:MangaData;layers:L
   return <primitive object={local} onClick={select} />;
 }
 
-function Camera({view,focus,buildingFocus,data,reduced,street}:{view:CameraView;focus:number|null;buildingFocus:{building:Building;revision:number}|null;data:MangaData;reduced:boolean;street?:StreetCamera}) {
+function Camera({view,focus,buildingFocus,data,reduced,street,orbit}:{view:CameraView;focus:number|null;buildingFocus:{building:Building;revision:number}|null;data:MangaData;reduced:boolean;street?:StreetCamera;orbit:boolean}) {
   const ref=useRef<OrbitControlsImpl>(null);
   const destination=useRef<{position:THREE.Vector3;target:THREE.Vector3}|null>(null);
   const {camera,size}=useThree();
@@ -97,7 +98,8 @@ function Camera({view,focus,buildingFocus,data,reduced,street}:{view:CameraView;
   useEffect(()=>{
     const aspect=size.width/size.height;
     const fit=Math.max(1,1.3/aspect);
-    if(view.kind==='top')move([0,2800*fit,.1],[0,0,0]);
+    if(view.park){const [x,y,z]=view.park;move([x+110*fit,z+120*fit,-y+140*fit],[x,z,-y]);}
+    else if(view.kind==='top')move([0,2800*fit,.1],[0,0,0]);
     else if(view.kind==='coast'){
       const coastal=data.buildings.find(b=>normalized(b.name).includes('club de pesca'));
       const [x,y,z]=coastal?buildingCenter(coastal):[-800,5,-300];
@@ -128,6 +130,7 @@ function Camera({view,focus,buildingFocus,data,reduced,street}:{view:CameraView;
     move([x+distance*.75,y+distance*.72,z+distance],[x,y,z]);
   },[move,buildingFocus,size.width,size.height]);
   useFrame((_,dt)=>{
+    if(ref.current){ref.current.autoRotate=orbit&&!reduced;ref.current.autoRotateSpeed=.45;}
     if(!destination.current||!ref.current)return;
     const {position,target}=destination.current,alpha=1-Math.exp(-Math.min(dt,.05)*5);
     camera.position.lerp(position,alpha);ref.current.target.lerp(target,alpha);ref.current.update();
@@ -212,6 +215,7 @@ function Metrics({onMetrics,onSlow,benchmark,onBenchmark}:{onMetrics:(fps:number
 }
 
 export default function MangaMap(props:Props) {
+  const [showBoundary,setShowBoundary]=useState(true),[orbit,setOrbit]=useState(false);
   const [data,setData]=useState<MangaData|null>(null),[error,setError]=useState<string|null>(null),[retry,setRetry]=useState(0);
   const [layers,setLayers]=useState<LayersState>({buildings:true,vegetation:true,water:true,rain:true,zones:true,flow:false});
   const [panel,setPanel]=useState(false),[mode,setMode]=useState<'api'|'manual'>('api');
@@ -251,8 +255,11 @@ export default function MangaMap(props:Props) {
   const forecastRain=forcingHour?.rain_mm_h??0;
   const hasRain=mode==='manual'||(forcingHour?.rain_mm_h!=null&&Number.isFinite(forcingHour.rain_mm_h));
   const rain=mode==='manual'?(seconds<scenario.durationH*3600?scenario.rainMmH:0):forecastRain;
+  useEffect(()=>{const activate=()=>{setMode('api');setPlaying(false);setLayers(l=>({...l,rain:true}));};window.addEventListener(FORECAST_TIMELINE_EVENT,activate);return()=>window.removeEventListener(FORECAST_TIMELINE_EVENT,activate);},[]);
+  const previousForecastHour=useRef(props.currentHour);
+  useEffect(()=>{if(previousForecastHour.current!==props.currentHour){previousForecastHour.current=props.currentHour;setMode('api');setPlaying(false);}},[props.currentHour]);
   useEffect(()=>{setBaseline(new URLSearchParams(location.search).get('mangaBaseline')==='1');},[]);
-  useEffect(()=>{const abort=new AbortController();fetch('/models/manga/checkpoint08/instances.json',{signal:abort.signal}).then(r=>r.ok?r.json():null).then(setInstances).catch(()=>{});return()=>abort.abort();},[]);
+  useEffect(()=>{const abort=new AbortController();fetch('/models/manga/checkpoint12/instances.json',{signal:abort.signal}).then(r=>r.ok?r.json():null).then(setInstances).catch(()=>{});return()=>abort.abort();},[]);
   useEffect(()=>{const el=section.current;if(!el)return;let intersects=true;const update=()=>setInView(intersects&&!document.hidden);const observer=new IntersectionObserver(([entry])=>{intersects=entry.isIntersecting;update();},{rootMargin:'100px'});observer.observe(el);document.addEventListener('visibilitychange',update);return()=>{observer.disconnect();document.removeEventListener('visibilitychange',update);};},[]);
   useEffect(()=>{
     const abort=new AbortController();setError(null);
@@ -319,12 +326,13 @@ export default function MangaMap(props:Props) {
   return <section ref={section} className="manga-viewer" aria-label="Modelo 3D del barrio Manga">
     {data&&!error?<GraphicsBoundary key={retry} onRetry={()=>setRetry(x=>x+1)}><Canvas frameloop={inView?'always':'never'} shadows={quality==='high'&&!lowResolution&&!moving} dpr={1} camera={INITIAL_CAMERA} gl={{antialias:true,alpha:false,powerPreference:'high-performance',toneMapping:THREE.ACESFilmicToneMapping}} onCreated={({gl})=>{gl.setClearColor('#c6c5b7');gl.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();setError('Se perdió el contexto gráfico. Puedes reintentar el visor.');},{once:true});}}>
       <Lighting mode={lightMode} lowResolution={quality!=='high'||lowResolution||moving} layers={layers} modelRevision={modelRevision}/>
-      <Suspense fallback={null}>{baseline?<Model data={data} layers={layers} onBuilding={setSelected} onEmpty={()=>setSelected(null)} onReady={handleModelReady}/>:<District data={data} buildings={layers.buildings} vegetation={layers.vegetation} quality={quality} rainMmH={hasRain?rain:0} instances={instances} heights={visualHeights} onBuilding={setSelected} onReady={handleModelReady}/>}</Suspense>
+      <Suspense fallback={null}>{baseline?<Model data={data} layers={layers} onBuilding={setSelected} onEmpty={()=>setSelected(null)} onReady={handleModelReady}/>:<District data={data} buildings={layers.buildings} vegetation={layers.vegetation} quality={quality} rainMmH={hasRain?rain:0} rainFootprint={mode==='manual'?scenario.rainFootprint:undefined} instances={instances} heights={visualHeights} onBuilding={setSelected} onReady={handleModelReady}/>}</Suspense>
+      {showBoundary&&instances?.perimeter&&<CoverageBoundary points={instances.perimeter}/>}
       {!baseline&&<RenderBudget quality={lowResolution?'performance':quality} onMotion={setMoving}/>}
-      <Camera view={view} focus={props.focusZonaId??null} buildingFocus={buildingFocus} data={data} reduced={reduced} street={visualMetadata?.streetCamera}/>
+      <Camera view={view} focus={props.focusZonaId??null} buildingFocus={buildingFocus} data={data} reduced={reduced} street={visualMetadata?.streetCamera} orbit={orbit}/>
       {displayedBuilding&&layers.buildings&&<SelectionOutline building={displayedBuilding}/>}
       {layers.water&&<Water data={data} result={result} reduced={reduced} flow={layers.flow}/>}
-      {layers.rain&&hasRain&&rain>0&&<RainWeather data={data} intensity={rain} wind={mode==='api'?(forcingHour?.wind_kmh??0):0} direction={mode==='api'?forcingHour?.wind_direction_deg:null} quality={quality} moving={moving} reduced={reduced}/>}
+      {layers.rain&&hasRain&&rain>0&&<RainWeather data={data} intensity={rain} field={mode==='manual'?scenario.rainFootprint:undefined} wind={mode==='api'?(forcingHour?.wind_kmh??0):0} direction={mode==='api'?forcingHour?.wind_direction_deg:null} quality={quality} moving={moving} reduced={reduced}/>}
       {layers.zones&&zones.map(z=>{const [x,y]=zoneLocal(...z.coordenadas);const water=spatialZones.get(z.id);return <mesh key={z.id} position={[x,35,-y]} onClick={e=>{if(e.delta>4)return;e.stopPropagation();setSelected(null);props.onSelectZona?.(z);}}><sphereGeometry args={[props.focusZonaId===z.id?15:coarsePointer?12:9,10,8]}/><meshBasicMaterial color={waterColor(water?.meanCm)}/></mesh>;})}
       <Metrics onMetrics={(f,c,t,m)=>{setFps(f);setDrawCalls(c);setTriangles(t);setGeometryMiB(m);}} onSlow={()=>setLowResolution(true)} benchmark={benchmark} onBenchmark={setBenchmarkResult}/>
     </Canvas></GraphicsBoundary>:<div className="manga-fallback">{error??'Preparando Manga…'}{error&&<button onClick={()=>setRetry(x=>x+1)}>Reintentar</button>}</div>}
@@ -342,7 +350,7 @@ export default function MangaMap(props:Props) {
         <small>{focusedWater.cells} celdas · {(focusedWater.wetAreaM2/10000).toFixed(2)} ha en celdas ≥1 cm · +{(focusedWater.seconds/3600).toFixed(1)} h{busy?' · actualizando…':''}</small></>:<p>{outsideCoverage?'Fuera de cobertura; coordenada por verificar.':busy?'Calculando el agua de esta zona…':'Sin cálculo disponible para esta hora.'}</p>}
       <small>Acumulación del terreno en radio de {focusedZone.radio_influencia} m. Estimación espacial, distinta del indicador zonal del panel.</small>
     </aside>}
-    <div className="manga-status" aria-live="polite">{focusedZone&&<strong>{focusedZone.nombre}{outsideCoverage?' · Coordenada fuera del área modelada; ubicación por verificar.':''}</strong>}{mode==='api'?`${api.label}${freshness?` · actualización ${freshness} COT${stale?' (antigua)':''}`:' · fecha de consulta no disponible'}`:'Lluvia uniforme y condiciones manuales; los paneles externos conservan su serie.'}{simError&&<strong role="alert">{simError}</strong>}</div>
+    <div className="manga-status" aria-live="polite">{focusedZone&&<strong>{focusedZone.nombre}{outsideCoverage?' · Coordenada fuera del área modelada; ubicación por verificar.':''}</strong>}{mode==='api'?`${api.label} · lluvia sin resolución por calle${freshness?` · actualización ${freshness} COT${stale?' (antigua)':''}`:' · fecha de consulta no disponible'}`:scenario.rainFootprint?'Lluvia localizada hipotética: no procede de un radar. El agua puede escurrir fuera de la zona lluviosa.':'Lluvia uniforme y condiciones manuales; los paneles externos conservan su serie.'}{simError&&<strong role="alert">{simError}</strong>}</div>
     <div className="manga-credit"><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap</a> · NASA SRTM <span>{fps} FPS</span></div>
 
     {selected&&displayedBuilding&&<div className="manga-selection" aria-label="Edificio seleccionado">
@@ -361,10 +369,16 @@ export default function MangaMap(props:Props) {
 
     {panel&&<aside className="manga-panel" aria-label="Controles del modelo"><div className="manga-panel-title"><b>Explorar Manga</b><button aria-label="Cerrar controles" onClick={()=>setPanel(false)}><X size={18}/></button></div>
       <label>Calidad visual<select value={quality} onChange={e=>{setQuality(e.target.value as RenderQuality);setLowResolution(false);}}><option value="high">Alta</option><option value="balanced">Equilibrada</option><option value="performance">Rendimiento</option></select></label>
+      <label className="manga-toggle"><input type="checkbox" checked={showBoundary} onChange={e=>setShowBoundary(e.target.checked)}/>Mostrar perímetro cartográfico</label>
+      <label className="manga-toggle"><input type="checkbox" checked={orbit} disabled={reduced} onChange={e=>setOrbit(e.target.checked)}/>Recorrido orbital suave</label>
+      <p className="manga-note">La línea temporal principal siempre vuelve al pronóstico API. Sin lluvia en esa hora no aparecen gotas; sin dato se muestra «sin dato».</p>
       <label>Iluminación<select value={lightMode} onChange={e=>setLightMode(e.target.value as LightMode)}><option value="day">Día caribeño</option><option value="sunset">Atardecer</option><option value="night">Noche</option></select></label>
       <p className="manga-note">{coarsePointer?'Modo móvil activo: prioridad a respuesta táctil. ':''}El detalle se adapta a la distancia. Jardines y mobiliario aproximados; relieve SRTM original.</p>
       <div className="manga-mode"><button className={mode==='api'?'active':''} onClick={()=>changeMode('api')}>Serie API</button><button className={mode==='manual'?'active':''} onClick={()=>changeMode('manual')}>Escenario</button></div>
+      {instances?.parks&&<label>Visitar parque cartografiado<select aria-label="Visitar parque cartografiado" defaultValue="" onChange={e=>{const park=instances.parks?.find(p=>String(p.osmId)===e.target.value);if(park){setBuildingFocus(null);setView(v=>({kind:'urban',revision:v.revision+1,park:park.position}));setPanel(false);}}}><option value="" disabled>Elegir parque OSM</option>{instances.parks.map(p=><option key={p.osmId} value={p.osmId}>{p.name} · {p.osmId}</option>)}</select></label>}
       {mode==='manual'?<><label>Condición inicial<select onChange={e=>{setScenario(PRESETS[e.target.value]);setSeconds(0);setPlaying(false);}} defaultValue="Lluvia intensa">{Object.keys(PRESETS).map(p=><option key={p}>{p}</option>)}</select></label>
+      <label className="manga-toggle"><input type="checkbox" checked={!!scenario.rainFootprint} onChange={e=>{const [x,y]=focusedZone?zoneLocal(...focusedZone.coordenadas):[0,0];updateScenario({rainFootprint:e.target.checked?{x,y,radiusM:300}:undefined});}}/>Lluvia localizada hipotética</label>
+      {scenario.rainFootprint&&<><label>Radio de lluvia (m)<output>{scenario.rainFootprint.radiusM}</output><input aria-label="Radio de lluvia localizada" type="range" min="80" max="1000" step="20" value={scenario.rainFootprint.radiusM} onChange={e=>updateScenario({rainFootprint:{...scenario.rainFootprint!,radiusM:Number(e.target.value)}})}/></label><button onClick={()=>{const [x,y]=focusedZone?zoneLocal(...focusedZone.coordenadas):[0,0];updateScenario({rainFootprint:{x,y,radiusM:scenario.rainFootprint!.radiusM}});}}>Centrar lluvia en zona seleccionada</button><p className="manga-note">Máximo en el centro, disminuye hasta cero en el borde. La misma distribución alimenta el agua y las gotas; resolución hidráulica de 40 m, no predicción por vivienda.</p></>}
       {([{key:'rainMmH',label:'Lluvia (mm/h)',max:300,step:5},{key:'durationH',label:'Duración (h)',max:24,step:1},{key:'infiltrationMmH',label:'Infiltración (mm/h)',max:30,step:1},{key:'drainageMmH',label:'Drenaje (mm/h)',max:30,step:1}] as const).map(c=><label key={c.key}>{c.label}<output>{scenario[c.key]}</output><input type="range" min="0" max={c.max} step={c.step} value={scenario[c.key]} onChange={e=>updateScenario({[c.key]:Number(e.target.value)})}/></label>)}
       <label className="manga-toggle"><input type="checkbox" checked={scenario.seaHeadM!==null} onChange={e=>updateScenario({seaHeadM:e.target.checked?2:null})}/>Conexión marina hipotética</label>
       {scenario.seaHeadM!==null&&<label>Cota marina EGM96 (m)<output>{scenario.seaHeadM}</output><input type="range" min="-2" max="15" step=".25" value={scenario.seaHeadM} onChange={e=>updateScenario({seaHeadM:Number(e.target.value)})}/></label>}

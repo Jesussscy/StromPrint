@@ -1,7 +1,9 @@
 import type { Grid, Scenario, WaterResult } from './types';
+import { rainCoverage } from './rainField';
 
 export const STEP_SECONDS = 10;
 export function validateScenario(s: Scenario, seconds: number) {
+  if(s.rainFootprint&&(![s.rainFootprint.x,s.rainFootprint.y,s.rainFootprint.radiusM].every(Number.isFinite)||s.rainFootprint.radiusM<40||s.rainFootprint.radiusM>3000||s.forcing))throw new Error('La lluvia localizada requiere un escenario hipotético con radio de 40–3000 m.');
   for (const n of [s.rainMmH,s.durationH,s.infiltrationMmH,s.drainageMmH,seconds]) if (!Number.isFinite(n) || n<0) throw new Error('Parámetros no finitos o negativos.');
   if (s.rainMmH>300 || s.durationH>168 || seconds>168*3600 || s.infiltrationMmH>100 || s.drainageMmH>100 || (s.seaHeadM!==null && (!Number.isFinite(s.seaHeadM) || s.seaHeadM < -2 || s.seaHeadM>15))) throw new Error('Fuera del rango exploratorio: lluvia 0–300 mm/h, duración 0–168 h y cota marina −2–15 m.');
   if (s.forcing) {
@@ -39,7 +41,7 @@ export class SurfaceWater {
     }
     this.outgoing.fill(0); this.flow.fill(0);
     for(let i=0;i<cells.length;i++) {
-      const c=cells[i], added=rain/3600000*dt*c.area;
+      const c=cells[i], added=rain*rainCoverage(c.x,c.y,s.rainFootprint)/3600000*dt*c.area;
       this.volume[i]+=added; this.rainM3+=added;
       const loss=Math.min(this.volume[i],(s.infiltrationMmH*(1-c.built)+s.drainageMmH)/3600000*dt*c.area);
       this.volume[i]-=loss; this.lossM3+=loss;

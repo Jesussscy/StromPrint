@@ -1,0 +1,17 @@
+{
+  "sourceSha256": "82c665e7d8e8cb568aa1da1d981f20fe232d6b95783d719aaddd0ed4c3a96565",
+  "boundaryAreaM2": 1840301.9137311452,
+  "boundarySourceDeviationM": 6.663211960261784e-05,
+  "comparisonIoU": 0.9398673472797009,
+  "comparisonDifferenceM2": 113461.21723055468,
+  "oldGrassM2": 52528.82656634992,
+  "grassM2": 92447.96547789386,
+  "outsideM2": 0.0,
+  "roadOverlapM2": 0.0,
+  "buildingOverlapM2": 0.0,
+  "parkCount": 7,
+  "treesBefore": 458,
+  "treesAfter": 522,
+  "shrubs": 36,
+  "note": "OSM extent retained; ArcGIS differs, not silently substituted. Garden placement/species inferred, DEM unchanged."
+}

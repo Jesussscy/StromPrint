@@ -3,29 +3,41 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { Bvh, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
-import type { Building, MangaData } from '@/app/lib/manga/types';
+import type { Building, MangaData, Scenario } from '@/app/lib/manga/types';
 
 export type RenderQuality='high'|'balanced'|'performance';
-export interface LandscapeInstances {trees:{position:number[];height:number;kind:string;rotation:number}[];lamps:number[][]}
-interface Props {data:MangaData;buildings:boolean;vegetation:boolean;quality:RenderQuality;rainMmH?:number;instances:LandscapeInstances|null;heights?:Record<string,number>;onBuilding:(b:Building)=>void;onReady:()=>void}
+export interface LandscapeInstances {trees:{position:number[];height:number;kind:string;rotation:number}[];lamps:number[][];shrubs?:number[][];perimeter?:number[][];parks?:{name:string;osmId:number;position:number[];source:string}[]}
+interface Props {data:MangaData;buildings:boolean;vegetation:boolean;quality:RenderQuality;rainMmH?:number;rainFootprint?:Scenario['rainFootprint'];instances:LandscapeInstances|null;heights?:Record<string,number>;onBuilding:(b:Building)=>void;onReady:()=>void}
 
 const noRaycast=()=>{};
-function surfaces(material:THREE.Material,facade=false,ground=false,wet={value:0}) {
+function surfaces(material:THREE.Material,facade=false,ground=false,wet={value:0},field={value:new THREE.Vector3()}) {
   const m=material.clone() as THREE.MeshStandardMaterial;
   m.side=THREE.DoubleSide;m.roughness=.85;m.metalness=0;
   // World-scale grain: stable across LODs, no unique texture per building.
   m.onBeforeCompile=shader=>{
     shader.uniforms.mangaWet=wet;
+    shader.uniforms.mangaRainField=field;
     shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 surfacePosition; varying vec3 surfaceNormal;')
-      .replace('#include <begin_vertex>','#include <begin_vertex>\nsurfacePosition=position; surfaceNormal=normal;');
+      .replace('#include <begin_vertex>','#include <begin_vertex>\nsurfacePosition=(modelMatrix*vec4(position,1.)).xyz; surfaceNormal=normalize(mat3(modelMatrix)*normal);');
     shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>
-      uniform float mangaWet; varying vec3 surfacePosition; varying vec3 surfaceNormal;
+      uniform float mangaWet; uniform vec3 mangaRainField; varying vec3 surfacePosition; varying vec3 surfaceNormal;
       float grain(vec3 p){return fract(sin(dot(p,vec3(12.9898,78.233,39.425)))*43758.5453);}`)
       .replace('#include <color_fragment>',`#include <color_fragment>
       float variation=sin(surfacePosition.x*.63+sin(surfacePosition.z*.21))*sin(surfacePosition.z*.71);
       diffuseColor.rgb*=.97+.045*variation+.025*grain(floor(surfacePosition*18.));
       float up=smoothstep(.4,.9,abs(surfaceNormal.y));
-      diffuseColor.rgb*=1.-mangaWet*up*.22;
+      float localWet=mangaWet*(mangaRainField.z>0.?1.-smoothstep(.65,1.,distance(surfacePosition.xz,mangaRainField.xy)/mangaRainField.z):1.);
+      diffuseColor.rgb*=1.-localWet*up*.22;
+      // Roof texture is artistic, derivative-filtered and adds no geometry.
+      float clay=smoothstep(.025,.12,diffuseColor.r-diffuseColor.g)*smoothstep(.55,.9,abs(surfaceNormal.y));
+      vec2 roofUV=surfacePosition.xz*vec2(3.5,2.4);
+      float tileAA=max(fwidth(roofUV.x),fwidth(roofUV.y));
+      float seam=1.-smoothstep(.035,.035+max(.01,tileAA),min(fract(roofUV.y),1.-fract(roofUV.y)));
+      float rib=sin(roofUV.x*6.2831853)*.06;
+      float tileFade=1.-smoothstep(.2,.7,tileAA);
+      diffuseColor.rgb*=1.+clay*tileFade*(rib-seam*.13);
+      float wallWear=(1.-up)*(.035*sin(surfacePosition.y*.3+surfacePosition.x*.027));
+      diffuseColor.rgb*=1.+wallWear;
       ${ground?`// Asphalt identification uses the exported mineral material color.
       float grey=max(diffuseColor.r,max(diffuseColor.g,diffuseColor.b))-min(diffuseColor.r,min(diffuseColor.g,diffuseColor.b));
       float asphalt=(1.-smoothstep(.015,.05,grey))*(1.-smoothstep(.09,.16,max(diffuseColor.r,max(diffuseColor.g,diffuseColor.b))));
@@ -40,28 +52,42 @@ function surfaces(material:THREE.Material,facade=false,ground=false,wet={value:0
       float fade=1.-smoothstep(.15,.65,max(fwidth(uv.x),fwidth(uv.y)));
       diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.19,.29,.31),pane*wall*fade*.6);`:''}`)
       .replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>
-        roughnessFactor=mix(roughnessFactor,.3,mangaWet*smoothstep(.4,.9,abs(surfaceNormal.y)));`);
+        roughnessFactor=mix(roughnessFactor,.3,localWet*smoothstep(.4,.9,abs(surfaceNormal.y)));`);
   };
   m.customProgramCacheKey=()=>`manga-surface11-${facade}-${ground}`;
   return m;
 }
 
-export function District({data,buildings,vegetation,quality,rainMmH=0,instances,heights,onBuilding,onReady}:Props) {
+export function District({data,buildings,vegetation,quality,rainMmH=0,rainFootprint,instances,heights,onBuilding,onReady}:Props) {
   const wet=useMemo(()=>({value:0}),[]);
+  const field=useMemo(()=>({value:new THREE.Vector3()}),[]);
+  field.value.set(rainFootprint?.x??0,-(rainFootprint?.y??0),rainFootprint?.radiusM??0);
   // Instant visual wetness follows the selected hour; no fabricated water volume.
   wet.value=Number.isFinite(rainMmH)?Math.min(1,Math.max(0,rainMmH)/12):0;
   const {scene}=useGLTF('/models/manga/checkpoint08/district.glb','/models/manga/draco/');
+  const {scene:landscape}=useGLTF('/models/manga/checkpoint12/landscape.glb','/models/manga/draco/');
+  const garden=useMemo(()=>{
+    const clone=landscape.clone(true);clone.updateMatrixWorld(true);
+    clone.traverse(o=>{if(o.name==='Tree_canopy12'||o.name==='Shrub12')o.visible=false;if(o instanceof THREE.Mesh){o.raycast=noRaycast;o.castShadow=true;o.receiveShadow=true;}});
+    return clone;
+  },[landscape]);
+  const canopy=useMemo(()=>{
+    const prototypes:THREE.Mesh[]=[];
+    garden.getObjectByName('Tree_canopy12')?.traverse(source=>{if(source instanceof THREE.Mesh)prototypes.push(new THREE.Mesh(source.geometry.clone().applyMatrix4(source.matrixWorld),source.material));});
+    return prototypes;
+  },[garden]);
+  useEffect(()=>()=>canopy.forEach(p=>p.geometry.dispose()),[canopy]);
   const local=useMemo(()=>{
     const clone=scene.clone(true);const materials=new Map<string,THREE.Material>();
     clone.traverse(o=>{if(o instanceof THREE.Mesh){
       const original=o.material as THREE.Material;
       const facade=o.userData.lod==='far',ground=o.userData.lod==='ground',key=original.uuid+`-${facade}-${ground}`;
-      if(!materials.has(key))materials.set(key,surfaces(original,facade,ground,wet));
+      if(!materials.has(key))materials.set(key,surfaces(original,facade,ground,wet,field));
       o.material=materials.get(key)!;o.raycast=noRaycast;o.castShadow=true;o.receiveShadow=true;
       if(o.name.startsWith('Tree_')||o.userData.lod==='base'||o.userData.lod==='detail')o.visible=false;
       o.geometry.computeBoundingSphere();
     }});return clone;
-  },[scene,wet]);
+  },[scene,wet,field]);
   useEffect(()=>{onReady();return()=>{const mats=new Set<THREE.Material>();local.traverse(o=>{if(o instanceof THREE.Mesh)mats.add(o.material as THREE.Material);});mats.forEach(m=>m.dispose());};},[local,onReady]);
   const groups=useMemo(()=>{
     const list: {mesh:THREE.Mesh;kind:string;center:THREE.Vector3}[]=[];
@@ -76,11 +102,13 @@ export function District({data,buildings,vegetation,quality,rainMmH=0,instances,
     for(const g of groups){
       // Cell edge distance, not distance to the city's origin.
       const d=Math.max(0,camera.position.distanceTo(g.center)-170);
-      g.mesh.visible=g.kind==='far'?buildings&&d>=far:g.kind==='base'?buildings&&d<far:g.kind==='detail'?buildings&&d<near:(g.kind==='grass'||g.kind==='soil')?vegetation:true;
+      g.mesh.visible=g.kind==='far'?buildings&&d>=far:g.kind==='base'?buildings&&d<far:g.kind==='detail'?buildings&&d<near:(g.kind==='grass'||g.kind==='soil')?false:true;
     }
   });
   return <><primitive object={local}/>{buildings&&<BuildingPicker data={data} heights={heights} onBuilding={onBuilding}/>}
-    {vegetation&&instances&&<Trees scene={local} items={instances.trees}/>}
+    {vegetation&&<primitive object={garden}/>}
+    {vegetation&&instances&&<Trees scene={local} canopy={canopy} items={instances.trees}/>}
+    {vegetation&&instances?.shrubs&&<Shrubs positions={instances.shrubs}/>}
     {instances&&<StreetLamps positions={instances.lamps}/>}
   </>;
 }
@@ -108,9 +136,20 @@ function BuildingPicker({data,heights,onBuilding}:{data:MangaData;heights?:Recor
   </mesh></Bvh>;
 }
 
-function Trees({scene,items}:{scene:THREE.Object3D;items:LandscapeInstances['trees']}) {
+function Trees({scene,canopy,items}:{scene:THREE.Object3D;canopy:THREE.Mesh[];items:LandscapeInstances['trees']}) {
   const batches=useMemo(()=>['palm','canopy'].map(kind=>({kind,items:items.filter(t=>t.kind===kind)})),[items]);
-  return <>{batches.map(batch=>{const prototype=scene.getObjectByName('Tree_'+batch.kind) as THREE.Mesh|undefined;return prototype?<TreeBatch key={batch.kind} prototype={prototype} items={batch.items}/>:null;})}</>;
+  return <>{batches.flatMap(batch=>{const prototypes=batch.kind==='canopy'?canopy:[scene.getObjectByName('Tree_'+batch.kind) as THREE.Mesh];return prototypes.filter(Boolean).map((prototype,i)=><TreeBatch key={batch.kind+i} prototype={prototype} items={batch.items}/>);})}</>;
+}
+function Shrubs({positions}:{positions:number[][]}) {
+  const ref=useRef<THREE.InstancedMesh>(null);
+  useEffect(()=>{if(!ref.current)return;const dummy=new THREE.Object3D();positions.forEach((p,i)=>{dummy.position.set(p[0],p[2]+p[3]*.5,-p[1]);dummy.scale.set(p[3]*.7,p[3]*.55,p[3]*.65);dummy.updateMatrix();ref.current!.setMatrixAt(i,dummy.matrix);});ref.current.instanceMatrix.needsUpdate=true;ref.current.computeBoundingSphere();},[positions]);
+  return <instancedMesh ref={ref} args={[undefined,undefined,positions.length]} raycast={noRaycast} castShadow receiveShadow><icosahedronGeometry args={[1,1]}/><meshStandardMaterial color="#55792e" roughness={.95}/></instancedMesh>;
+}
+
+export function CoverageBoundary({points}:{points:number[][]}) {
+  const geometry=useMemo(()=>{const p:number[]=[];for(let i=1;i<points.length;i++)for(const v of [points[i-1],points[i]])p.push(v[0],v[2],-v[1]);return new THREE.BufferGeometry().setAttribute('position',new THREE.Float32BufferAttribute(p,3));},[points]);
+  useEffect(()=>()=>geometry.dispose(),[geometry]);
+  return <lineSegments geometry={geometry}><lineBasicMaterial color="#bd975d" transparent opacity={.7}/></lineSegments>;
 }
 function TreeBatch({prototype,items}:{prototype:THREE.Mesh;items:LandscapeInstances['trees']}) {
   const ref=useRef<THREE.InstancedMesh>(null);

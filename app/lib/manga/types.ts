@@ -14,6 +14,8 @@ export interface MangaData {
 }
 export interface Forcing { hour: number; rainMmH: number }
 export interface Scenario {
+  /** Optional, explicitly hypothetical rain cell; never inferred from a point API. */
+  rainFootprint?: { x:number; y:number; radiusM:number };
   rainMmH: number; durationH: number; infiltrationMmH: number; drainageMmH: number;
   /** Hypothetical boundary head in EGM96; never automatic MSL addition. */
   seaHeadM: number | null; forcing?: Forcing[];

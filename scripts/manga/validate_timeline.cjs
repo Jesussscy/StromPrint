@@ -1,0 +1,14 @@
+require('./validate_local_rain.cjs');
+const assert=require('assert/strict'),fs=require('fs');
+global.window=new EventTarget();
+const {FORECAST_TIMELINE_EVENT,activateForecastTimeline}=require('../../app/lib/manga/timeline.ts');
+let calls=0;const handler=()=>calls++;
+window.addEventListener(FORECAST_TIMELINE_EVENT,handler);
+activateForecastTimeline();activateForecastTimeline();
+assert.equal(calls,2,'reselecting the same hour must notify the map again');
+window.removeEventListener(FORECAST_TIMELINE_EVENT,handler);activateForecastTimeline();assert.equal(calls,2);
+const slider=fs.readFileSync('app/components/TimelineSlider.tsx','utf8');
+assert.ok(slider.includes('onPointerDown={activateForecastTimeline}'));
+assert.ok(slider.includes('onKeyDown='));
+assert.ok(slider.includes('activateForecastTimeline(); onScrub('));
+console.log('PASS: timeline interaction event and repeat selection; pointer/keyboard/scrub wiring present. Browser integration checked separately.');

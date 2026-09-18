@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useCallback, useMemo } from "react";
 import type { PuntoPrediccion } from "@/app/lib/api";
 import { riskColor, formatHour, formatHourShort } from "@/app/lib/api";
+import { activateForecastTimeline } from '@/app/lib/manga/timeline';
 
 interface TimelineSliderProps {
   puntos: PuntoPrediccion[];
@@ -23,7 +24,7 @@ export default memo(function TimelineSlider({ puntos, currentHour, onScrub, isPl
     return puntos.reduce((c, p) => Math.abs(p.tiempo_hora - currentHour) < Math.abs(c.tiempo_hora - currentHour) ? p : c);
   }, [puntos, currentHour]);
 
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => { onScrub(parseFloat(e.target.value)); }, [onScrub]);
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => { activateForecastTimeline(); onScrub(parseFloat(e.target.value)); }, [onScrub]);
 
   const dayMarkers = useMemo(() => {
     const days = Math.floor((maxHour || 48) / 24);
@@ -43,7 +44,7 @@ export default memo(function TimelineSlider({ puntos, currentHour, onScrub, isPl
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
-            onClick={onTogglePlay}
+            onClick={()=>{activateForecastTimeline();onTogglePlay();}}
             aria-label={isPlaying ? "Pausar" : "Reproducir"}
             className="flex h-11 w-11 sm:h-10 sm:w-10 items-center justify-center rounded-full border border-cyan/30 glass-subtle text-cyan transition hover:border-cyan hover:shadow-glow active:scale-95 min-h-[44px] min-w-[44px]"
           >
@@ -93,7 +94,7 @@ export default memo(function TimelineSlider({ puntos, currentHour, onScrub, isPl
             animate={{ width: `${progressPct}%` }} transition={{ type: "tween", duration: 0.15 }} />
         </div>
 
-        <input type="range" min={0} max={maxHour || 48} step={1} value={currentHour} onChange={handleChange}
+        <input type="range" min={0} max={maxHour || 48} step={1} value={currentHour} onChange={handleChange} onPointerDown={activateForecastTimeline} onKeyDown={e=>{if(['Home','End','ArrowLeft','ArrowRight','ArrowUp','ArrowDown','PageUp','PageDown'].includes(e.key))activateForecastTimeline();}}
           className="absolute inset-x-0 top-0 h-7 w-full cursor-pointer appearance-none bg-transparent"
           aria-label="Deslizador de línea temporal" />
 

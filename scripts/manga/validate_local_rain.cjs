@@ -1,0 +1,16 @@
+const fs=require('fs'),ts=require('typescript'),assert=require('assert/strict');
+require.extensions['.ts']=(mod,file)=>mod._compile(ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText,file);
+const {SurfaceWater}=require('../../app/lib/manga/solver.ts');
+const {rainCoverage}=require('../../app/lib/manga/rainField.ts');
+const field={x:0,y:0,radiusM:100};
+assert.equal(rainCoverage(0,0,field),1);assert.equal(rainCoverage(100,0,field),0);assert.equal(rainCoverage(500,0,field),0);
+assert.ok(rainCoverage(80,0,field)>0&&rainCoverage(80,0,field)<1);
+const cells=[0,80,200].map(x=>({x,y:0,z:0,area:100,built:0,coastal:false,triangles:[],ij:[x,0]}));
+const grid={dx:40,cells,edges:[]};
+const scenario={rainMmH:20,durationH:1,infiltrationMmH:0,drainageMmH:0,seaHeadM:null,rainFootprint:field};
+const a=new SurfaceWater(grid,scenario).advanceTo(3600);
+assert.equal(a.depth[2],0,'outside storm remains dry without incoming flow');assert.ok(a.depth[0]>a.depth[1]);
+assert.ok(Math.abs(a.balanceM3)<1e-9);assert.deepEqual(a,new SurfaceWater(grid,scenario).advanceTo(3600),'replay deterministic');
+assert.throws(()=>new SurfaceWater(grid,{...scenario,forcing:[{hour:0,rainMmH:20}]}),/hipotético/,'do not pass artificial mask as API forecast');
+assert.throws(()=>new SurfaceWater(grid,{...scenario,rainFootprint:{...field,radiusM:0}}));
+console.log('PASS: localized rainfall, dry outer cells, taper, mass, deterministic replay and API separation.');

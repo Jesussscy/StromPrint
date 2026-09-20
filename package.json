@@ -1,6 +1,6 @@
 {
   "name": "stormprint",
-  "version": "3.11.0",
+  "version": "6.1.0",
   "private": true,
   "description": "StormPrint â€” La huella que deja cada tormenta en el territorio (Manga, Cartagena)",
   "scripts": {
@@ -13,7 +13,7 @@
     "backend": "uvicorn api.index:app --reload --host 127.0.0.1 --port 8000",
     "test": "python -m pytest tests -q",
     "vercel-build": "next build",
-    "manga:validate": "node scripts/manga/validate.cjs"
+    "manga:validate": "node scripts/manga/validate_v61.cjs"
   },
   "dependencies": {
     "@react-three/drei": "9.114.3",

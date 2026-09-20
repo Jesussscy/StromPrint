@@ -1,3 +1,7 @@
+# Entrega actual: versión 6.1
+
+Nuevo modelo basado en el adjunto `scene.glb`. Render y recuperación: [VERSION_6.1.md](VERSION_6.1.md). Checkpoint anterior: etiqueta `v6.0`. Los documentos siguientes describen entregas históricas.
+
 # Manga en StormPrint — entrega local
 
 **Entrega ligera actual, checkpoint15:** [guía, fuentes y validación](CHECKPOINT15_GEOGRAPHY.md),

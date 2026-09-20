@@ -25,3 +25,6 @@ tide_cache.json
 .runtime-manga/
 models/manga/contract-input.json
 models/manga/MANGA_CONTRACT.blend*
+
+# Reproducible Blender working files, version 6.1
+models/manga/MANGA_V6.1.blend*

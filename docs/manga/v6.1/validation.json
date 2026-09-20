@@ -1,0 +1,16 @@
+{
+  "pass": true,
+  "triangles": 558631,
+  "vertices": 1160117,
+  "meshes": 331,
+  "bytes": 3565532,
+  "sourceSha256": "4ead2731e28460980180687b0181b2bf1f5bd12a2c44a2f115b930127ccd9cfd",
+  "checks": [
+    "Every Draco primitive decoded",
+    "Finite coordinates and valid indices",
+    "Export totals match report",
+    "Five architectural types and cemetery",
+    "Source hash preserved",
+    "Alignment residual and asset budgets"
+  ]
+}

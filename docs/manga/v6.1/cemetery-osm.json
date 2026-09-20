@@ -1,0 +1,42 @@
+{
+  "version": 0.6,
+  "generator": "Overpass API 0.7.62.11 87bfad18",
+  "osm3s": {
+    "timestamp_osm_base": "2026-09-20T02:34:40Z",
+    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+  },
+  "elements": [
+
+{
+  "type": "way",
+  "id": 49474750,
+  "bounds": {
+    "minlat": 10.4163241,
+    "minlon": -75.5408439,
+    "maxlat": 10.4177008,
+    "maxlon": -75.5393614
+  },
+  "nodes": [
+    628537009,
+    628537011,
+    628537013,
+    628537015,
+    628537009
+  ],
+  "geometry": [
+    { "lat": 10.4177008, "lon": -75.5404866 },
+    { "lat": 10.4167210, "lon": -75.5408439 },
+    { "lat": 10.4163241, "lon": -75.5397187 },
+    { "lat": 10.4173038, "lon": -75.5393614 },
+    { "lat": 10.4177008, "lon": -75.5404866 }
+  ],
+  "tags": {
+    "denomination": "catholic",
+    "landuse": "cemetery",
+    "name": "Cementerio de Manga",
+    "religion": "christian"
+  }
+}
+
+  ]
+}

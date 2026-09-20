@@ -1,0 +1,94 @@
+{
+  "version": "6.1",
+  "counts": {
+    "small-building": 377,
+    "outsideDistrictExcluded": 332,
+    "small-house": 235,
+    "medium-house": 619,
+    "large-house": 388,
+    "tower": 3,
+    "unsupportedLinePrimitivesExcluded": 834,
+    "tombs": 306,
+    "mausoleums": 30,
+    "trees": 886
+  },
+  "sourceSha256": "4ead2731e28460980180687b0181b2bf1f5bd12a2c44a2f115b930127ccd9cfd",
+  "alignment": {
+    "matches": 1605,
+    "medianErrorM": 0.002881276422453114,
+    "p95ErrorM": 0.011149865843851338
+  },
+  "landmarks": [
+    {
+      "name": "Cementerio Santa Cruz de Manga",
+      "position": [
+        -482.07557883981985,
+        615.2663895078425,
+        0
+      ],
+      "source": "https://www.openstreetmap.org/way/49474750"
+    },
+    {
+      "name": "Club de pesca",
+      "position": [
+        -939.2555846153845,
+        313.1605384615385,
+        0
+      ],
+      "source": "https://www.openstreetmap.org/way/95165442"
+    },
+    {
+      "name": "Iglesia Santa Cruz de Manga",
+      "position": [
+        -141.85664000000003,
+        246.92838999999998,
+        0
+      ],
+      "source": "https://www.openstreetmap.org/way/109808638"
+    },
+    {
+      "name": "Casa Román",
+      "position": [
+        -539.4612000000001,
+        367.40378,
+        0
+      ],
+      "source": "https://www.openstreetmap.org/way/109811287"
+    }
+  ],
+  "entry": [
+    -462.5132430730682,
+    669.4514785519374
+  ],
+  "entryApproach": [
+    -451.76950996268056,
+    699.5940099461776,
+    22
+  ],
+  "cemeteryPolygon": [
+    [
+      -524.1156901340554,
+      691.4085013883306
+    ],
+    [
+      -563.2405293841485,
+      583.0328608450017
+    ],
+    [
+      -440.0352998289946,
+      539.1297400824938
+    ],
+    [
+      -400.91079601208105,
+      647.4944557155442
+    ],
+    [
+      -524.1156901340554,
+      691.4085013883306
+    ]
+  ],
+  "meshes": 331,
+  "triangles": 558631,
+  "bytes": 3565532,
+  "notes": "Render conceptual. Huellas del adjunto; terreno plano, alturas y fachadas interpretadas. No es topografía hidráulica."
+}

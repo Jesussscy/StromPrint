@@ -6,14 +6,6 @@ export function Skeleton({ className = "", style }: { className?: string; style?
   );
 }
 
-export function SkeletonText({ className = "" }: { className?: string }) {
-  return <Skeleton className={`h-3 w-24 ${className}`} />;
-}
-
-export function SkeletonCard({ className = "" }: { className?: string }) {
-  return <Skeleton className={`p-4 ${className}`} />;
-}
-
 export function SkeletonStat({ className = "" }: { className?: string }) {
   return (
     <div className="glass rounded-xl p-3">

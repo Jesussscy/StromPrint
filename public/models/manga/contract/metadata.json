@@ -36,94 +36,379 @@
   "landmarks": [
     {
       "name": "Puente_Roman",
-      "lon": -75.5414,
-      "lat": 10.4182,
+      "lon": -75.54455284916327,
+      "lat": 10.417353700648968,
       "position": [
-        -973.2011673090747,
-        576.6192326226737,
+        -1318.4637118353567,
+        483.63444433524273,
         2.5
       ],
-      "distanceToBoundaryM": 63.12382954355655,
-      "insideBoundary": true,
-      "provenance": "User specification; position, elevation and dimensions unverified"
+      "distanceToBoundaryM": 63.60785427273833,
+      "insideBoundary": false,
+      "provenance": "OSM horizontal geometry; user hypothetical vertical elevation; incomplete architecture",
+      "requested": {
+        "position": [
+          -973.2011673090747,
+          576.6192326226737,
+          2.5
+        ],
+        "lon": -75.5414,
+        "lat": 10.4182,
+        "provenance": "User specification; position, elevation and dimensions unverified"
+      },
+      "verticalProvenance": "User elevation, hypothetical MSL; not surveyed",
+      "planimetryProvenance": "OpenStreetMap, community mapping; not cadastral survey",
+      "dimensionsProvenance": "Length/orientation from OSM; width = lanes × 3.25 + 2 m; slab 0.45 m; rails 1 m assumed",
+      "identityEvidence": "OSM street and geographic topology matched to Cartagena Film Commission access inventory",
+      "horizontalCorrectionM": 357.56453334415204,
+      "sourceUrls": [
+        "https://www.openstreetmap.org/way/404213692"
+      ],
+      "osmWayIds": [
+        404213692
+      ],
+      "centerlines": [
+        {
+          "osmId": 404213692,
+          "points": [
+            [
+              -1250.7094525769353,
+              435.81751441792585
+            ],
+            [
+              -1386.217971093778,
+              531.4513742525596
+            ]
+          ],
+          "lengthM": 165.85654565768544,
+          "widthM": 8.5,
+          "endpointDistanceToLandM": [
+            0.0,
+            146.47240456474754
+          ]
+        }
+      ]
     },
     {
       "name": "Puente_Las_Palmas",
-      "lon": -75.5375,
-      "lat": 10.4198,
+      "lon": -75.54085690009445,
+      "lat": 10.419644200023257,
       "position": [
-        -546.0185696472763,
-        752.8059099623933,
+        -913.4824325139343,
+        736.2043300883379,
         2.2
       ],
-      "distanceToBoundaryM": 171.68203711730627,
+      "distanceToBoundaryM": 20.739444389576246,
       "insideBoundary": false,
-      "provenance": "User specification; position, elevation and dimensions unverified"
+      "provenance": "OSM horizontal geometry; user hypothetical vertical elevation; incomplete architecture",
+      "requested": {
+        "position": [
+          -546.0185696472763,
+          752.8059099623933,
+          2.2
+        ],
+        "lon": -75.5375,
+        "lat": 10.4198,
+        "provenance": "User specification; position, elevation and dimensions unverified"
+      },
+      "verticalProvenance": "User elevation, hypothetical MSL; not surveyed",
+      "planimetryProvenance": "OpenStreetMap, community mapping; not cadastral survey",
+      "dimensionsProvenance": "Length/orientation from OSM; width = lanes × 3.25 + 2 m; slab 0.45 m; rails 1 m assumed",
+      "identityEvidence": "OSM street and geographic topology matched to Cartagena Film Commission access inventory",
+      "horizontalCorrectionM": 367.8386915037632,
+      "sourceUrls": [
+        "https://www.openstreetmap.org/way/173053758"
+      ],
+      "osmWayIds": [
+        173053758
+      ],
+      "centerlines": [
+        {
+          "osmId": 173053758,
+          "points": [
+            [
+              -899.1977152365143,
+              762.1973728802986
+            ],
+            [
+              -927.7671497913543,
+              710.2112872963771
+            ]
+          ],
+          "lengthM": 59.319184798192374,
+          "widthM": 8.5,
+          "endpointDistanceToLandM": [
+            50.20734958789856,
+            0.0
+          ]
+        }
+      ]
     },
     {
       "name": "Puente_Jimenez",
-      "lon": -75.533,
-      "lat": 10.419,
+      "lon": -75.53216955012502,
+      "lat": 10.414597850069782,
       "position": [
-        -53.61355359049048,
-        663.5169972779695,
+        36.46725074763526,
+        176.61482966924086,
         2.0
       ],
-      "distanceToBoundaryM": 326.40983962278443,
+      "distanceToBoundaryM": 7.501769471700655,
       "insideBoundary": false,
-      "provenance": "User specification; position, elevation and dimensions unverified"
+      "provenance": "OSM horizontal geometry; user hypothetical vertical elevation; incomplete architecture",
+      "requested": {
+        "position": [
+          -53.61355359049048,
+          663.5169972779695,
+          2.0
+        ],
+        "lon": -75.533,
+        "lat": 10.419,
+        "provenance": "User specification; position, elevation and dimensions unverified"
+      },
+      "verticalProvenance": "User elevation, hypothetical MSL; not surveyed",
+      "planimetryProvenance": "OpenStreetMap, community mapping; not cadastral survey",
+      "dimensionsProvenance": "Length/orientation from OSM; width = lanes × 3.25 + 2 m; slab 0.45 m; rails 1 m assumed",
+      "identityEvidence": "OSM bridge:name/alt_name",
+      "horizontalCorrectionM": 495.16489388110114,
+      "sourceUrls": [
+        "https://www.openstreetmap.org/way/90955541"
+      ],
+      "osmWayIds": [
+        90955541
+      ],
+      "centerlines": [
+        {
+          "osmId": 90955541,
+          "points": [
+            [
+              12.457530681509525,
+              157.05641160788946
+            ],
+            [
+              60.476970813761,
+              196.17324773059227
+            ]
+          ],
+          "lengthM": 61.935397785638465,
+          "widthM": 8.5,
+          "endpointDistanceToLandM": [
+            0.0,
+            37.785384910591
+          ]
+        }
+      ]
     },
     {
       "name": "Puente_Bazurto",
-      "lon": -75.5235,
-      "lat": 10.4105,
+      "lon": -75.52468294706969,
+      "lat": 10.405642012939346,
       "position": [
-        984.6714974402566,
-        -278.0674982094206,
+        854.2980724569355,
+        -815.0042205944338,
         1.5
       ],
-      "distanceToBoundaryM": 329.97198726982464,
+      "distanceToBoundaryM": 84.63402619684808,
       "insideBoundary": false,
-      "provenance": "User specification; position, elevation and dimensions unverified"
+      "provenance": "OSM horizontal geometry; user hypothetical vertical elevation; incomplete architecture",
+      "requested": {
+        "position": [
+          984.6714974402566,
+          -278.0674982094206,
+          1.5
+        ],
+        "lon": -75.5235,
+        "lat": 10.4105,
+        "provenance": "User specification; position, elevation and dimensions unverified"
+      },
+      "verticalProvenance": "User elevation, hypothetical MSL; not surveyed",
+      "planimetryProvenance": "OpenStreetMap, community mapping; not cadastral survey",
+      "dimensionsProvenance": "Length/orientation from OSM; width = lanes × 3.25 + 2 m; slab 0.45 m; rails 1 m assumed",
+      "identityEvidence": "OSM bridge:name/alt_name",
+      "horizontalCorrectionM": 552.5380292680699,
+      "sourceUrls": [
+        "https://www.openstreetmap.org/way/25355014",
+        "https://www.openstreetmap.org/way/49555739"
+      ],
+      "osmWayIds": [
+        25355014,
+        49555739
+      ],
+      "centerlines": [
+        {
+          "osmId": 25355014,
+          "points": [
+            [
+              766.4959854707122,
+              -786.907978604082
+            ],
+            [
+              939.056090070575,
+              -856.6761751072481
+            ]
+          ],
+          "lengthM": 186.13057498116746,
+          "widthM": 8.5,
+          "endpointDistanceToLandM": [
+            0.0,
+            178.9451465642919
+          ]
+        },
+        {
+          "osmId": 49555739,
+          "points": [
+            [
+              938.8241242442164,
+              -844.6899050842039
+            ],
+            [
+              904.490183015354,
+              -828.9321133743506
+            ],
+            [
+              882.5041088656872,
+              -819.4419591075275
+            ],
+            [
+              772.6176575665595,
+              -772.0131559595466
+            ]
+          ],
+          "lengthM": 181.40926915330817,
+          "widthM": 15.0,
+          "endpointDistanceToLandM": [
+            174.03037030051075,
+            0.0
+          ]
+        }
+      ]
     },
     {
       "name": "Fortin_Pastelillo",
-      "lon": -75.5435,
-      "lat": 10.4178,
+      "lon": -75.54381682552759,
+      "lat": 10.41399583436748,
       "position": [
-        -1203.1369220160414,
-        532.784359997604,
+        -1238.537583518333,
+        112.21338851954474,
         1.8
       ],
-      "distanceToBoundaryM": 54.50519633474221,
-      "insideBoundary": false,
-      "provenance": "User specification; position, elevation and dimensions unverified"
+      "distanceToBoundaryM": 32.433089089757225,
+      "insideBoundary": true,
+      "provenance": "OSM horizontal geometry; user hypothetical vertical elevation; incomplete architecture",
+      "requested": {
+        "position": [
+          -1203.1369220160414,
+          532.784359997604,
+          1.8
+        ],
+        "lon": -75.5435,
+        "lat": 10.4178,
+        "provenance": "User specification; position, elevation and dimensions unverified"
+      },
+      "verticalProvenance": "User elevation, hypothetical MSL; not surveyed",
+      "planimetryProvenance": "OpenStreetMap, community mapping; not cadastral survey",
+      "dimensionsProvenance": "OSM historic=fort footprint; terrace thickness 0.6 m, parapet width 1.2 m and height 1.4 m assumed; no measured facades",
+      "horizontalCorrectionM": 422.0582292584737,
+      "sourceUrls": [
+        "https://www.openstreetmap.org/way/54977866"
+      ],
+      "osmWayIds": [
+        54977866
+      ],
+      "centerlines": []
     },
     {
       "name": "Club_Nautico_Marina",
-      "lon": -75.538,
-      "lat": 10.411,
+      "lon": -75.5413578,
+      "lat": 10.412062699999996,
       "position": [
-        -602.3985858358792,
-        -220.1252578443382,
+        -969.7412329231738,
+        -101.99588987464085,
         1.2
       ],
-      "distanceToBoundaryM": 126.92581746063244,
+      "distanceToBoundaryM": 17.45273114285253,
       "insideBoundary": true,
-      "provenance": "User specification; position, elevation and dimensions unverified"
+      "provenance": "OSM horizontal geometry; user hypothetical vertical elevation; incomplete architecture",
+      "requested": {
+        "position": [
+          -602.3985858358792,
+          -220.1252578443382,
+          1.2
+        ],
+        "lon": -75.538,
+        "lat": 10.411,
+        "provenance": "User specification; position, elevation and dimensions unverified"
+      },
+      "verticalProvenance": "User elevation, hypothetical MSL; not surveyed",
+      "planimetryProvenance": "OpenStreetMap, community mapping; not cadastral survey",
+      "additionalSources": [
+        "https://www.openstreetmap.org/node/4246811137"
+      ],
+      "dimensionsProvenance": "Marina anchor from OSM node; nearby pier centerline only, association inferred by proximity; width 2.5 m and thickness 0.35 m assumed. Full marina incomplete.",
+      "horizontalCorrectionM": 385.8693664260236,
+      "sourceUrls": [
+        "https://www.openstreetmap.org/way/109814461"
+      ],
+      "osmWayIds": [
+        109814461
+      ],
+      "centerlines": []
     },
     {
       "name": "Puerto_SPRC",
-      "lon": -75.531,
-      "lat": 10.406,
+      "lon": -75.53210500333763,
+      "lat": 10.404517493766782,
       "position": [
-        162.89198540482903,
-        -774.2707287464291,
+        41.66208013067891,
+        -937.9898621438006,
         2.1
       ],
-      "distanceToBoundaryM": 115.31983278421744,
-      "insideBoundary": true,
-      "provenance": "User specification; position, elevation and dimensions unverified"
+      "distanceToBoundaryM": 16.750113602448927,
+      "insideBoundary": false,
+      "provenance": "OSM horizontal geometry; user hypothetical vertical elevation; incomplete architecture",
+      "requested": {
+        "position": [
+          162.89198540482903,
+          -774.2707287464291,
+          2.1
+        ],
+        "lon": -75.531,
+        "lat": 10.406,
+        "provenance": "User specification; position, elevation and dimensions unverified"
+      },
+      "verticalProvenance": "User elevation, hypothetical MSL; not surveyed",
+      "planimetryProvenance": "OpenStreetMap, community mapping; not cadastral survey",
+      "dimensionsProvenance": "Six mapped port pier/quay lines; visualization strips 2 m wide, not berth surfaces or complete port buildings",
+      "horizontalCorrectionM": 203.71706991110423,
+      "sourceUrls": [
+        "https://www.openstreetmap.org/way/166292802",
+        "https://www.openstreetmap.org/way/166292803",
+        "https://www.openstreetmap.org/way/166292804",
+        "https://www.openstreetmap.org/way/166292805",
+        "https://www.openstreetmap.org/way/166292806",
+        "https://www.openstreetmap.org/way/166292807"
+      ],
+      "osmWayIds": [
+        166292802,
+        166292803,
+        166292804,
+        166292805,
+        166292806,
+        166292807
+      ],
+      "centerlines": []
+    }
+  ],
+  "landmarkSources": [
+    {
+      "path": "data\\manga\\raw\\osm-features.json",
+      "sha256": "d31d5d3e533d0cc905b69908ab44d38adc7ee9ac300f13cf25ded6fe3d6bac94",
+      "osmTimestamp": "2026-09-17T00:51:45Z"
+    },
+    {
+      "path": "data\\manga\\raw\\osm-contract-landmarks.json",
+      "sha256": "a27cc85fa5310b55f8a754f1ccf8312a91b628091ac576c6b97a4113fb28ceb5",
+      "osmTimestamp": "2026-09-19T02:43:35Z"
     }
   ]
 }

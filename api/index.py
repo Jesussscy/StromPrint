@@ -59,7 +59,6 @@ from .tide_service import tide_service
 from .spatial_forcing import SpatialForcing, make_spatial_forcing
 from .weather_service import (
     ESTADO_SOLEADO,
-    ESTADO_NUBLADO,
     ESTADO_LLUVIOSO,
     ESTADO_TORMENTA,
     ESTADO_SIN_DATOS,

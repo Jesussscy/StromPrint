@@ -178,10 +178,6 @@ export function clasificarNivelCm(cm: number): NivelRiesgo {
   return map[nivel];
 }
 
-export function colorDeNivel(cm: number): string {
-  return colorDeRiesgo(clasificarNivelCm(cm));
-}
-
 export function colorDeRiesgo(nivel: NivelRiesgo): string {
   return RIESGO_META[nivel].color;
 }
@@ -215,14 +211,6 @@ export interface ParametrosZonaManga {
   exposicion_viento_pct: number;
 }
 
-// Cota de referencia minima: 0.5 m (la zona mas baja de Manga).
-const ALTURA_BASE_MIN_M = 0.5;
-
-/** Bajura de la zona (cm): una zona a 0.5 m ve el agua a plena columna. */
-export function bajuraCm(alturaBaseM: number): number {
-  return Math.max(0, (alturaBaseM - ALTURA_BASE_MIN_M) * 100);
-}
-
 export const ZONAS_PARAMETROS: Record<number, ParametrosZonaManga> = {
   1: { id: 1, altura_base_m: 0.6, drenaje: "bajo", rigidez_suelo: "duro", exposicion_marea_pct: 90, exposicion_lluvia_pct: 70, exposicion_viento_pct: 60 },
   2: { id: 2, altura_base_m: 0.66, drenaje: "bajo", rigidez_suelo: "duro", exposicion_marea_pct: 90, exposicion_lluvia_pct: 75, exposicion_viento_pct: 80 },
@@ -244,18 +232,6 @@ export const ZONAS_PARAMETROS: Record<number, ParametrosZonaManga> = {
   18: { id: 18, altura_base_m: 1.4, drenaje: "alto", rigidez_suelo: "blando", exposicion_marea_pct: 12, exposicion_lluvia_pct: 28, exposicion_viento_pct: 8 },
   19: { id: 19, altura_base_m: 1.3, drenaje: "alto", rigidez_suelo: "blando", exposicion_marea_pct: 15, exposicion_lluvia_pct: 40, exposicion_viento_pct: 12 },
   20: { id: 20, altura_base_m: 1.36, drenaje: "alto", rigidez_suelo: "medio", exposicion_marea_pct: 12, exposicion_lluvia_pct: 30, exposicion_viento_pct: 10 },
-};
-
-export const DRENAJE_LABEL: Record<DrenajeNivel, string> = {
-  bajo: "Bajo",
-  medio: "Medio",
-  alto: "Alto",
-};
-
-export const RIGIDEZ_LABEL: Record<RigidezSuelo, string> = {
-  blando: "Blando",
-  medio: "Medio",
-  duro: "Duro",
 };
 
 // ---------------------------------------------------------------------------

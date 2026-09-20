@@ -1,12 +1,15 @@
 {
-  "checkpoint": "14C",
+  "checkpoint": "15C",
   "status": "PASS",
-  "triangles": 27627,
-  "bytes": 2252176,
+  "triangles": 27915,
+  "bytes": 2289176,
   "terrainAreaM2": 1838981.8123785844,
+  "deckSamples": 35,
+  "landmarkSourceHashes": "PASS",
+  "waterCoverage": "PASS",
   "atlas": "2048x2048, one embedded PNG",
   "appliedTransforms": true,
   "yUp": true,
-  "sha256": "f4790e638c4415ecca174a75f46d7c89e2dca473df6da5088008694da2f4ca28",
+  "sha256": "1eaea5e6b5e4481db54d93d03546114cf24f7eccd39d481fa7575740d957171c",
   "certified": false
 }

@@ -55,7 +55,6 @@ import {
 } from "@/app/lib/export";
 import {
   playAlerta,
-  sirenaOff,
   soundEnabled,
   setSoundEnabled,
 } from "@/app/lib/sound";
@@ -517,7 +516,6 @@ function DashboardEmbedded() {
     const nv = !sonido;
     setSonido(nv);
     setSoundEnabled(nv);
-    if (!nv) sirenaOff();
   };
 
   const irAlInicio = () => {

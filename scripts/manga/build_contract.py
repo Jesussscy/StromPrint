@@ -96,27 +96,33 @@ def triangle_mesh(name, triangles, kind):
 terrain = triangle_mesh('Manga_Terrain_Base', data['terrain'], 'terrain')
 terrain['elevationProvenance'] = meta['terrainMethod']
 terrain['certified'] = False
-verts, faces = [], []
-for b in data['buildings']:
-    bottom, top = b['base'], b['base'] + b['height']
-    for tri in b['roof']:
-        a, c, d = tri
-        if (c[0]-a[0])*(d[1]-a[1])-(c[1]-a[1])*(d[0]-a[0]) < 0:
-            tri = list(reversed(tri))
-        for z, reverse in [(top, False), (bottom, True)]:
-            start = len(verts)
-            verts.extend([(p[0], p[1], z) for p in tri])
-            faces.append(tuple(start+i for i in ([2, 1, 0] if reverse else [0, 1, 2])))
-    for ring_index, ring in enumerate(b['rings']):
-        area = sum(a[0]*c[1]-c[0]*a[1] for a, c in zip(ring, ring[1:]))
-        if (area > 0) != (ring_index == 0):
-            ring = list(reversed(ring))
-        for a, c in zip(ring, ring[1:]):
-            start = len(verts)
-            verts.extend([(a[0], a[1], bottom), (c[0], c[1], bottom),
-                          (c[0], c[1], top), (a[0], a[1], top)])
-            faces.append(tuple(start+i for i in range(4)))
-buildings = mesh('Buildings_LOD1', verts, faces)
+
+
+def extrusions(name, solids, kind='solid', parent=None):
+    verts, faces = [], []
+    for b in solids:
+        bottom, top = b['base'], b['base'] + b['height']
+        for tri in b['roof']:
+            a, c, d = tri
+            if (c[0]-a[0])*(d[1]-a[1])-(c[1]-a[1])*(d[0]-a[0]) < 0:
+                tri = list(reversed(tri))
+            for z, reverse in [(top, False), (bottom, True)]:
+                start = len(verts)
+                verts.extend([(p[0], p[1], z) for p in tri])
+                faces.append(tuple(start+i for i in ([2, 1, 0] if reverse else [0, 1, 2])))
+        for ring_index, ring in enumerate(b['rings']):
+            area = sum(a[0]*c[1]-c[0]*a[1] for a, c in zip(ring, ring[1:]))
+            if (area > 0) != (ring_index == 0):
+                ring = list(reversed(ring))
+            for a, c in zip(ring, ring[1:]):
+                start = len(verts)
+                verts.extend([(a[0], a[1], bottom), (c[0], c[1], bottom),
+                              (c[0], c[1], top), (a[0], a[1], top)])
+                faces.append(tuple(start+i for i in range(4)))
+    return mesh(name, verts, faces, kind, parent)
+
+
+buildings = extrusions('Buildings_LOD1', data['buildings'])
 buildings['heightProvenance'] = 'OSM levels or estimated; see original manga.json by building ID'
 x0, y0, x1, y1 = meta['waterBounds']
 water = mesh('WaterLevel_Animated', [(x0,y0,0),(x1,y0,0),(x1,y1,0),(x0,y1,0)], [(0,1,2,3)], 'water')
@@ -125,37 +131,13 @@ landmarks = group('Landmarks_LOD2')
 bridges = group('Puentes_Group', landmarks)
 
 
-def boxes(name, parts, parent):
-    vs, fs = [], []
-    for x, y, z, sx, sy, sz in parts:
-        start = len(vs)
-        vs.extend([(x+dx*sx/2, y+dy*sy/2, z+dz*sz/2)
-                   for dx,dy,dz in [(-1,-1,-1),(1,-1,-1),(1,1,-1),(-1,1,-1),
-                                    (-1,-1,1),(1,-1,1),(1,1,1),(-1,1,1)]])
-        fs.extend([tuple(start+i for i in f) for f in [(3,2,1,0),(4,5,6,7),(0,1,5,4),
-                                                                    (1,2,6,5),(2,3,7,6),(3,0,4,7)]])
-    return mesh(name, vs, fs, 'landmark', parent)
-
-
 for item in meta['landmarks']:
     name = item['name']
-    x, y, z = item['position']
-    if name.startswith('Puente_'):
-        parts = [(x,y,z-.25,12,60,.5), (x-5.8,y,z+.5,.3,60,1), (x+5.8,y,z+.5,.3,60,1)]
-        parent = bridges
-    elif name == 'Fortin_Pastelillo':
-        parts = [(x,y,z+.4,48,35,.8), (x-23,y,z+2,2,35,4),
-                 (x+23,y,z+2,2,35,4), (x,y-16.5,z+2,48,2,4), (x,y+16.5,z+2,48,2,4)]
-        parent = landmarks
-    elif name == 'Club_Nautico_Marina':
-        parts = [(x,y,z-.2,70,4,.4)] + [(x+i*14,y-15,z-.2,3,30,.4) for i in range(-2,3)]
-        parent = landmarks
-    else:
-        parts = [(x,y,z+5,80,45,10)]
-        parent = landmarks
-    obj = boxes(name, parts, parent)
+    parent = bridges if name.startswith('Puente_') else landmarks
+    obj = extrusions(name, data['landmarkGeometry'][name], 'landmark', parent)
     obj['provenance'] = item['provenance']
-    obj['representation'] = 'Schematic proxy, not surveyed LOD2'
+    obj['representation'] = item['dimensionsProvenance']
+    obj['sourceUrls'] = item['sourceUrls']
     obj['anchorENH'] = item['position']
 
 for obj in scene.objects:
@@ -189,6 +171,6 @@ scene.render.filepath = str(ROOT/'models/manga/contract-preview.png')
 bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/'models/manga/MANGA_CONTRACT.blend'))
 bpy.ops.render.render(write_still=True)
 (ROOT/'docs/manga/contract-build.json').write_text(json.dumps(dict(
-    checkpoint='14B', triangles=triangles, blender=bpy.app.version_string,
+    checkpoint='15B', triangles=triangles, blender=bpy.app.version_string,
     glbBytes=(OUT/'manga-contract.glb').stat().st_size, certified=False), indent=2))
 print('CONTRACT_COMPLETE', triangles)

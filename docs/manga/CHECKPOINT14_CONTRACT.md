@@ -1,5 +1,8 @@
 # Checkpoint 14 — contrato 3D ligero de Manga
 
+**Histórico:** el [checkpoint15](CHECKPOINT15_GEOGRAPHY.md) reemplaza los proxies de posición,
+actualiza GLB/visor y completa la prueba WebGL. Las cifras y pendientes siguientes describen el checkpoint14.
+
 Fecha: 18/09/2026. **Implementación técnica terminada; reconstrucción exacta pendiente de datos.**
 
 ## Entrega

@@ -10,6 +10,7 @@ from PIL import Image, ImageDraw
 from pyproj import Transformer
 from shapely.geometry import shape, box, Point
 from shapely.ops import transform
+from contract_landmarks import prepare_landmarks
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / 'public/models/manga/contract'
@@ -108,14 +109,22 @@ metadata = dict(crs='EPSG:32618', originLonLat=[-75.5325, 10.4130], originUTM=li
                                 insideBoundary=boundary.covers(Point(xy(lon, lat))),
                                 provenance='User specification; position, elevation and dimensions unverified')
                            for name, lat, lon, h in specs])
+landmark_geometry = prepare_landmarks(metadata, xy, boundary)
+all_landmark_points = [p for pieces in landmark_geometry.values() for piece in pieces for ring in piece['rings'] for p in ring]
+metadata['waterBounds'] = [min(water_bounds[0], min(p[0] for p in all_landmark_points)-50),
+                           min(water_bounds[1], min(p[1] for p in all_landmark_points)-50),
+                           max(water_bounds[2], max(p[0] for p in all_landmark_points)+50),
+                           max(water_bounds[3], max(p[1] for p in all_landmark_points)+50)]
 inverse = Transformer.from_crs(32618, 4326, always_xy=True)
 for item in metadata['landmarks']:
     e, n, _ = item['position']
     lon, lat = inverse.transform(e + origin[0], n + origin[1])
-    assert abs(lon-item['lon']) < 1e-8 and abs(lat-item['lat']) < 1e-8
+    item['lon'], item['lat'] = lon, lat
+    assert math.dist(xy(lon, lat), [e, n]) < 1e-6
 assert math.dist(xy(-75.5325, 10.4130), [0, 0]) < 1e-8
 (OUT / 'metadata.json').write_text(json.dumps(metadata, indent=2, ensure_ascii=False), encoding='utf8')
 prepared = ROOT / 'models/manga/contract-input.json'
-prepared.write_text(json.dumps(dict(metadata=metadata, terrain=terrain, buildings=buildings)), encoding='utf8')
-print(json.dumps(dict(checkpoint='14A', buildings=len(buildings), terrainTriangles=len(terrain),
+prepared.write_text(json.dumps(dict(metadata=metadata, terrain=terrain, buildings=buildings,
+                                    landmarkGeometry=landmark_geometry)), encoding='utf8')
+print(json.dumps(dict(checkpoint='15A', buildings=len(buildings), terrainTriangles=len(terrain),
                       areaM2=boundary.area, outsideBboxM2=metadata['areaOutsideRequestedBboxM2'])))

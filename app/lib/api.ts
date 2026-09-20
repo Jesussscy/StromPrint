@@ -6,37 +6,7 @@
 
 import { riscoColorEstilo, etiquetaNivel } from "@/app/lib/riesgo";
 
-// --- Tipos legacy (backwards compatibility) ---
-
-export interface FloodRecord {
-  hour: number;
-  water_level_cm: number;
-  rain_intensity: number;
-  tide_level: number;
-  risk_level: "low" | "moderate" | "high" | "critical";
-}
-
-export interface SimulationResponse {
-  territory: string;
-  total_points: number;
-  max_water_level_cm: number;
-  peak_hour: number;
-  records: FloodRecord[];
-}
-
-export interface SimulationRequestParams {
-  duration_hours?: number;
-  resolution_hours?: number;
-  storm_peak_hour?: number;
-  storm_intensity?: number;
-  storm_width?: number;
-  mean_sea_level?: number;
-  mass?: number;
-  damping?: number;
-  stiffness?: number;
-}
-
-// --- Tipos nuevos ---
+// --- Tipos ---
 
 export type EstadoMeteo =
   | "soleado"
@@ -346,19 +316,6 @@ export function predecir(params: {
       body: JSON.stringify(params),
     })
   );
-}
-
-export function runPrediction(params: SimulationRequestParams): Promise<SimulationResponse> {
-  return stormprintFetch<SimulationResponse>("/api/v1/predict", {
-    method: "POST",
-    body: JSON.stringify(params),
-  });
-}
-
-export function fetchHistory(limit = 168): Promise<FloodRecord[]> {
-  return stormprintFetch<FloodRecord[]>(`/api/v1/history?limit=${limit}`, {
-    method: "GET",
-  });
 }
 
 export function fetchPredicciones(limit = 10): Promise<{ predicciones: PrediccionGuardada[] }> {

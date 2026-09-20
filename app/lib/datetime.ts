@@ -31,14 +31,3 @@ export function formatFechaCartagena(value: string | number | Date): string {
     month: "2-digit",
   }).format(d);
 }
-
-export function formatHoraCartagena(value: string | number | Date): string {
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return "—";
-  return new Intl.DateTimeFormat("es-CO", {
-    timeZone: TZ,
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(d);
-}

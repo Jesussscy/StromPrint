@@ -31,8 +31,3 @@ export function loadNumber(clave: string, porDefecto: number): number {
   const v = loadJSON<number | string>(clave, porDefecto);
   return typeof v === "number" && Number.isFinite(v) ? v : porDefecto;
 }
-
-export function loadBoolean(clave: string, porDefecto: boolean): boolean {
-  const v = loadJSON<boolean>(clave, porDefecto);
-  return typeof v === "boolean" ? v : porDefecto;
-}

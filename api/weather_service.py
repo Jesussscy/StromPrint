@@ -185,16 +185,10 @@ def determinar_estado(
     return ESTADO_SOLEADO
 
 
-def es_dia_lluvioso(estado: str) -> bool:
-    """True si el estado implica precipitacion significativa."""
-    return estado in (ESTADO_LLUVIOSO, ESTADO_TORMENTA)
-
-
 def tiene_lluvia_en_horizonte(hourly_data: List[Dict], horas: Optional[int] = None) -> bool:
     """True si hay alguna gota de lluvia dentro de la ventana de pronostico.
 
-    A diferencia de es_dia_lluvioso (que mira solo el estado actual), aqui se
-    recorre todo el horizonte de pronostico: puede estar soleado "ahora" y
+    Se recorre todo el horizonte de pronostico: puede estar soleado "ahora" y
     llover mas tarde en el dia; en ese caso el modelo debe conservar la lluvia.
     La ventana se cuenta DESDE AHORA (hora local de Bogota), alineada con la
     marea y el resumen (t=0 = ahora)."""
@@ -917,7 +911,7 @@ class WeatherService:
             from .tide_service import tide_service as _tide_svc
 
             tide = await _tide_svc.get_tide(duration_hours=48.0)
-            marea_actual_cm = float(tide.get("nivel_actual_cm") or marea_actual_cm)
+            marea_actual_cm = float(tide.get("marea_actual_cm") or marea_actual_cm)
             marea_origen = str(tide.get("origen") or "estimada")
             if tide.get("proxima_pleamar"):
                 proxima_pleamar = tide["proxima_pleamar"]

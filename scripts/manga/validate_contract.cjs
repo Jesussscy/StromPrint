@@ -39,6 +39,7 @@ for (const node of gltf.nodes) {
 assert.ok(nodes.Landmarks_LOD2.children.includes(gltf.nodes.indexOf(nodes.Puentes_Group)));
 assert.equal(nodes.Puentes_Group.children.length, 4);
 let triangles = 0, terrainArea = 0;
+const decoded = {};
 for (const [name, node] of Object.entries(nodes)) {
   if (node.mesh === undefined) continue;
   const primitives = gltf.meshes[node.mesh].primitives;
@@ -49,6 +50,7 @@ for (const [name, node] of Object.entries(nodes)) {
     const normals = accessor(primitive.attributes.NORMAL);
     const uv = accessor(primitive.attributes.TEXCOORD_0);
     const indices = accessor(primitive.indices).flat();
+    decoded[name] = { positions, indices };
     assert.equal(indices.length % 3, 0);
     triangles += indices.length / 3;
     assert.ok(positions.flat().every(Number.isFinite));
@@ -75,7 +77,45 @@ for (const [name, node] of Object.entries(nodes)) {
 assert.ok(triangles <= 80000);
 assert.ok(Math.abs(terrainArea - metadata.areaM2) / metadata.areaM2 < .0001);
 assert.equal(metadata.sourceSHA256, crypto.createHash('sha256').update(fs.readFileSync(path.join(root, 'public/models/manga/manga.json'))).digest('hex'));
-const report = { checkpoint: '14C', status: 'PASS', triangles, bytes: bytes.length, terrainAreaM2: terrainArea,
+for (const source of metadata.landmarkSources) {
+  assert.equal(source.sha256, crypto.createHash('sha256').update(fs.readFileSync(path.join(root, source.path))).digest('hex'));
+}
+const waterPositions = decoded.WaterLevel_Animated.positions;
+const wx = waterPositions.map(p => p[0]), wz = waterPositions.map(p => p[2]);
+for (const geometry of Object.values(decoded)) for (const p of geometry.positions) {
+  assert.ok(p[0] >= Math.min(...wx)-.01 && p[0] <= Math.max(...wx)+.01 &&
+    p[2] >= Math.min(...wz)-.01 && p[2] <= Math.max(...wz)+.01, 'Water context must cover all geometry');
+}
+function signedArea(a, b, c) {
+  return ((b[0]-a[0])*(c[2]-a[2])-(b[2]-a[2])*(c[0]-a[0]))/2;
+}
+let deckSamples = 0;
+for (const landmark of metadata.landmarks) {
+  const node = nodes[landmark.name];
+  assert.deepEqual(node.extras.anchorENH, landmark.position);
+  assert.ok(landmark.requested && landmark.sourceUrls.length);
+  const { positions, indices } = decoded[landmark.name];
+  for (const line of landmark.centerlines) {
+    for (let i = 1; i < line.points.length; i++) {
+      for (const t of [.01, .25, .5, .75, .99]) {
+        const a = line.points[i-1], b = line.points[i];
+        const sample = [a[0]+(b[0]-a[0])*t, landmark.position[2], -a[1]-(b[1]-a[1])*t];
+        let covered = false;
+        for (let j = 0; j < indices.length; j += 3) {
+          const [p, q, r] = indices.slice(j, j+3).map(k => positions[k]);
+          if (![p,q,r].every(v => Math.abs(v[1]-sample[1]) < 1e-5)) continue;
+          const area = Math.abs(signedArea(p,q,r));
+          if (area > 1e-6 && Math.abs(Math.abs(signedArea(sample,q,r)) +
+            Math.abs(signedArea(p,sample,r)) + Math.abs(signedArea(p,q,sample))-area) < .02) covered = true;
+        }
+        assert.ok(covered, `${landmark.name}: OSM centerline must lie on deck at specified height`);
+        deckSamples++;
+      }
+    }
+  }
+}
+const report = { checkpoint: '15C', status: 'PASS', triangles, bytes: bytes.length, terrainAreaM2: terrainArea,
+  deckSamples, landmarkSourceHashes: 'PASS', waterCoverage: 'PASS',
   atlas: '2048x2048, one embedded PNG', appliedTransforms: true, yUp: true,
   sha256: crypto.createHash('sha256').update(bytes).digest('hex'), certified: false };
 fs.writeFileSync(path.join(root, 'docs/manga/contract-validation.json'), JSON.stringify(report, null, 2));

@@ -7,7 +7,6 @@ strict security headers and CORS policy, OWASP Top 10 mitigations.
 import hashlib
 import hmac
 import os
-import secrets
 from typing import Optional
 
 from fastapi import Header, HTTPException, Request, status
@@ -50,31 +49,6 @@ def _hash_key(raw_key: str) -> str:
 
 
 _EXPECTED_KEY_HASH = _hash_key(_RAW_API_KEY)
-
-
-def generate_admin_credentials(username: str, password: str) -> dict:
-    salt = secrets.token_hex(16)
-    derived = hashlib.pbkdf2_hmac(
-        "sha256",
-        password.encode("utf-8"),
-        bytes.fromhex(salt),
-        100_000,
-    )
-    return {
-        "username": username,
-        "salt": salt,
-        "password_hash": derived.hex(),
-    }
-
-
-def verify_admin_credentials(password: str, salt: str, password_hash: str) -> bool:
-    derived = hashlib.pbkdf2_hmac(
-        "sha256",
-        password.encode("utf-8"),
-        bytes.fromhex(salt),
-        100_000,
-    )
-    return hmac.compare_digest(derived.hex(), password_hash)
 
 
 async def verify_api_key(x_stormprint_key: Optional[str] = Header(default=None)) -> str:
@@ -158,8 +132,6 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 # CORS
 # ---------------------------------------------------------------------------
 def get_allowed_origins() -> list:
-    IS_PROD = os.environ.get("VERCEL_ENV", os.environ.get("ENV", "production")) != "development"
-
     # Siempre aceptamos el dominio de Vercel activo (VERCEL_URL) además de la
     # lista explícita, para que la app nunca quede bloqueada por CORS aunque el
     # proyecto se despliegue en un alias/dominio distinto al configurado.
@@ -168,7 +140,7 @@ def get_allowed_origins() -> list:
     if vercel_url:
         origins.add(f"https://{vercel_url}")
 
-    if IS_PROD:
+    if IS_PRODUCTION:
         raw = os.environ.get(
             "STORMPRINT_ALLOWED_ORIGINS",
             "https://stormprint.vercel.app",
@@ -184,20 +156,6 @@ def get_allowed_origins() -> list:
             origins.add(origin)
 
     return list(origins)
-
-
-# ---------------------------------------------------------------------------
-# Public routes (no auth required)
-# ---------------------------------------------------------------------------
-PUBLIC_ROUTES = {
-    "/api/v1/health",
-    "/api/v1/predecir",
-    "/api/v1/predicciones",
-}
-
-
-def is_public_route(path: str) -> bool:
-    return path.rstrip("/") in PUBLIC_ROUTES
 
 
 # ---------------------------------------------------------------------------

@@ -105,12 +105,6 @@ def _proxima_pleamar_de_serie(times: List[str], heights_m: List[float], referenc
     return best_iso or ""
 
 
-def _marea_actual_de_serie(sea_level_cm: List[float], now_index: Optional[int]) -> float:
-    if now_index is None or now_index < 0 or now_index >= len(sea_level_cm):
-        return 8.0
-    return round(float(sea_level_cm[now_index]), 1)
-
-
 async def fetch_tide_hourly(
     forecast_days: int = 8,
     past_days: int = 1,

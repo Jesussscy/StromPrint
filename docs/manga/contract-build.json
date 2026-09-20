@@ -1,7 +1,7 @@
 {
-  "checkpoint": "14B",
-  "triangles": 27627,
+  "checkpoint": "15B",
+  "triangles": 27915,
   "blender": "5.2.2 LTS",
-  "glbBytes": 2252176,
+  "glbBytes": 2289176,
   "certified": false
 }

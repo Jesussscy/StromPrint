@@ -1,0 +1,1122 @@
+{
+  "sha256": "159340bbabd9c65e920747c621a048907bb4a7c617f072a1d4693782f7013770",
+  "source": "rain_generator.blend",
+  "groups": {
+    "Droplet": {
+      "inputs": {
+        "Length": 1.0,
+        "Radius": 0.05000000074505806
+      },
+      "nodes": [
+        {
+          "type": "GeometryNodeSetShadeSmooth",
+          "inputs": {
+            "Selection": true,
+            "Shade Smooth": true
+          }
+        },
+        {
+          "type": "NodeGroupOutput",
+          "inputs": {}
+        },
+        {
+          "type": "GeometryNodeMeshCylinder",
+          "inputs": {
+            "Vertices": 5,
+            "Side Segments": 1,
+            "Fill Segments": 1
+          }
+        },
+        {
+          "type": "NodeGroupInput",
+          "inputs": {}
+        },
+        {
+          "type": "GeometryNodeSetMaterial",
+          "inputs": {
+            "Selection": true,
+            "Material": "<bpy_struct, Material(\"Falling Droplet Shader\") at 0x0000017A6CDC78A0>"
+          }
+        }
+      ]
+    },
+    "Rain Splash": {
+      "inputs": {
+        "": "DROPLET SETTINGS",
+        "Density": 1.0,
+        "Vertex Group": 1.0,
+        "Z Limit": 0.0,
+        "Drops/Splash": 4,
+        "Power": 1.0,
+        "Speed": 0.699999988079071,
+        "Radius": 0.009999999776482582,
+        "Material": "<bpy_struct, Material(\"Splash Droplet Shader\") at 0x0000017A6CDC6EA0>"
+      },
+      "nodes": [
+        {
+          "type": "GeometryNodeSimulationInput",
+          "inputs": {}
+        },
+        {
+          "type": "GeometryNodeInputSceneTime",
+          "inputs": {}
+        },
+        {
+          "type": "GeometryNodeDuplicateElements",
+          "inputs": {
+            "Selection": true
+          }
+        },
+        {
+          "type": "ShaderNodeVectorMath",
+          "inputs": {
+            "Vector": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "Scale": 1.0
+          }
+        },
+        {
+          "type": "FunctionNodeRandomValue",
+          "inputs": {
+            "Min": [
+              -1.0,
+              -1.0,
+              0.0
+            ],
+            "Max": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "ID": 0,
+            "Seed": 0
+          }
+        },
+        {
+          "type": "GeometryNodeCaptureAttribute",
+          "inputs": {
+            "Selection": true
+          }
+        },
+        {
+          "type": "ShaderNodeVectorMath",
+          "inputs": {
+            "Vector": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "Scale": 1.0
+          }
+        },
+        {
+          "type": "GeometryNodeJoinGeometry",
+          "inputs": {}
+        },
+        {
+          "type": "ShaderNodeVectorMath",
+          "inputs": {
+            "Vector": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "type": "ShaderNodeMath",
+          "inputs": {
+            "Value": 0.5
+          }
+        },
+        {
+          "type": "ShaderNodeVectorMath",
+          "inputs": {
+            "Vector": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "Scale": 1.0
+          }
+        },
+        {
+          "type": "ShaderNodeCombineXYZ",
+          "inputs": {
+            "X": 0.0,
+            "Y": 0.0
+          }
+        },
+        {
+          "type": "GeometryNodeSetPosition",
+          "inputs": {
+            "Selection": true,
+            "Position": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "type": "GeometryNodeSimulationOutput",
+          "inputs": {
+            "Skip": false
+          }
+        },
+        {
+          "type": "GeometryNodeInputPosition",
+          "inputs": {}
+        },
+        {
+          "type": "FunctionNodeCompare",
+          "inputs": {}
+        },
+        {
+          "type": "ShaderNodeSeparateXYZ",
+          "inputs": {}
+        },
+        {
+          "type": "GeometryNodeDeleteGeometry",
+          "inputs": {}
+        },
+        {
+          "type": "ShaderNodeMath",
+          "inputs": {
+            "Value": 0.5
+          }
+        },
+        {
+          "type": "FunctionNodeRandomValue",
+          "inputs": {
+            "Min": 0.800000011920929,
+            "Max": 1.2000000476837158,
+            "ID": 0,
+            "Seed": 0
+          }
+        },
+        {
+          "type": "GeometryNodeSetMaterial",
+          "inputs": {
+            "Selection": true
+          }
+        },
+        {
+          "type": "GeometryNodeSetPointRadius",
+          "inputs": {
+            "Selection": true
+          }
+        },
+        {
+          "type": "GeometryNodeJoinGeometry",
+          "inputs": {}
+        },
+        {
+          "type": "NodeGroupOutput",
+          "inputs": {}
+        },
+        {
+          "type": "ShaderNodeVectorMath",
+          "inputs": {
+            "Vector": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "type": "ShaderNodeMath",
+          "inputs": {
+            "Value": 0.5
+          }
+        },
+        {
+          "type": "ShaderNodeMath",
+          "inputs": {
+            "Value": 0.5
+          }
+        },
+        {
+          "type": "ShaderNodeMath",
+          "inputs": {
+            "Value": 0.5
+          }
+        },
+        {
+          "type": "NodeGroupInput",
+          "inputs": {}
+        },
+        {
+          "type": "GeometryNodeDistributePointsOnFaces",
+          "inputs": {
+            "Selection": true,
+            "Distance Min": 0.0
+          }
+        },
+        {
+          "type": "NodeGroupInput",
+          "inputs": {}
+        },
+        {
+          "type": "NodeGroupInput",
+          "inputs": {}
+        },
+        {
+          "type": "NodeGroupInput",
+          "inputs": {}
+        },
+        {
+          "type": "NodeGroupInput",
+          "inputs": {}
+        },
+        {
+          "type": "NodeGroupInput",
+          "inputs": {}
+        },
+        {
+          "type": "NodeGroupInput",
+          "inputs": {}
+        },
+        {
+          "type": "NodeGroupInput",
+          "inputs": {}
+        }
+      ]
+    },
+    "Rain Zone": {
+      "inputs": {
+        "": "ZONE SETTINGS",
+        "Amount": 1000,
+        "Scale": 0.10000000149011612,
+        "Fall Speed": 0.5,
+        "Instance": "<bpy_struct, Object(\"Droplet\") at 0x0000017A6CE18F20>",
+        "Size X": 5.0,
+        "Size Y": 5.0,
+        "Size Z": 5.0,
+        "Tilt X": 0.0,
+        "Tilt Y": 0.0,
+        "Outline": true
+      },
+      "nodes": [
+        {
+          "type": "GeometryNodePoints",
+          "inputs": {
+            "Radius": 0.10000000149011612
+          }
+        },
+        {
+          "type": "ShaderNodeVectorMath",
+          "inputs": {
+            "Vector": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "Scale": 1.0
+          }
+        },
+        {
+          "type": "GeometryNodeInputPosition",
+          "inputs": {}
+        },
+        {
+          "type": "ShaderNodeMapRange",
+          "inputs": {
+            "From Min": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "To Min": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "To Max": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "Steps": [
+              4.0,
+              4.0,
+              4.0
+            ],
+            "Vector": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "From Max": [
+              1.0,
+              1.0,
+              1.0
+            ]
+          }
+        },
+        {
+          "type": "ShaderNodeSeparateXYZ",
+          "inputs": {}
+        },
+        {
+          "type": "GeometryNodeSimulationInput",
+          "inputs": {}
+        },
+        {
+          "type": "GeometryNodeSetPosition",
+          "inputs": {
+            "Selection": true,
+            "Position": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "type": "ShaderNodeCombineXYZ",
+          "inputs": {
+            "Z": 0.0
+          }
+        },
+        {
+          "type": "ShaderNodeCombineXYZ",
+          "inputs": {}
+        },
+        {
+          "type": "FunctionNodeRandomValue",
+          "inputs": {
+            "Min": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "ID": 0,
+            "Seed": 0
+          }
+        },
+        {
+          "type": "GeometryNodeSetPosition",
+          "inputs": {
+            "Selection": true,
+            "Position": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "type": "ShaderNodeVectorMath",
+          "inputs": {
+            "Vector": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "Scale": 1.0
+          }
+        },
+        {
+          "type": "ShaderNodeVectorMath",
+          "inputs": {
+            "Vector": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "Scale": 1.0
+          }
+        },
+        {
+          "type": "ShaderNodeVectorMath",
+          "inputs": {
+            "Vector": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "Scale": 1.0
+          }
+        },
+        {
+          "type": "GeometryNodeInputPosition",
+          "inputs": {}
+        },
+        {
+          "type": "ShaderNodeSeparateXYZ",
+          "inputs": {}
+        },
+        {
+          "type": "FunctionNodeCompare",
+          "inputs": {
+            "B": 0.0
+          }
+        },
+        {
+          "type": "GeometryNodeSetPosition",
+          "inputs": {
+            "Offset": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "type": "ShaderNodeCombineXYZ",
+          "inputs": {}
+        },
+        {
+          "type": "FunctionNodeRandomValue",
+          "inputs": {
+            "Min": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "ID": 0
+          }
+        },
+        {
+          "type": "ShaderNodeCombineXYZ",
+          "inputs": {
+            "Z": 0.0
+          }
+        },
+        {
+          "type": "ShaderNodeVectorMath",
+          "inputs": {
+            "Vector": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "Scale": 1.0
+          }
+        },
+        {
+          "type": "ShaderNodeVectorMath",
+          "inputs": {
+            "Vector": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "Scale": 1.0
+          }
+        },
+        {
+          "type": "GeometryNodeSimulationOutput",
+          "inputs": {
+            "Skip": false
+          }
+        },
+        {
+          "type": "ShaderNodeCombineXYZ",
+          "inputs": {}
+        },
+        {
+          "type": "ShaderNodeVectorMath",
+          "inputs": {
+            "Vector": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "Scale": 1.0
+          }
+        },
+        {
+          "type": "ShaderNodeVectorMath",
+          "inputs": {
+            "Vector": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "Scale": 1.0
+          }
+        },
+        {
+          "type": "ShaderNodeVectorMath",
+          "inputs": {
+            "Vector": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "Scale": 1.0
+          }
+        },
+        {
+          "type": "GeometryNodeInputSceneTime",
+          "inputs": {}
+        },
+        {
+          "type": "FunctionNodeRandomValue",
+          "inputs": {
+            "Min": 0.0,
+            "ID": 0
+          }
+        },
+        {
+          "type": "GeometryNodeInputSceneTime",
+          "inputs": {}
+        },
+        {
+          "type": "ShaderNodeCombineXYZ",
+          "inputs": {
+            "Z": 0.0
+          }
+        },
+        {
+          "type": "ShaderNodeVectorMath",
+          "inputs": {
+            "Vector": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "Scale": 1.0
+          }
+        },
+        {
+          "type": "GeometryNodeSetPosition",
+          "inputs": {
+            "Selection": true,
+            "Position": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "type": "ShaderNodeCombineXYZ",
+          "inputs": {}
+        },
+        {
+          "type": "ShaderNodeVectorMath",
+          "inputs": {
+            "Vector": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "Scale": 1.0
+          }
+        },
+        {
+          "type": "GeometryNodeObjectInfo",
+          "inputs": {
+            "As Instance": false
+          }
+        },
+        {
+          "type": "FunctionNodeAlignEulerToVector",
+          "inputs": {
+            "Rotation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "Factor": 1.0
+          }
+        },
+        {
+          "type": "ShaderNodeCombineXYZ",
+          "inputs": {}
+        },
+        {
+          "type": "ShaderNodeCombineXYZ",
+          "inputs": {}
+        },
+        {
+          "type": "GeometryNodeMeshGrid",
+          "inputs": {
+            "Vertices X": 2,
+            "Vertices Y": 2
+          }
+        },
+        {
+          "type": "GeometryNodeSetPosition",
+          "inputs": {
+            "Selection": true,
+            "Position": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        {
+          "type": "GeometryNodeJoinGeometry",
+          "inputs": {}
+        },
+        {
+          "type": "GeometryNodeConvexHull",
+          "inputs": {}
+        },
+        {
+          "type": "GeometryNodeDeleteGeometry",
+          "inputs": {
+            "Selection": true
+          }
+        },
+        {
+          "type": "FunctionNodeBooleanMath",
+          "inputs": {}
+        },
+        {
+          "type": "GeometryNodeDeleteGeometry",
+          "inputs": {}
+        },
+        {
+          "type": "GeometryNodeInstanceOnPoints",
+          "inputs": {
+            "Selection": true,
+            "Pick Instance": false,
+            "Instance Index": 0
+          }
+        },
+        {
+          "type": "GeometryNodeJoinGeometry",
+          "inputs": {}
+        },
+        {
+          "type": "NodeGroupOutput",
+          "inputs": {}
+        },
+        {
+          "type": "NodeGroupInput",
+          "inputs": {}
+        },
+        {
+          "type": "NodeGroupInput",
+          "inputs": {}
+        },
+        {
+          "type": "NodeGroupInput",
+          "inputs": {}
+        },
+        {
+          "type": "NodeGroupInput",
+          "inputs": {}
+        },
+        {
+          "type": "NodeGroupInput",
+          "inputs": {}
+        },
+        {
+          "type": "NodeGroupInput",
+          "inputs": {}
+        },
+        {
+          "type": "NodeGroupInput",
+          "inputs": {}
+        },
+        {
+          "type": "NodeGroupInput",
+          "inputs": {}
+        },
+        {
+          "type": "NodeGroupInput",
+          "inputs": {}
+        },
+        {
+          "type": "NodeGroupInput",
+          "inputs": {}
+        },
+        {
+          "type": "NodeGroupInput",
+          "inputs": {}
+        },
+        {
+          "type": "NodeGroupInput",
+          "inputs": {}
+        },
+        {
+          "type": "NodeGroupInput",
+          "inputs": {}
+        },
+        {
+          "type": "NodeGroupInput",
+          "inputs": {}
+        },
+        {
+          "type": "NodeGroupInput",
+          "inputs": {}
+        },
+        {
+          "type": "NodeGroupInput",
+          "inputs": {}
+        },
+        {
+          "type": "NodeGroupInput",
+          "inputs": {}
+        }
+      ]
+    }
+  },
+  "materials": {
+    "Default Ground Shader": [
+      {
+        "type": "ShaderNodeOutputMaterial",
+        "inputs": {
+          "Displacement": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Thickness": 0.0
+        }
+      },
+      {
+        "type": "ShaderNodeBsdfDiffuse",
+        "inputs": {
+          "Color": [
+            0.5,
+            0.5,
+            0.5,
+            1.0
+          ],
+          "Roughness": 0.20000000298023224,
+          "Normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Weight": 0.0
+        }
+      }
+    ],
+    "Dots Stroke": [
+      {
+        "type": "NodeFrame",
+        "inputs": {}
+      },
+      {
+        "type": "ShaderNodeOutputMaterial",
+        "inputs": {
+          "Displacement": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Thickness": 0.0
+        }
+      },
+      {
+        "type": "ShaderNodeBsdfPrincipled",
+        "inputs": {
+          "Base Color": [
+            0.800000011920929,
+            0.800000011920929,
+            0.800000011920929,
+            1.0
+          ],
+          "Metallic": 0.0,
+          "Roughness": 0.5,
+          "IOR": 1.5,
+          "Alpha": 1.0,
+          "Thin Wall": false,
+          "Normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Weight": 0.0,
+          "Diffuse Roughness": 0.0,
+          "Subsurface Weight": 0.0,
+          "Subsurface Radius": [
+            1.0,
+            0.20000000298023224,
+            0.10000000149011612
+          ],
+          "Subsurface Scale": 0.004999999888241291,
+          "Subsurface IOR": 1.399999976158142,
+          "Subsurface Anisotropy": 0.0,
+          "Specular IOR Level": 0.5,
+          "Specular Tint": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Anisotropic": 0.0,
+          "Anisotropic Rotation": 0.0,
+          "Tangent": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Transmission Weight": 0.0,
+          "Coat Weight": 0.0,
+          "Coat Roughness": 0.029999999329447746,
+          "Coat IOR": 1.5,
+          "Coat Tint": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Coat Normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Sheen Weight": 0.0,
+          "Sheen Roughness": 0.5,
+          "Sheen Tint": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Emission Color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Emission Strength": 0.0,
+          "Thin Film Thickness": 0.0,
+          "Thin Film IOR": 1.3300000429153442
+        }
+      },
+      {
+        "type": "ShaderNodeOutputMaterial",
+        "inputs": {
+          "Displacement": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Thickness": 0.0
+        }
+      },
+      {
+        "type": "ShaderNodeBsdfDiffuse",
+        "inputs": {
+          "Color": [
+            0.800000011920929,
+            0.800000011920929,
+            0.800000011920929,
+            1.0
+          ],
+          "Roughness": 0.0,
+          "Normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Weight": 0.0
+        }
+      }
+    ],
+    "Falling Droplet Shader": [
+      {
+        "type": "ShaderNodeOutputMaterial",
+        "inputs": {
+          "Displacement": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Thickness": 0.0
+        }
+      },
+      {
+        "type": "ShaderNodeMixShader",
+        "inputs": {}
+      },
+      {
+        "type": "ShaderNodeBsdfTransparent",
+        "inputs": {
+          "Color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Weight": 0.0
+        }
+      },
+      {
+        "type": "ShaderNodeBsdfGlass",
+        "inputs": {
+          "Color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Roughness": 0.0,
+          "IOR": 1.3300000429153442,
+          "Normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Weight": 0.0,
+          "Thin Film Thickness": 0.0,
+          "Thin Film IOR": 1.3300000429153442
+        }
+      },
+      {
+        "type": "ShaderNodeTexWave",
+        "inputs": {
+          "Distortion": 0.0,
+          "Detail": 2.0,
+          "Detail Scale": 1.0,
+          "Detail Roughness": 0.5,
+          "Phase Offset": 0.0
+        }
+      },
+      {
+        "type": "ShaderNodeTexCoord",
+        "inputs": {}
+      },
+      {
+        "type": "ShaderNodeMath",
+        "inputs": {
+          "Value": 0.5
+        }
+      },
+      {
+        "type": "ShaderNodeValToRGB",
+        "inputs": {}
+      }
+    ],
+    "Material": [
+      {
+        "type": "ShaderNodeOutputMaterial",
+        "inputs": {
+          "Displacement": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Thickness": 0.0
+        }
+      },
+      {
+        "type": "ShaderNodeBsdfPrincipled",
+        "inputs": {
+          "Base Color": [
+            0.800000011920929,
+            0.800000011920929,
+            0.800000011920929,
+            1.0
+          ],
+          "Metallic": 0.0,
+          "Roughness": 0.5,
+          "IOR": 1.4500000476837158,
+          "Alpha": 1.0,
+          "Thin Wall": false,
+          "Normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Weight": 0.0,
+          "Diffuse Roughness": 0.0,
+          "Subsurface Weight": 0.0,
+          "Subsurface Radius": [
+            1.0,
+            0.20000000298023224,
+            0.10000000149011612
+          ],
+          "Subsurface Scale": 0.05000000074505806,
+          "Subsurface IOR": 1.399999976158142,
+          "Subsurface Anisotropy": 0.0,
+          "Specular IOR Level": 0.5,
+          "Specular Tint": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Anisotropic": 0.0,
+          "Anisotropic Rotation": 0.0,
+          "Tangent": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Transmission Weight": 0.0,
+          "Coat Weight": 0.0,
+          "Coat Roughness": 0.029999999329447746,
+          "Coat IOR": 1.5,
+          "Coat Tint": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Coat Normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Sheen Weight": 0.0,
+          "Sheen Roughness": 0.5,
+          "Sheen Tint": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Emission Color": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "Emission Strength": 1.0,
+          "Thin Film Thickness": 0.0,
+          "Thin Film IOR": 1.3300000429153442
+        }
+      }
+    ],
+    "Splash Droplet Shader": [
+      {
+        "type": "ShaderNodeOutputMaterial",
+        "inputs": {
+          "Displacement": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Thickness": 0.0
+        }
+      },
+      {
+        "type": "ShaderNodeBsdfGlass",
+        "inputs": {
+          "Color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "Roughness": 0.0,
+          "IOR": 1.3300000429153442,
+          "Normal": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Weight": 0.0,
+          "Thin Film Thickness": 0.0,
+          "Thin Film IOR": 1.3300000429153442
+        }
+      }
+    ]
+  }
+}

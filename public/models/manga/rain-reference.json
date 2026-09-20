@@ -1,0 +1,6 @@
+{
+  "source": "rain_generator.blend",
+  "droplet": { "length": 1, "radius": 0.05, "ior": 1.33 },
+  "splash": { "drops": 4, "speed": 0.7, "radius": 0.01 },
+  "adaptation": "Geometry Nodes fall/recycle and four ballistic splash particles translated to GPU shaders; screen-space visibility scaled for district views. Cycles glass shading approximated in WebGL."
+}

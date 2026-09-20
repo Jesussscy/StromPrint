@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import type { MangaData, Scenario } from '@/app/lib/manga/types';
 import { insideBoundary } from '@/app/lib/manga/adapter';
 import type { RenderQuality } from './MangaScene';
+import reference from '@/public/models/manga/rain-reference.json';
 
 // ---------------------------------------------------------------------------
 // Module-level constants: deterministic hashing, inert raycast and the GLSL
@@ -21,23 +22,23 @@ const COVERAGE_SHADER=`uniform sampler2D boundaryMask; uniform vec4 bounds; unif
     return texture2D(boundaryMask,uv).r*local;}`;
 
 const DROP_VERTEX=`attribute vec3 origin; attribute float seed;
-  uniform float time; uniform float screenHeight; uniform vec2 drift; varying vec2 uvDrop; varying float alphaDrop; varying vec2 groundXZ;
+  uniform float time; uniform float screenHeight; uniform float aspect; uniform vec2 drift; varying vec2 uvDrop; varying float alphaDrop; varying vec2 groundXZ;
   void main(){
     float near=step(.5,fract(seed*2.));float layer=fract(seed*2.);
     float speed=mix(mix(7.,10.,layer),mix(13.,17.,layer),near);
-    float age=mod(time+seed*71.,92./speed);
-    float height=92.-age*speed;
+    float age=mod(time+seed*71.,220./speed);
+    float height=220.-age*speed;
     float lengthDrop=mix(mix(.5,1.,layer),mix(1.2,2.4,layer),near);
     vec3 p=origin+vec3(drift.x*age,height,drift.y*age);
     groundXZ=p.xz;
     vec4 view=modelViewMatrix*vec4(p,1.);
     vec3 velocity=mat3(modelViewMatrix)*vec3(-drift.x,speed,-drift.y);
     vec2 axis=normalize(velocity.xy+vec2(.0001));vec2 across=vec2(-axis.y,axis.x);
-    float width=clamp(-2.*view.z/(projectionMatrix[1][1]*screenHeight),.02,1.6)*(near?1.7:1.);
-    view.xy+=across*position.x*width+axis*position.y*max(lengthDrop,width*3.);
+    float width=clamp(-2.*view.z/(projectionMatrix[1][1]*screenHeight),.02,8.)*mix(.65,1.,near);
+    view.xy+=across*position.x*width+axis*position.y*max(lengthDrop,width*aspect);
     gl_Position=projectionMatrix*view;uvDrop=position.xy;
     float alphaBase=mix(.28+.5*seed,.45+.5*seed,near);
-    alphaDrop=smoothstep(1.5,6.,height)*(1.-smoothstep(80.,92.,height))*alphaBase;
+    alphaDrop=smoothstep(1.5,6.,height)*(1.-smoothstep(195.,220.,height))*alphaBase;
   }`;
 const DROP_FRAGMENT=`${COVERAGE_SHADER} uniform float strength; uniform float flash; varying vec2 uvDrop; varying float alphaDrop;
   void main(){
@@ -62,11 +63,12 @@ const IMPACT_FRAGMENT=`${COVERAGE_SHADER} uniform float strength;varying vec2 q;
 
 const SPRAY_POS=new Float32Array([-.5,-.5,0,.5,-.5,0,.5,.5,0,-.5,-.5,0,.5,.5,0,-.5,.5,0]);
 const SPRAY_VERTEX=`attribute vec3 origin; attribute float seed;
-  uniform float time; uniform vec2 drift; varying vec2 uvSpray; varying float alphaSpray; varying vec2 groundXZ;
-  void main(){float phase=fract(time*2.4+seed*7.);float h=phase*4.;
-    vec3 p=origin+vec3(drift.x*phase*2.,h,drift.y*phase*2.);groundXZ=p.xz;uvSpray=position.xy;
+  uniform float time; uniform vec2 drift; uniform float splashSpeed; varying vec2 uvSpray; varying float alphaSpray; varying vec2 groundXZ;
+  void main(){float phase=fract(time*splashSpeed*2.4+floor(seed*100.)*.17);float h=4.*phase*(1.-phase)*.7;
+    float angle=fract(seed*100.)*6.2831853;
+    vec3 p=origin+vec3(cos(angle)*phase*.8+drift.x*phase*.03,h,sin(angle)*phase*.8+drift.y*phase*.03);groundXZ=p.xz;uvSpray=position.xy;
     vec4 view=modelViewMatrix*vec4(p,1.);
-    float size=clamp(-view.z/520.,.3,3.)*(.3+.5*seed);
+    float size=clamp(-view.z/900.,.035,.4)*(.5+.5*seed);
     view.xy+=position.xy*vec2(size,size*1.5);
     gl_Position=projectionMatrix*view;
     float env=sin(phase*3.14159265);env*=env;
@@ -134,9 +136,9 @@ export function RainWeather({data,intensity,wind,direction,quality,moving,reduce
   const drops=useMemo(()=>{
     const g=new THREE.InstancedBufferGeometry();
     g.setAttribute('position',new THREE.Float32BufferAttribute([-.5,0,0,.5,0,0,.5,1,0,-.5,0,0,.5,1,0,-.5,1,0],3));
-    const origins=new Float32Array(16000*3),seeds=new Float32Array(16000);
+    const origins=new Float32Array(48000*3),seeds=new Float32Array(48000);
     const cells=data.grid.cells,n=cells.length;
-    for(let i=0;i<16000;i++){
+    for(let i=0;i<48000;i++){
       const c=cells[Math.floor(random(i+16001)*n)];
       origins[i*3]=c.x+(random(i*3)-.5)*data.grid.dx;origins[i*3+1]=c.z;origins[i*3+2]=-c.y+(random(i*3+1)-.5)*data.grid.dx;
       seeds[i]=random(i*3+2);
@@ -145,7 +147,7 @@ export function RainWeather({data,intensity,wind,direction,quality,moving,reduce
     g.setAttribute('seed',new THREE.InstancedBufferAttribute(seeds,1));return g;
   },[data]);
   const material=useMemo(()=>new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,
-    uniforms:{...coverageUniforms,time:{value:0},drift:{value:new THREE.Vector2()},strength:{value:0},screenHeight:{value:600},flash:{value:0}},
+    uniforms:{...coverageUniforms,time:{value:0},drift:{value:new THREE.Vector2()},strength:{value:0},aspect:{value:reference.droplet.length/reference.droplet.radius*.45},screenHeight:{value:600},flash:{value:0}},
     vertexShader:DROP_VERTEX,fragmentShader:DROP_FRAGMENT
   }),[coverageUniforms]);
 
@@ -169,18 +171,18 @@ export function RainWeather({data,intensity,wind,direction,quality,moving,reduce
   const spray=useMemo(()=>{
     const g=new THREE.InstancedBufferGeometry();
     g.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(SPRAY_POS),3));
-    const count=Math.min(2200,data.grid.cells.length),cells=data.grid.cells,n=cells.length,dx=data.grid.dx;
+    const cells=data.grid.cells,n=cells.length,dx=data.grid.dx,count=Math.min(2200,n)*reference.splash.drops;
     const p=new Float32Array(count*3),s=new Float32Array(count);
     for(let i=0;i<count;i++){
-      const c=cells[Math.floor(i*n/count)];
+      const c=cells[Math.floor(Math.floor(i/reference.splash.drops)*n/(count/reference.splash.drops))];
       p[i*3]=c.x+(random(i*11)-.5)*dx;p[i*3+1]=c.z+.10;p[i*3+2]=-c.y+(random(i*11+1)-.5)*dx;
-      s[i]=random(i*11+2);
+      s[i]=(Math.floor(random(Math.floor(i/reference.splash.drops)+2)*100)+(i%reference.splash.drops)/reference.splash.drops)/100;
     }
     g.setAttribute('origin',new THREE.InstancedBufferAttribute(p,3));
     g.setAttribute('seed',new THREE.InstancedBufferAttribute(s,1));return g;
   },[data]);
   const sprayMaterial=useMemo(()=>new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,
-    uniforms:{...coverageUniforms,time:{value:0},drift:{value:new THREE.Vector2()},strength:{value:0}},
+    uniforms:{...coverageUniforms,time:{value:0},splashSpeed:{value:reference.splash.speed},drift:{value:new THREE.Vector2()},strength:{value:0}},
     vertexShader:SPRAY_VERTEX,fragmentShader:SPRAY_FRAGMENT
   }),[coverageUniforms]);
 
@@ -223,9 +225,9 @@ export function RainWeather({data,intensity,wind,direction,quality,moving,reduce
     // Inertia: smooth the visible rate so drops never pop when the API changes.
     rateRef.current+=(target-rateRef.current)*Math.min(1,ddt*2.5);
     const rate=rateRef.current;
-    const ramp=Math.min(1,.15+.85*Math.sqrt(rate/25));
+    const ramp=Math.min(1,.08+.92*Math.sqrt(rate/100));
     const u=material.uniforms;
-    drops.instanceCount=rate>0?Math.round((quality==='high'?16000:quality==='balanced'?8000:3000)*ramp*(moving?.65:1)):0;
+    drops.instanceCount=rate>.01?Math.round((quality==='high'?48000:quality==='balanced'?24000:9000)*ramp*(moving?.65:1)):0;
     u.screenHeight.value=Math.max(1,size.height);
     // Gusts: wind and rain breathe instead of staying frozen.
     const gust=1+.18*Math.sin(tRef.current*.9)+.12*Math.sin(tRef.current*2.35+1.7);
@@ -233,16 +235,16 @@ export function RainWeather({data,intensity,wind,direction,quality,moving,reduce
     const speed=direction==null||!Number.isFinite(wind)?0:Math.max(0,wind)/3.6*gust;
     u.drift.value.set(-Math.sin(rad)*speed,Math.cos(rad)*speed);
     u.time.value+=ddt;
-    u.strength.value=Math.min(1,(.22+Math.min(rate/60,.35))*gust);
+    u.strength.value=Math.min(.9,(.20+Math.min(rate/100,.6))*gust)*Math.min(1,rate);
     // Splash spray follows the same smoothed rain and wind.
     const su=sprayMaterial.uniforms;
-    spray.instanceCount=quality==='performance'?0:rate>0?Math.round(2200*ramp*(moving?0:1)):0;
+    spray.instanceCount=quality==='performance'?0:rate>.01?Math.round(spray.getAttribute('seed').count*ramp*(moving?0:1)):0;
     su.time.value=u.time.value;
     su.drift.value.copy(u.drift.value);
     su.strength.value=Math.min(.7,rate/25);
     // Lightning: a scene-wide ambient flash while the storm is heavy.
     let flash=0;
-    if(rate>=20&&quality!=='performance'){
+    if(false){
       if(tRef.current>=nextFlash.current){nextFlash.current=tRef.current+4+Math.random()*7;flashEnv.current=1;boltSeed.current=Math.random();}
     }else{
       nextFlash.current=tRef.current+2+Math.random()*4;

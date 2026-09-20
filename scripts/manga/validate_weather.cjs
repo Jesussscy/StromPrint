@@ -1,0 +1,15 @@
+const fs=require('fs'),ts=require('typescript'),assert=require('node:assert/strict');
+require.extensions['.ts']=(mod,file)=>mod._compile(ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText,file);
+const {accumulatedRain,finiteRain,rainLabel,RAIN_PRESETS}=require('../../app/lib/manga/weather.ts');
+const series=[{tiempo_hora:0,lluvia_mm_h:40},{tiempo_hora:1,lluvia_mm_h:0},{tiempo_hora:2,lluvia_mm_h:0}];
+assert.equal(accumulatedRain(series,0,5,1),0);
+assert.equal(accumulatedRain(series,1,5,1),.035);
+assert.equal(accumulatedRain(series,2,5,1),.03);
+assert.equal(accumulatedRain(series,1,5,1),.035,'scrubbing backwards must reproduce depth');
+assert.equal(accumulatedRain(series,.5,5,1),.0175);
+assert.ok(accumulatedRain(series,1,2,1)>accumulatedRain(series,1,10,.5),'poor drainage accumulates more');
+assert.equal(accumulatedRain([{tiempo_hora:0,lluvia_mm_h:0}],20,5,1),0);
+assert.deepEqual([NaN,Infinity,undefined,-10].map(finiteRain),[0,0,0,0]);
+assert.deepEqual(Object.values(RAIN_PRESETS).map(rainLabel),['Normal','Alerta','Emergencia','Crítico']);
+assert.equal(rainLabel(0),'Sin lluvia');
+console.log('PASS: four rain levels, dry/missing input, fractional hours, drainage and deterministic reverse timeline.');

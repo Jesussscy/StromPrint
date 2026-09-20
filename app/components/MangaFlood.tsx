@@ -17,7 +17,11 @@ export default function MangaFlood({data, depths, rain}:{data:MangaData;depths:n
   const material=useMemo(()=>new THREE.ShaderMaterial({
     transparent:true,depthWrite:false,side:THREE.DoubleSide,
     uniforms:{time:{value:0},rain:{value:0},zones:{value:ZONAS_MANGA.map(z=>{const [x,y]=zoneLocal(...z.coordenadas);return new THREE.Vector4(x,-y,z.radio_influencia,0);})}},
-    vertexShader:`varying vec2 world; void main(){world=position.xz;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+    vertexShader:`uniform vec4 zones[20];varying vec2 world;
+      void main(){world=position.xz;float depth=0.;
+        for(int i=0;i<20;i++){vec4 z=zones[i];float reach=clamp(sqrt(max(z.w,0.)/.25),0.,1.);
+          depth=max(depth,z.w*(1.-smoothstep(reach*.35,reach+.001,distance(world,z.xy)/z.z)));}
+        gl_Position=projectionMatrix*modelViewMatrix*vec4(position+vec3(0.,depth,0.),1.);}`,
     fragmentShader:`uniform vec4 zones[20];uniform float time;uniform float rain;varying vec2 world;
       void main(){float depth=0.;
         for(int i=0;i<20;i++){

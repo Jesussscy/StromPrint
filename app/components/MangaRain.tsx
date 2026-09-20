@@ -13,7 +13,6 @@ import reference from '@/public/models/manga/rain-reference.json';
 // ---------------------------------------------------------------------------
 const random=(i:number)=>{const n=Math.sin(i*127.1+311.7)*43758.5453;return n-Math.floor(n);};
 const noRaycast=()=>{};
-const SCREEN_QUAD=new Float32Array([-1,-1,0,3,-1,0,-1,3,0]);
 
 const COVERAGE_SHADER=`uniform sampler2D boundaryMask; uniform vec4 bounds; uniform vec3 rainField; varying vec2 groundXZ;
   float coverage(){vec2 uv=(groundXZ-bounds.xy)/bounds.zw;
@@ -96,28 +95,6 @@ const SKY_FRAGMENT=`uniform float time;uniform float strength;uniform float flas
     gl_FragColor=vec4(col,alpha);
   }`;
 
-const SCREEN_VERTEX=`varying vec2 vUv;void main(){vUv=position.xy*.5+.5;gl_Position=vec4(position.xy,0.,1.);}`;
-const BOLT_FRAGMENT=`uniform float flash;uniform float boltSeed;uniform float time;varying vec2 vUv;
-  float bh(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
-  float sdSeg(vec2 p,vec2 a,vec2 b){vec2 pa=p-a,ba=b-a;float h=clamp(dot(pa,ba)/(dot(ba,ba)+1e-6),0.,1.);return length(pa-ba*h);}
-  void main(){
-    float f=max(0.,flash-.22);
-    vec2 p=vUv;
-    vec2 prev=vec2(clamp(boltSeed,0.,1.),0.);float best=1e5;
-    for(int i=1;i<=12;i++){
-      float y=float(i)/12.;
-      float xo=(bh(vec2(float(i)*.713,boltSeed))-.5)*.20;
-      vec2 cur=vec2(clamp(prev.x+xo,.14,.86),y);
-      best=min(best,sdSeg(p,prev,cur));
-      prev=cur;
-    }
-    float bolt=smoothstep(.010,.003,best)*(.84+.16*sin(time*130.));
-    float glow=exp(-best*46.)*.7;
-    vec3 col=vec3(1.)*bolt+vec3(.66,.80,1.)*glow;
-    float all=pow(max(0.,flash),3.)*.16;
-    gl_FragColor=vec4(col,f*(bolt*.9+glow*.35)+all);
-  }`;
-
 // ---------------------------------------------------------------------------
 export function RainWeather({data,intensity,wind,direction,quality,moving,reduced,field}:{data:MangaData;intensity:number;wind:number;direction:number|null|undefined;quality:RenderQuality;moving:boolean;reduced:boolean;field?:Scenario['rainFootprint']}) {
   const mask=useMemo(()=>{
@@ -144,7 +121,7 @@ export function RainWeather({data,intensity,wind,direction,quality,moving,reduce
       seeds[i]=random(i*3+2);
     }
     g.setAttribute('origin',new THREE.InstancedBufferAttribute(origins,3));
-    g.setAttribute('seed',new THREE.InstancedBufferAttribute(seeds,1));return g;
+    g.setAttribute('seed',new THREE.InstancedBufferAttribute(seeds,1));g.instanceCount=0;return g;
   },[data]);
   const material=useMemo(()=>new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,
     uniforms:{...coverageUniforms,time:{value:0},drift:{value:new THREE.Vector2()},strength:{value:0},aspect:{value:reference.droplet.length/reference.droplet.radius*.45},screenHeight:{value:600},flash:{value:0}},
@@ -179,7 +156,7 @@ export function RainWeather({data,intensity,wind,direction,quality,moving,reduce
       s[i]=(Math.floor(random(Math.floor(i/reference.splash.drops)+2)*100)+(i%reference.splash.drops)/reference.splash.drops)/100;
     }
     g.setAttribute('origin',new THREE.InstancedBufferAttribute(p,3));
-    g.setAttribute('seed',new THREE.InstancedBufferAttribute(s,1));return g;
+    g.setAttribute('seed',new THREE.InstancedBufferAttribute(s,1));g.instanceCount=0;return g;
   },[data]);
   const sprayMaterial=useMemo(()=>new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,
     uniforms:{...coverageUniforms,time:{value:0},splashSpeed:{value:reference.splash.speed},drift:{value:new THREE.Vector2()},strength:{value:0}},
@@ -192,27 +169,15 @@ export function RainWeather({data,intensity,wind,direction,quality,moving,reduce
     vertexShader:SKY_VERTEX,fragmentShader:SKY_FRAGMENT
   }),[]);
 
-  const boltGeometry=useMemo(()=>new THREE.BufferGeometry().setAttribute('position',new THREE.BufferAttribute(new Float32Array(SCREEN_QUAD),3)),[]);
-  const boltMaterial=useMemo(()=>new THREE.ShaderMaterial({transparent:true,depthTest:false,depthWrite:false,toneMapped:false,
-    uniforms:{flash:{value:0},boltSeed:{value:0},time:{value:0}},
-    vertexShader:SCREEN_VERTEX,fragmentShader:BOLT_FRAGMENT
-  }),[]);
-
-  const flashRef=useRef<THREE.AmbientLight>(null);
   const skyMesh=useRef<THREE.Mesh>(null);
-  const boltMesh=useRef<THREE.Mesh>(null);
   const rateRef=useRef(0);
   const tRef=useRef(0);
   const fieldRef=useRef<{x:number;y:number;r:number}>({x:0,y:0,r:0});
-  const flashEnv=useRef(0);
-  const boltSeed=useRef(0);
-  const nextFlash=useRef(2+Math.random()*4);
-
   useEffect(()=>()=>{
     mask.texture.dispose();drops.dispose();impacts.dispose();spray.dispose();
     material.dispose();impactMaterial.dispose();sprayMaterial.dispose();
-    skyGeometry.dispose();skyMaterial.dispose();boltGeometry.dispose();boltMaterial.dispose();
-  },[mask,drops,impacts,spray,material,impactMaterial,sprayMaterial,skyGeometry,skyMaterial,boltGeometry,boltMaterial]);
+    skyGeometry.dispose();skyMaterial.dispose();
+  },[mask,drops,impacts,spray,material,impactMaterial,sprayMaterial,skyGeometry,skyMaterial]);
 
   useFrame(({size},dt)=>{
     if(reduced)return;
@@ -242,30 +207,14 @@ export function RainWeather({data,intensity,wind,direction,quality,moving,reduce
     su.time.value=u.time.value;
     su.drift.value.copy(u.drift.value);
     su.strength.value=Math.min(.7,rate/25);
-    // Lightning: a scene-wide ambient flash while the storm is heavy.
-    let flash=0;
-    if(false){
-      if(tRef.current>=nextFlash.current){nextFlash.current=tRef.current+4+Math.random()*7;flashEnv.current=1;boltSeed.current=Math.random();}
-    }else{
-      nextFlash.current=tRef.current+2+Math.random()*4;
-    }
-    flashEnv.current*=Math.exp(-ddt*8);
-    flash=flashEnv.current;
-    if(flashRef.current)flashRef.current.intensity=flash*(.9+.5*ramp)*Math.min(1,rate/30);
-    u.flash.value=flash;
     if(skyMesh.current)skyMesh.current.visible=rate>1;
     const k=skyMaterial.uniforms;
-    k.time.value=tRef.current;k.strength.value=Math.min(.5,rate/50);k.flash.value=flash;
-    if(boltMesh.current)boltMesh.current.visible=flash>.1;
-    const b=boltMaterial.uniforms;
-    b.flash.value=flash;b.boltSeed.value=boltSeed.current;b.time.value=tRef.current;
+    k.time.value=tRef.current;k.strength.value=Math.min(.5,rate/50);
     const iu=impactMaterial.uniforms;
     iu.time.value=u.time.value;iu.strength.value=Math.min(.55,rate/30);
   });
   return reduced?null:<group>
-    <ambientLight ref={flashRef} intensity={0}/>
     <mesh ref={skyMesh} geometry={skyGeometry} material={skyMaterial} frustumCulled={false} raycast={noRaycast}/>
-    <mesh ref={boltMesh} geometry={boltGeometry} material={boltMaterial} renderOrder={999} frustumCulled={false} raycast={noRaycast}/>
     <mesh geometry={drops} material={material} frustumCulled={false} raycast={noRaycast}/>
     {quality!=='performance'&&!moving&&<><mesh geometry={impacts} material={impactMaterial} frustumCulled={false} raycast={noRaycast}/><mesh geometry={spray} material={sprayMaterial} frustumCulled={false} raycast={noRaycast}/></>}
   </group>;

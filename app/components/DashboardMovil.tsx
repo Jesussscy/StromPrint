@@ -304,6 +304,7 @@ export default function DashboardMovil({
               spatialForcing={prediccion?.forzamiento_espacial}
               currentHour={currentHour}
               sourceLabel={prediccion?.fuente_meteo}
+              isPlaying={isPlaying}
               meteorologia={prediccion?.meteorologia_resumen ?? null}
               liveWater={liveWater}
               liveLatenciaMs={liveLatenciaMs}

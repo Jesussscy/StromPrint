@@ -6,8 +6,12 @@ import { ZONAS_MANGA } from '@/app/lib/zonasManga';
 import { zoneLocal } from '@/app/lib/manga/adapter';
 import type { MangaData } from '@/app/lib/manga/types';
 
+const N=ZONAS_MANGA.length;
+
 /** Water is clipped to street geometry in the flat v6.1 model. The depth comes
- * from zone predictions or explicitly exploratory storage, never fake DEM. */
+ * from zone predictions or explicitly exploratory storage, never fake DEM.
+ * Depth is computed once per vertex and interpolated (vDepth); the fragment
+ * only adds a per-pixel ripple, dropping the old per-fragment 20-zone loop. */
 export default function MangaFlood({data, depths, rain}:{data:MangaData;depths:number[];rain:number}) {
   const geometry=useMemo(()=>{
     const g=new THREE.BufferGeometry();
@@ -17,19 +21,16 @@ export default function MangaFlood({data, depths, rain}:{data:MangaData;depths:n
   const material=useMemo(()=>new THREE.ShaderMaterial({
     transparent:true,depthWrite:false,side:THREE.DoubleSide,
     uniforms:{time:{value:0},rain:{value:0},zones:{value:ZONAS_MANGA.map(z=>{const [x,y]=zoneLocal(...z.coordenadas);return new THREE.Vector4(x,-y,z.radio_influencia,0);})}},
-    vertexShader:`uniform vec4 zones[20];varying vec2 world;
+    vertexShader:`uniform vec4 zones[${N}];varying vec2 world;varying float vDepth;
       void main(){world=position.xz;float depth=0.;
-        for(int i=0;i<20;i++){vec4 z=zones[i];float reach=clamp(sqrt(max(z.w,0.)/.25),0.,1.);
+        for(int i=0;i<${N};i++){vec4 z=zones[i];float reach=clamp(sqrt(max(z.w,0.)/.25),0.,1.);
           depth=max(depth,z.w*(1.-smoothstep(reach*.35,reach+.001,distance(world,z.xy)/z.z)));}
+        vDepth=depth;
         gl_Position=projectionMatrix*modelViewMatrix*vec4(position+vec3(0.,depth,0.),1.);}`,
-    fragmentShader:`uniform vec4 zones[20];uniform float time;uniform float rain;varying vec2 world;
-      void main(){float depth=0.;
-        for(int i=0;i<20;i++){
-          vec4 z=zones[i]; float d=distance(world,z.xy)/z.z;
-          float irregular=.08*sin(world.x*.13)*sin(world.y*.09)+.04*sin(world.x*.4+world.y*.2);
-          float reach=clamp(sqrt(max(z.w,0.)/.25),0.,1.);
-          depth=max(depth,z.w*(1.-smoothstep(reach*.35,reach+.001,d+irregular)));
-        }
+    fragmentShader:`uniform float time;uniform float rain;varying vec2 world;varying float vDepth;
+      void main(){
+        float irregular=.08*sin(world.x*.13)*sin(world.y*.09)+.04*sin(world.x*.4+world.y*.2);
+        float depth=max(.0,vDepth*(1.+irregular));
         float wet=clamp(rain/30.,0.,1.)*.14;
         float opacity=smoothstep(.001,.04,depth)*.76+wet;
         if(opacity<.005)discard;

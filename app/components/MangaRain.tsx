@@ -100,12 +100,12 @@ export function RainWeather({data,intensity,wind,direction,quality,moving,reduce
   const mask=useMemo(()=>{
     const xs=data.boundary.map(p=>p[0]),ys=data.boundary.map(p=>-p[1]);
     const minX=Math.min(...xs),minZ=Math.min(...ys),dx=Math.max(...xs)-minX,dz=Math.max(...ys)-minZ;
-    const pixels=new Uint8Array(512*512);
-    for(let y=0;y<512;y++)for(let x=0;x<512;x++){
+    const n=256,pixels=new Uint8Array(n*n);
+    for(let y=0;y<n;y++)for(let x=0;x<n;x++){
       // Conservative 4-corner mask: no whole edge pixel outside the polygon.
-      pixels[y*512+x]=[[0,0],[1,0],[0,1],[1,1]].every(([u,v])=>insideBoundary(minX+(x+u)/512*dx,-(minZ+(y+v)/512*dz),data.boundary))?255:0;
+      pixels[y*n+x]=[[0,0],[1,0],[0,1],[1,1]].every(([u,v])=>insideBoundary(minX+(x+u)/n*dx,-(minZ+(y+v)/n*dz),data.boundary))?255:0;
     }
-    const texture=new THREE.DataTexture(pixels,512,512,THREE.RedFormat);texture.needsUpdate=true;
+    const texture=new THREE.DataTexture(pixels,n,n,THREE.RedFormat);texture.needsUpdate=true;
     return {texture,bounds:new THREE.Vector4(minX,minZ,dx,dz)};
   },[data]);
   const coverageUniforms=useMemo(()=>({boundaryMask:{value:mask.texture},bounds:{value:mask.bounds},rainField:{value:new THREE.Vector3()}}),[mask]);
@@ -187,8 +187,10 @@ export function RainWeather({data,intensity,wind,direction,quality,moving,reduce
     const fx=field?.x??0,fy=-(field?.y??0),fr=field?.radiusM??0,last=fieldRef.current;
     if(fx!==last.x||fy!==last.y||fr!==last.r){last.x=fx;last.y=fy;last.r=fr;coverageUniforms.rainField.value.set(fx,fy,fr);}
     const target=Number.isFinite(intensity)?Math.max(0,intensity):0;
-    // Inertia: smooth the visible rate so drops never pop when the API changes.
-    rateRef.current+=(target-rateRef.current)*Math.min(1,ddt*2.5);
+    // Fast catch-up for timeline jumps (scrub/play); slow easing for ambient drift.
+    const delta=target-rateRef.current;
+    const step=Math.abs(delta)>8?16:Math.abs(delta)>2?7:2.5;
+    rateRef.current+=delta*Math.min(1,ddt*step);
     const rate=rateRef.current;
     const ramp=Math.min(1,.08+.92*Math.sqrt(rate/100));
     const u=material.uniforms;

@@ -7,6 +7,43 @@ import { ZONAS_MANGA, ZONAS_PARAMETROS } from '@/app/lib/zonasManga';
 import { RAIN_PRESETS, finiteRain, rainLabel, accumulatedRain, type RainPreset } from '@/app/lib/manga/weather';
 import { FORECAST_TIMELINE_EVENT } from '@/app/lib/manga/timeline';
 
+function lerp(a:number,b:number,t:number){return a+(b-a)*t;}
+/** Rain or wind at an arbitrary hour: linear interpolation between the surrounding
+ * forecast points, flat-clamped outside the series. Keeps the 3D rain in sync
+ * with the timeline even at fractional hours (playback steps of 0.5h). */
+function interpolateSeries<T extends { tiempo_hora:number },K extends keyof T>(
+  points:T[]|undefined, hour:number, key:K, fallback:number
+): number {
+  if(!points?.length) return fallback;
+  const read=(p:T)=>typeof p[key]==='number'&&Number.isFinite(p[key])?p[key] as unknown as number:fallback;
+  if(hour<=points[0].tiempo_hora) return read(points[0]);
+  for(let i=0;i<points.length-1;i++){
+    const a=points[i],b=points[i+1];
+    if(hour>=a.tiempo_hora&&hour<=b.tiempo_hora){
+      const span=b.tiempo_hora-a.tiempo_hora;
+      return lerp(read(a),read(b),span===0?0:(hour-a.tiempo_hora)/span);
+    }
+  }
+  return read(points[points.length-1]);
+}
+/** Wind direction is circular: interpolate the shortest arc. */
+function interpolateDirection(points:({tiempo_hora:number;wind_direction_deg:number|null})[]|undefined,hour:number){
+  if(!points?.length) return undefined;
+  const pick=(p:{wind_direction_deg:number|null})=>typeof p.wind_direction_deg==='number'?p.wind_direction_deg:undefined;
+  if(hour<=points[0].tiempo_hora) return pick(points[0]);
+  for(let i=0;i<points.length-1;i++){
+    const a=points[i],b=points[i+1];
+    if(hour>=a.tiempo_hora&&hour<=b.tiempo_hora){
+      const da=pick(a),db=pick(b);
+      if(da==null||db==null) return db??da;
+      const span=b.tiempo_hora-a.tiempo_hora,t=span===0?0:(hour-a.tiempo_hora)/span;
+      const delta=((db-da+540)%360)-180;
+      return (da+delta*t+360)%360;
+    }
+  }
+  return pick(points[points.length-1]);
+}
+
 export function useMangaWeather(props:MangaMapProps) {
   const [data,setData]=useState<MangaData|null>(null),[error,setError]=useState(false);
   const [manual,setManual]=useState<RainPreset|null>(null),[duration,setDuration]=useState(2);
@@ -22,19 +59,28 @@ export function useMangaWeather(props:MangaMapProps) {
   useEffect(()=>{const activate=()=>setManual(null);window.addEventListener(FORECAST_TIMELINE_EVENT,activate);return()=>window.removeEventListener(FORECAST_TIMELINE_EVENT,activate);},[]);
   useEffect(()=>setManual(null),[props.currentHour,props.sourceLabel]);
   const point=props.puntoMeteo;
-  const weather=props.spatialForcing?.hours.find(h=>h.hour===Math.floor(props.currentHour??0));
-  const rate=manual?RAIN_PRESETS[manual]:finiteRain(point?.lluvia_mm_h ?? weather?.rain_mm_h);
-  const hasWeather=manual!==null||Number.isFinite(point?.lluvia_mm_h)||Number.isFinite(weather?.rain_mm_h);
+  const hour=Math.max(0,props.currentHour??0);
+  const hours=useMemo(()=>props.spatialForcing?.hours.map(h=>({tiempo_hora:h.hour,wind_kmh:h.wind_kmh,wind_direction_deg:h.wind_direction_deg}))??[],[props.spatialForcing]);
+  const series=useMemo(()=>props.forecastPoints??props.spatialForcing?.hours.map(h=>({tiempo_hora:h.hour,lluvia_mm_h:finiteRain(h.rain_mm_h)}))??[],[props.forecastPoints,props.spatialForcing]);
+  const weather=props.spatialForcing?.hours.find(h=>h.hour===Math.floor(hour));
+  const rate=manual?RAIN_PRESETS[manual]:interpolateSeries(series.length?series:undefined,hour,'lluvia_mm_h',point?.lluvia_mm_h??weather?.rain_mm_h??0);
+  const hasWeather=manual!==null||Number.isFinite(point?.lluvia_mm_h)||Boolean(series.length);
   const depths=useMemo(()=>ZONAS_MANGA.map(z=>{
     if(!manual&&props.zonasVivas?.has(z.id)) {
       const n=props.zonasVivas.get(z.id)!.nivel;
       return Number.isFinite(n)?Math.max(0,n)/100:0;
     }
     const p=ZONAS_PARAMETROS[z.id];
-    const series=manual?[{tiempo_hora:0,lluvia_mm_h:RAIN_PRESETS[manual]},{tiempo_hora:duration,lluvia_mm_h:0}]:props.forecastPoints??props.spatialForcing?.hours.map(h=>({tiempo_hora:h.hour,lluvia_mm_h:finiteRain(h.rain_mm_h)}))??[];
-    return accumulatedRain(series,manual?duration:props.currentHour??0,p.drenaje==='bajo'?2:p.drenaje==='medio'?5:10,p.exposicion_lluvia_pct/100)*(1+Math.max(0,1.4-p.altura_base_m));
-  }),[manual,duration,props.zonasVivas,props.forecastPoints,props.spatialForcing,props.currentHour]);
-  return {data,error,manual,setManual,duration,setDuration,rate,hasWeather,depths,reduced,wind:weather?.wind_kmh??0,direction:weather?.wind_direction_deg};
+    const s=manual?[{tiempo_hora:0,lluvia_mm_h:RAIN_PRESETS[manual]},{tiempo_hora:duration,lluvia_mm_h:0}]:series;
+    // Rain bucket + documented tidal exposure so water appears where it floods
+    // (Av. Miramar / ciénaga) even during high tide without rain.
+    const tideM=manual?0:(point?.marea_cm??0)*p.exposicion_marea_pct/100/100;
+    const rainM=accumulatedRain(s,manual?duration:hour,p.drenaje==='bajo'?2:p.drenaje==='medio'?5:10,p.exposicion_lluvia_pct/100)*(1+Math.max(0,1.4-p.altura_base_m));
+    return Math.max(0,rainM+tideM);
+  }),[manual,duration,props.zonasVivas,series,hour,point]);
+  const wind=manual?0:interpolateSeries(hours,hour,'wind_kmh',0);
+  const direction=manual?undefined:interpolateDirection(hours,hour);
+  return {data,error,manual,setManual,duration,setDuration,rate,hasWeather,depths,reduced,wind,direction};
 }
 
 export function WeatherPanel({weather:w,source,hour}:{weather:ReturnType<typeof useMangaWeather>;source?:string;hour?:number}) {

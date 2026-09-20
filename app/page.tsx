@@ -661,10 +661,11 @@ function DashboardEmbedded() {
             horaLocal={Math.floor(currentHour) % 24}
             puntoMeteo={activePunto}
               forecastPoints={prediccion?.puntos}
-              spatialForcing={prediccion?.forzamiento_espacial}
+spatialForcing={prediccion?.forzamiento_espacial}
               currentHour={currentHour}
               sourceLabel={prediccion?.fuente_meteo}
-            meteorologia={prediccion?.meteorologia_resumen ?? null}
+              isPlaying={isPlaying}
+              meteorologia={prediccion?.meteorologia_resumen ?? null}
             liveWater={liveWater}
             liveLatenciaMs={liveLatenciaMs}
           />

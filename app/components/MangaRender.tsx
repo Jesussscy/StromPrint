@@ -115,7 +115,7 @@ export default function MangaRender(props: MangaMapProps) {
           shadow-mapSize={[2048, 2048]} shadow-camera-left={-1400} shadow-camera-right={1400} shadow-camera-top={1400} shadow-camera-bottom={-1400} shadow-camera-far={5000} shadow-bias={-.0002} />
         <Suspense fallback={null}><City buildings={buildings} vegetation={vegetation} quality={quality} /></Suspense>
         <Navigation view={view} selected={selected} revision={revision} onSample={setSample} />
-        {weather.data&&<><RainWeather data={weather.data} intensity={weather.rate} wind={weather.wind} direction={weather.direction} quality={quality?'high':'balanced'} moving={false} reduced={weather.reduced}/><MangaFlood data={weather.data} depths={weather.depths} rain={weather.rate}/></>}
+        {weather.data&&<><RainWeather data={weather.data} intensity={weather.rate} wind={weather.wind} direction={weather.direction} quality={quality?'high':'balanced'} moving={!!props.isPlaying} reduced={weather.reduced}/><MangaFlood data={weather.data} depths={weather.depths} rain={weather.rate}/></>}
       </Canvas>
     </RenderBoundary>
     <Progress />

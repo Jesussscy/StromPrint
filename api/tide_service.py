@@ -138,8 +138,16 @@ async def fetch_tide_hourly(
     if not times or not heights:
         return None
 
-    sea_cm = [round(float(h) * 100.0, 2) for h in heights]
-    return {"time": times, "sea_level_cm": sea_cm}
+    pares = [
+        (t, round(float(h) * 100.0, 2))
+        for t, h in zip(times, heights)
+        if h is not None
+    ]
+    if not pares:
+        return None
+    times_ok = [t for t, _ in pares]
+    sea_cm = [v for _, v in pares]
+    return {"time": times_ok, "sea_level_cm": sea_cm}
 
 
 def serie_marea_desde_ahora(

@@ -1,0 +1,13 @@
+INFO:     Started server process [15572]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+2026-09-18T22:07:21 [stormprint] WARNING: [0fdf3bac] Slow request: POST /api/v1/predecir -> 200 (3079 ms)
+2026-09-18T22:07:22 [stormprint] WARNING: [b90c175b] Slow request: POST /api/v1/predecir -> 200 (2385 ms)
+2026-09-18T22:07:24 [stormprint] WARNING: [515e572d] Slow request: GET /api/v1/water-state -> 200 (6086 ms)
+2026-09-18T22:07:24 [stormprint] WARNING: [1ed94378] Slow request: GET /api/v1/weather -> 200 (6083 ms)
+2026-09-18T22:07:40 [stormprint.weather] ERROR: Open-Meteo request error: 
+2026-09-18T22:07:55 [stormprint] WARNING: [e0f43fa6] Slow request: POST /api/v1/predecir -> 200 (33851 ms)
+2026-09-18T22:07:55 [stormprint] WARNING: [05186395] Slow request: POST /api/v1/predecir -> 200 (36999 ms)
+2026-09-18T22:38:50 [stormprint] WARNING: [2b70615c] Slow request: GET /api/v1/water-state -> 200 (1971 ms)
+2026-09-18T23:10:20 [stormprint] WARNING: [6ab99477] Slow request: GET /api/v1/water-state -> 200 (1887 ms)

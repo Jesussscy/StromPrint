@@ -1,0 +1,42 @@
+{
+  "started_utc": "2026-09-18T17:39:20.506369+00:00",
+  "blender_version": "5.2.2 LTS",
+  "blender_executable": "C:\\Program Files\\Blender Foundation\\Blender 5.2\\blender.exe",
+  "blend_file": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\MANGA_CHECKPOINT12.blend",
+  "local_only": true,
+  "mode": "preview",
+  "status": "complete",
+  "results": [
+    {
+      "path": "C:\\Users\\Xermy\\Downloads\\PURO BACKEND\\StormPrint\\StormPrint\\models\\manga\\checkpoint12\\preview\\Jardin_Manga.png",
+      "camera": "Jardin_Manga",
+      "frame": 1,
+      "scenario": "seco",
+      "status": "complete",
+      "seconds": 6.736,
+      "bytes": 562320,
+      "engine": "BLENDER_EEVEE",
+      "device": "Eevee GPU (Blender graphics backend)",
+      "blender_version": "5.2.2 LTS"
+    }
+  ],
+  "notes": [
+    "Architectural materials/details are generic unless documented as verified.",
+    "Hydrology is exploratory, not a certified prediction."
+  ],
+  "settings": {
+    "engine": "BLENDER_EEVEE",
+    "device": "Eevee GPU (Blender graphics backend)",
+    "samples": 16,
+    "resolution": [
+      960,
+      540
+    ],
+    "fps": 24,
+    "threads": 8,
+    "memory_strategy": "Instanced scene, no persistent data, subdivision 1; Cycles texture limit 2048. This is not a hard VRAM cap."
+  },
+  "blend_sha256": "591bacafc83571b49a297c59b3d69ce5e9f93da17131be4c6edd448fba4caf8a",
+  "elapsed_seconds": 7.299,
+  "finished_utc": "2026-09-18T17:39:27.805742+00:00"
+}

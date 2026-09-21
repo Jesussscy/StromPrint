@@ -1,0 +1,15 @@
+{
+  "size": 1024,
+  "bounds": [
+    -1137.1638,
+    -890.5527,
+    2275.1257,
+    1781.8058999999998
+  ],
+  "format": "RGBA float32 little endian",
+  "sourceSha256": "22080a00ef47a16adc4e21a0efa1e0ca7b52fc957eacd808180140b34f16e09c",
+  "groundPixels": 358213,
+  "roofPixels": 117746,
+  "maxHeight": 37.451507568359375,
+  "seconds": 5.23
+}

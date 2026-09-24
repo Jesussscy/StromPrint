@@ -45,8 +45,8 @@ export function waterLevels(grid:Grid,result:WaterResult) {
  * does not cover high vertices. Level is reconstructed from the stored volume.
  */
 export function waterSurface(grid: Grid, result: WaterResult | null) {
-  const positions: number[] = [], depths: number[] = [];
-  if (!result) return { positions, depths };
+  const positions: number[] = [], depths: number[] = [], cellIndices: number[] = [];
+  if (!result) return { positions, depths, cellIndices };
   grid.cells.forEach((cell, index) => {
     const depth = result.depth[index];
     if (!Number.isFinite(depth) || depth < .004) return;
@@ -66,9 +66,10 @@ export function waterSurface(grid: Grid, result: WaterResult | null) {
         for (const vertex of [wet[0], wet[i], wet[i + 1]]) {
           positions.push(vertex[0], level + .008, -vertex[1]);
           depths.push(Math.max(0, level - vertex[2]));
+          cellIndices.push(index);
         }
       }
     }
   });
-  return { positions, depths };
+  return { positions, depths, cellIndices };
 }

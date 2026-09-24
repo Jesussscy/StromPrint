@@ -23,6 +23,7 @@ tide_cache.json
 # Artefactos de TypeScript/Next
 *.tsbuildinfo
 .runtime-manga/
+/tmp/
 models/manga/contract-input.json
 models/manga/MANGA_CONTRACT.blend*
 

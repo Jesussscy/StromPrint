@@ -154,6 +154,8 @@ El visor **MangaMap.tsx** usa Three.js / React Three Fiber y el modelo local cre
 
 No es una simulación hidráulica calibrada. La topografía SRTM y las alturas estimadas no resuelven bordillos ni cada charco.
 
+El [motor 2D fraccionario experimental](docs/manga/MODELO_2D.md) permite ejecutar y reanudar escenarios sobre un DEM compatible con la marea; aún requiere datos geográficos y calibración para alimentar el panel público.
+
 ---
 
 ## 🔌 API

@@ -3,9 +3,11 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { MangaData, Scenario } from '@/app/lib/manga/types';
-import { insideBoundary } from '@/app/lib/manga/adapter';
+import { insideBoundary, zoneLocal } from '@/app/lib/manga/adapter';
+import { ZONAS_MANGA } from '@/app/lib/zonasManga';
 import type { RenderQuality } from './MangaScene';
 import reference from '@/public/models/manga/rain-reference.json';
+import type { GroundSampler, RoadSnapper } from '@/app/lib/manga/ground';
 
 // ---------------------------------------------------------------------------
 // Module-level constants: deterministic hashing, inert raycast and the GLSL
@@ -74,7 +76,7 @@ const SPRAY_VERTEX=`attribute vec3 origin; attribute float seed;
     alphaSpray=env*(.25+.4*seed);
   }`;
 const SPRAY_FRAGMENT=`${COVERAGE_SHADER} uniform float strength;varying vec2 uvSpray;varying float alphaSpray;
-  void main(){float r=length(uvSpray);float dot=smoothstep(.55,.16,r);
+  void main(){float r=length(uvSpray);float dot=1.-smoothstep(.16,.55,r);
     gl_FragColor=vec4(.86,.92,.97,dot*alphaSpray*strength*coverage());}`;
 
 const SKY_VERTEX=`varying vec3 vWorld;void main(){vWorld=(modelMatrix*vec4(position,1.)).xyz;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`;
@@ -96,7 +98,7 @@ const SKY_FRAGMENT=`uniform float time;uniform float strength;uniform float flas
   }`;
 
 // ---------------------------------------------------------------------------
-export function RainWeather({data,intensity,wind,direction,quality,moving,reduced,field}:{data:MangaData;intensity:number;wind:number;direction:number|null|undefined;quality:RenderQuality;moving:boolean;reduced:boolean;field?:Scenario['rainFootprint']}) {
+export function RainWeather({data,intensity,wind,direction,quality,moving,reduced,field,ground,depths,roadSnapper}:{data:MangaData;intensity:number;wind:number;direction:number|null|undefined;quality:RenderQuality;moving:boolean;reduced:boolean;field?:Scenario['rainFootprint'];ground?:GroundSampler|null;depths:number[];roadSnapper:RoadSnapper|null}) {
   const mask=useMemo(()=>{
     const xs=data.boundary.map(p=>p[0]),ys=data.boundary.map(p=>-p[1]);
     const minX=Math.min(...xs),minZ=Math.min(...ys),dx=Math.max(...xs)-minX,dz=Math.max(...ys)-minZ;
@@ -109,6 +111,19 @@ export function RainWeather({data,intensity,wind,direction,quality,moving,reduce
     return {texture,bounds:new THREE.Vector4(minX,minZ,dx,dz)};
   },[data]);
   const coverageUniforms=useMemo(()=>({boundaryMask:{value:mask.texture},bounds:{value:mask.bounds},rainField:{value:new THREE.Vector3()}}),[mask]);
+  const wetZones=useMemo(()=>ZONAS_MANGA.flatMap(z=>{
+    const [x,y]=zoneLocal(...z.coordenadas),road=roadSnapper?.(x,y,25);
+    return road?[{x:road.x,y:road.y,r:Math.min(z.radio_influencia,85),depth:Math.max(0,depths[z.id-1]??0)}]:[];
+  }).filter(z=>z.depth>.015),[depths,roadSnapper]);
+  const wetDepth=(x:number,y:number)=>{
+    let value=0;
+    for(const z of wetZones){
+      const d=Math.hypot(x-z.x,y-z.y)/z.r;if(d>=1)continue;
+      const t=Math.max(0,Math.min(1,(d-.25)/.75)),smooth=t*t*(3-2*t);
+      value=Math.max(value,z.depth*(1-smooth));
+    }
+    return value;
+  };
 
   const drops=useMemo(()=>{
     const g=new THREE.InstancedBufferGeometry();
@@ -117,12 +132,13 @@ export function RainWeather({data,intensity,wind,direction,quality,moving,reduce
     const cells=data.grid.cells,n=cells.length;
     for(let i=0;i<48000;i++){
       const c=cells[Math.floor(random(i+16001)*n)];
-      origins[i*3]=c.x+(random(i*3)-.5)*data.grid.dx;origins[i*3+1]=c.z;origins[i*3+2]=-c.y+(random(i*3+1)-.5)*data.grid.dx;
+      const x=c.x+(random(i*3)-.5)*data.grid.dx,y=c.y+(random(i*3+1)-.5)*data.grid.dx;
+      origins[i*3]=x;origins[i*3+1]=ground?.(x,y)??c.z;origins[i*3+2]=-y;
       seeds[i]=random(i*3+2);
     }
     g.setAttribute('origin',new THREE.InstancedBufferAttribute(origins,3));
     g.setAttribute('seed',new THREE.InstancedBufferAttribute(seeds,1));g.instanceCount=0;return g;
-  },[data]);
+  },[data,ground]);
   const material=useMemo(()=>new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,
     uniforms:{...coverageUniforms,time:{value:0},drift:{value:new THREE.Vector2()},strength:{value:0},aspect:{value:reference.droplet.length/reference.droplet.radius*.45},screenHeight:{value:600},flash:{value:0}},
     vertexShader:DROP_VERTEX,fragmentShader:DROP_FRAGMENT
@@ -131,15 +147,15 @@ export function RainWeather({data,intensity,wind,direction,quality,moving,reduce
   const impacts=useMemo(()=>{
     const g=new THREE.InstancedBufferGeometry();
     g.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(IMPACT_POS),3));
-    const triangles=data.roads.flatMap(r=>r.triangles),count=Math.min(1600,triangles.length);
+    const triangles=data.roads.flatMap(r=>r.triangles).filter(t=>wetDepth((t[0][0]+t[1][0]+t[2][0])/3,(t[0][1]+t[1][1]+t[2][1])/3)>.015),count=Math.min(1600,triangles.length);
     const p=new Float32Array(count*3),s=new Float32Array(count);
     for(let i=0;i<count;i++){
       const t=triangles[Math.floor(i*triangles.length/count)];
-      p[i*3]=(t[0][0]+t[1][0]+t[2][0])/3;p[i*3+1]=(t[0][2]+t[1][2]+t[2][2])/3+.045;p[i*3+2]=-(t[0][1]+t[1][1]+t[2][1])/3;s[i]=random(i+123);
+      p[i*3]=(t[0][0]+t[1][0]+t[2][0])/3;p[i*3+2]=-(t[0][1]+t[1][1]+t[2][1])/3;p[i*3+1]=(ground?.(p[i*3],-p[i*3+2])??((t[0][2]+t[1][2]+t[2][2])/3))+.19+wetDepth(p[i*3],-p[i*3+2])+.01;s[i]=random(i+123);
     }
     g.setAttribute('origin',new THREE.InstancedBufferAttribute(p,3));
     g.setAttribute('seed',new THREE.InstancedBufferAttribute(s,1));g.instanceCount=count;return g;
-  },[data]);
+  },[data,ground,wetZones]);
   const impactMaterial=useMemo(()=>new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,
     uniforms:{...coverageUniforms,time:{value:0},strength:{value:0}},
     vertexShader:IMPACT_VERTEX,fragmentShader:IMPACT_FRAGMENT
@@ -148,16 +164,18 @@ export function RainWeather({data,intensity,wind,direction,quality,moving,reduce
   const spray=useMemo(()=>{
     const g=new THREE.InstancedBufferGeometry();
     g.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(SPRAY_POS),3));
-    const cells=data.grid.cells,n=cells.length,dx=data.grid.dx,count=Math.min(2200,n)*reference.splash.drops;
+    const dx=data.grid.dx,wetRoads=data.roads.flatMap(r=>r.triangles).filter(t=>wetDepth((t[0][0]+t[1][0]+t[2][0])/3,(t[0][1]+t[1][1]+t[2][1])/3)>.015);
+    const activeCells=data.grid.cells.filter(c=>wetDepth(c.x,c.y)>.015&&wetRoads.some(t=>Math.hypot(c.x-(t[0][0]+t[1][0]+t[2][0])/3,c.y-(t[0][1]+t[1][1]+t[2][1])/3)<22));
+    const n=activeCells.length,count=Math.min(2200,n)*reference.splash.drops;
     const p=new Float32Array(count*3),s=new Float32Array(count);
     for(let i=0;i<count;i++){
-      const c=cells[Math.floor(Math.floor(i/reference.splash.drops)*n/(count/reference.splash.drops))];
-      p[i*3]=c.x+(random(i*11)-.5)*dx;p[i*3+1]=c.z+.10;p[i*3+2]=-c.y+(random(i*11+1)-.5)*dx;
+      const c=activeCells[Math.floor(Math.floor(i/reference.splash.drops)*n/(count/reference.splash.drops))];
+      p[i*3]=c.x+(random(i*11)-.5)*dx;p[i*3+2]=-c.y+(random(i*11+1)-.5)*dx;p[i*3+1]=(ground?.(p[i*3],-p[i*3+2])??c.z)+.19+wetDepth(p[i*3],-p[i*3+2])+.01;
       s[i]=(Math.floor(random(Math.floor(i/reference.splash.drops)+2)*100)+(i%reference.splash.drops)/reference.splash.drops)/100;
     }
     g.setAttribute('origin',new THREE.InstancedBufferAttribute(p,3));
     g.setAttribute('seed',new THREE.InstancedBufferAttribute(s,1));g.instanceCount=0;return g;
-  },[data]);
+  },[data,ground,wetZones]);
   const sprayMaterial=useMemo(()=>new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,
     uniforms:{...coverageUniforms,time:{value:0},splashSpeed:{value:reference.splash.speed},drift:{value:new THREE.Vector2()},strength:{value:0}},
     vertexShader:SPRAY_VERTEX,fragmentShader:SPRAY_FRAGMENT
@@ -180,7 +198,6 @@ export function RainWeather({data,intensity,wind,direction,quality,moving,reduce
   },[mask,drops,impacts,spray,material,impactMaterial,sprayMaterial,skyGeometry,skyMaterial]);
 
   useFrame(({size},dt)=>{
-    if(reduced)return;
     const ddt=Math.min(dt,.1);
     tRef.current+=ddt;
     // Update the hypothetical rain footprint only when it actually changed.
@@ -194,7 +211,8 @@ export function RainWeather({data,intensity,wind,direction,quality,moving,reduce
     const rate=rateRef.current;
     const ramp=Math.min(1,.08+.92*Math.sqrt(rate/100));
     const u=material.uniforms;
-    drops.instanceCount=rate>.01?Math.round((quality==='high'?48000:quality==='balanced'?24000:9000)*ramp*(moving?.65:1)):0;
+    const dropBudget=reduced?4000:quality==='high'?48000:quality==='balanced'?24000:9000;
+    drops.instanceCount=rate>.01?Math.round(dropBudget*ramp*(moving?.65:1)):0;
     u.screenHeight.value=Math.max(1,size.height);
     // Gusts: wind and rain breathe instead of staying frozen.
     const gust=1+.18*Math.sin(tRef.current*.9)+.12*Math.sin(tRef.current*2.35+1.7);
@@ -205,7 +223,7 @@ export function RainWeather({data,intensity,wind,direction,quality,moving,reduce
     u.strength.value=Math.min(.9,(.20+Math.min(rate/100,.6))*gust)*Math.min(1,rate);
     // Splash spray follows the same smoothed rain and wind.
     const su=sprayMaterial.uniforms;
-    spray.instanceCount=quality==='performance'?0:rate>.01?Math.round(spray.getAttribute('seed').count*ramp*(moving?0:1)):0;
+    spray.instanceCount=quality==='performance'?0:rate>.01?Math.round(spray.getAttribute('seed').count*ramp*(reduced?.3:1)):0;
     su.time.value=u.time.value;
     su.drift.value.copy(u.drift.value);
     su.strength.value=Math.min(.7,rate/25);
@@ -215,9 +233,9 @@ export function RainWeather({data,intensity,wind,direction,quality,moving,reduce
     const iu=impactMaterial.uniforms;
     iu.time.value=u.time.value;iu.strength.value=Math.min(.55,rate/30);
   });
-  return reduced?null:<group>
+  return <group>
     <mesh ref={skyMesh} geometry={skyGeometry} material={skyMaterial} frustumCulled={false} raycast={noRaycast}/>
     <mesh geometry={drops} material={material} frustumCulled={false} raycast={noRaycast}/>
-    {quality!=='performance'&&!moving&&<><mesh geometry={impacts} material={impactMaterial} frustumCulled={false} raycast={noRaycast}/><mesh geometry={spray} material={sprayMaterial} frustumCulled={false} raycast={noRaycast}/></>}
+    {quality!=='performance'&&<><mesh geometry={impacts} material={impactMaterial} frustumCulled={false} raycast={noRaycast}/><mesh geometry={spray} material={sprayMaterial} frustumCulled={false} raycast={noRaycast}/></>}
   </group>;
 }

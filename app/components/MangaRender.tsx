@@ -13,18 +13,73 @@ import { ZONAS_MANGA } from '@/app/lib/zonasManga';
 import { zoneLocal } from '@/app/lib/manga/adapter';
 import { RainWeather } from './MangaRain';
 import MangaFlood from './MangaFlood';
+import MangaTerrain from './MangaTerrain';
+import MangaBuildings from './MangaBuildings';
+import MangaCemetery from './MangaCemetery';
+import MangaRoads from './MangaRoads';
+import { useMangaDem, useGroundSampler, useRoadMask, useRoadSnapper } from '@/app/lib/manga/ground';
 import { useMangaWeather, WeatherPanel } from './MangaWeatherPanel';
+import MangaPort, { AnimatedSea } from './MangaPort';
+import { insidePortYard } from '@/app/lib/manga/portLayout';
+import type { MangaData } from '@/app/lib/manga/types';
+import { MANGA_POIS, type MangaPoi } from '@/app/lib/manga/poi';
 
 type View = 'district' | 'zone' | 'top';
 type Sample = { fps: number; calls: number; triangles: number };
 const landmarks = metadata.landmarks;
-const locations = [...ZONAS_MANGA.map(z=>({name:z.nombre,detail:z.ubicacion,description:z.descripcion,position:zoneLocal(...z.coordenadas),zone:z,source:`https://www.google.com/maps/search/?api=1&query=${z.coordenadas.join(',')}`})),
-  ...landmarks.map(m=>({name:m.name,detail:'Lugar emblemático',description:'Lugar registrado en la cartografía del modelo.',position:m.position,zone:null,source:m.source}))];
+type Place = {name:string;detail:string;description:string;position:[number,number,number];zone:typeof ZONAS_MANGA[number]|null;source:string;poi?:MangaPoi};
+const locations:Place[] = [...ZONAS_MANGA.map(z=>({name:z.nombre,detail:z.ubicacion,description:z.descripcion,position:[...zoneLocal(...z.coordenadas),0] as [number,number,number],zone:z,source:`https://www.google.com/maps/search/?api=1&query=${z.coordenadas.join(',')}`})),
+  ...landmarks.map(m=>({name:m.name,detail:'Lugar emblemático',description:'Lugar registrado en la cartografía del modelo.',position:m.position as [number,number,number],zone:null,source:m.source})),
+  ...MANGA_POIS.map(p=>({name:p.name,detail:p.address,description:p.description,position:[...zoneLocal(p.latitude,p.longitude),0] as [number,number,number],zone:null,source:p.source,poi:p})),
+  {name:'Sociedad Portuaria de Cartagena',detail:'Terminal de Manga',description:'Patios de contenedores, grúas y muelles. Recreación conceptual basada en las referencias compartidas.',position:[500,-620,0],zone:null,source:'https://www.google.com/maps/search/?api=1&query=Sociedad+Portuaria+de+Cartagena'},
+  {name:'Muelle de cruceros',detail:'Sociedad Portuaria',description:'Crucero a escala y muelle de pasajeros; representación conceptual.',position:[-65,-728,0],zone:null,source:'https://www.google.com/maps/search/?api=1&query=Sociedad+Portuaria+de+Cartagena'},
+  {name:'Buque portacontenedores',detail:'Sociedad Portuaria',description:'Buque de carga y operación de contenedores; representación conceptual.',position:[651,-780,0],zone:null,source:'https://www.google.com/maps/search/?api=1&query=Sociedad+Portuaria+de+Cartagena'}];
 const normalize=(s:string)=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
-function City({ buildings, vegetation, quality }: { buildings: boolean; vegetation: boolean; quality: boolean }) {
+function City({ buildings, vegetation, quality, showDem, ground,roadMask }: { buildings: boolean; vegetation: boolean; quality: boolean; showDem: boolean; ground:ReturnType<typeof useGroundSampler>;roadMask:ReturnType<typeof useRoadMask> }) {
   const { scene } = useGLTF('/models/manga/v6.1/manga-v6.1.glb', '/models/manga/draco/');
-  const local = useMemo(() => scene.clone(true), [scene]);
+  const local = useMemo(() => {
+    const copy=scene.clone(true);
+    copy.updateMatrixWorld(true);
+    // The source bakes trees and old generic buildings into shared tiles.
+    // Clear only the operating yard; residential streets outside it remain.
+    copy.traverse(o=>{
+      if(!(o instanceof THREE.Mesh)||!['Vegetation','Buildings','Details'].includes(o.userData.category))return;
+      // Each exported GLB object is a 300 m material/tile batch, not one house.
+      // Move the intact batch to its local ground datum; per-vertex clamping
+      // distorted roofs and trees and made them look torn through the earth.
+      if(showDem&&ground&&o.userData.category==='Vegetation'){
+        const bounds=new THREE.Box3().setFromObject(o),center=bounds.getCenter(new THREE.Vector3());
+        const datum=ground(center.x,-center.z);
+        if(datum!=null)o.position.y+=datum+.28;
+      }
+      let geometry=o.geometry as THREE.BufferGeometry;
+      const position=geometry.getAttribute('position');
+      const indices=geometry.getIndex();
+      if(!position)return;
+      const keep:number[]=[];
+      const count=indices?indices.count:position.count;
+      const point=new THREE.Vector3();
+      for(let i=0;i+2<count;i+=3){
+        let x=0,y=0;
+        for(let j=0;j<3;j++){
+          const vertex=indices?indices.getX(i+j):i+j;
+          point.fromBufferAttribute(position,vertex).applyMatrix4(o.matrixWorld);
+          x+=point.x;y-=point.z;
+        }
+        const cx=x/3,cy=y/3;
+        const onStreet=o.userData.category==='Vegetation'&&roadMask?.(cx,cy);
+        if(!insidePortYard(cx,cy)&&!onStreet){
+          keep.push(indices?indices.getX(i):i,indices?indices.getX(i+1):i+1,indices?indices.getX(i+2):i+2);
+        }
+      }
+      if(keep.length<count){
+        const filtered=geometry.clone();filtered.setIndex(keep);
+        o.geometry=filtered;o.userData.portFilteredGeometry=true;
+      }
+    });
+    return copy;
+  }, [scene,showDem,ground,roadMask]);
   const detail = useMemo(() => {
     const items: { mesh: THREE.Mesh; center: THREE.Vector3 }[] = [];
     local.traverse(o => {
@@ -37,17 +92,21 @@ function City({ buildings, vegetation, quality }: { buildings: boolean; vegetati
   }, [local]);
   useEffect(() => {
     local.traverse(o => {
-      if (o.userData.category === 'Buildings') o.visible = buildings;
+      if (o.userData.category === 'Sea') o.visible = false;
+      if (o.userData.category === 'Terrain') o.visible = !showDem;
+      if (o.userData.category === 'Buildings') o.visible = buildings&&!showDem;
+      if (o.userData.category === 'Details') o.visible = buildings&&!showDem;
       if (o.userData.category === 'Vegetation') o.visible = vegetation;
     });
-  }, [local, buildings, vegetation]);
+  }, [local, buildings, vegetation, showDem]);
+  useEffect(()=>()=>{local.traverse(o=>{if(o instanceof THREE.Mesh&&o.userData.portFilteredGeometry)o.geometry.dispose();});},[local]);
   useFrame(({ camera }) => {
-    for (const item of detail) item.mesh.visible = buildings && camera.position.distanceToSquared(item.center) < (quality ? 1000 : 500) ** 2;
+    for (const item of detail) item.mesh.visible = buildings && !showDem && camera.position.distanceToSquared(item.center) < (quality ? 1000 : 500) ** 2;
   });
   return <primitive object={local} dispose={null} />;
 }
 
-function Navigation({ view, selected, revision, onSample }: { view: View; selected: number; revision: number; onSample: (s: Sample) => void }) {
+function Navigation({ view, selected, revision, onSample, roadSnapper }: { view: View; selected: number; revision: number; onSample: (s: Sample) => void; roadSnapper: ReturnType<typeof useRoadSnapper> }) {
   const controls = useRef<Controls>(null);
   const { camera, size } = useThree();
   const timer = useRef(0), frames = useRef(0);
@@ -58,12 +117,13 @@ function Navigation({ view, selected, revision, onSample }: { view: View; select
     let target = new THREE.Vector3(0, 0, -50);
     let offset = new THREE.Vector3(1275, 1575, 1575).multiplyScalar(fit);
     if (view === 'zone') {
-      target = new THREE.Vector3(mark.position[0], 0, -mark.position[1]);
+      const snapped=mark.zone&&roadSnapper?roadSnapper(mark.position[0],mark.position[1],25):null;
+      target = new THREE.Vector3(snapped?.x??mark.position[0], 0, -(snapped?.y??mark.position[1]));
       offset = new THREE.Vector3(90, 150, -160).multiplyScalar(fit);
     }
     if (view === 'top') offset = new THREE.Vector3(0, 3100 * fit, .01);
     controls.current.target.copy(target);camera.position.copy(target).add(offset);controls.current.update();
-  }, [camera, view, selected, revision, size.width, size.height]);
+  }, [camera, view, selected, revision, size.width, size.height, roadSnapper]);
   useFrame(({ gl }, dt) => {
     timer.current += dt;frames.current++;
     if (timer.current >= 1) {
@@ -87,11 +147,15 @@ class RenderBoundary extends Component<{ children: ReactNode }, { failed: boolea
 
 export default function MangaRender(props: MangaMapProps) {
   const weather=useMangaWeather(props);
+  const dem=useMangaDem(),ground=useGroundSampler(dem),roadMask=useRoadMask(dem),roadSnapper=useRoadSnapper(dem);
+  const surfaceData=useMemo<MangaData|null>(()=>weather.data&&dem?.roads?.length?{...weather.data,roads:dem.roads.map((road,i)=>({id:`surface-${i}`,name:'Red vial continua',triangles:road.triangles as MangaData['roads'][number]['triangles']}))}:weather.data,[weather.data,dem]);
   const [searchOpen,setSearchOpen]=useState(false),[query,setQuery]=useState('');
   const results=locations.map((l,index)=>({...l,index})).filter(l=>normalize(l.name+' '+l.detail).includes(normalize(query)));
   const [view, setView] = useState<View>('district');
   const [selected, setSelected] = useState(0), [revision, setRevision] = useState(0);
   const [buildings, setBuildings] = useState(true), [vegetation, setVegetation] = useState(true);
+  const [showDem, setShowDem] = useState(true);
+  const rainGround=useMemo(()=>showDem?ground:()=>0,[showDem,ground]);
   const [sunset, setSunset] = useState(false), [quality, setQuality] = useState(false);
   const [sample, setSample] = useState<Sample | null>(null);
   const [visible, setVisible] = useState(true);
@@ -106,26 +170,33 @@ export default function MangaRender(props: MangaMapProps) {
   }, []);
   useEffect(()=>{if(props.focusZonaId!=null){const i=locations.findIndex(l=>l.zone?.id===props.focusZonaId);if(i>=0){setSelected(i);setView('zone');setRevision(r=>r+1);}}},[props.focusZonaId]);
   function focus(next: View, index = 0) { setView(next);setSelected(index);setRevision(r => r + 1); }
-  return <section className="manga6" ref={container} aria-label="Manga: nuevo modelo 3D, versión 6.1">
+  function focusPoi(poi:MangaPoi) { const index=locations.findIndex(place=>place.poi?.id===poi.id);if(index<0)return;focus('zone',index);props.onSelectZona?.(null); }
+  return <section className="manga6" ref={container} aria-label="Manga: modelo 3D con sociedad portuaria">
     <RenderBoundary>
-      <Canvas frameloop={visible ? 'always' : 'never'} shadows={quality} dpr={[1, 1.5]} camera={{ position: [1700, 2100, 2100], fov: 43, near: .5, far: 15000 }} gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping }}>
+      <Canvas frameloop={visible ? 'always' : 'never'} shadows={quality} dpr={[1, 1.5]} camera={{ position: [1700, 2100, 2100], fov: 43, near: 2, far: 15000 }} gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping }}>
         <color attach="background" args={[weather.rate>10 ? '#718995' : sunset ? '#e0bfa4' : '#bad4d7']} />
         <hemisphereLight args={[sunset ? '#ffd4a5' : '#eef7ff', '#6e7961', 1.6]} />
         <directionalLight position={sunset ? [-900, 550, 800] : [700, 1600, -600]} intensity={weather.rate>10 ? .9 : sunset ? 2.4 : 2.1} color={sunset ? '#ffc58f' : '#fff4db'} castShadow={quality}
           shadow-mapSize={[2048, 2048]} shadow-camera-left={-1400} shadow-camera-right={1400} shadow-camera-top={1400} shadow-camera-bottom={-1400} shadow-camera-far={5000} shadow-bias={-.0002} />
-        <Suspense fallback={null}><City buildings={buildings} vegetation={vegetation} quality={quality} /></Suspense>
-        <Navigation view={view} selected={selected} revision={revision} onSample={setSample} />
-        {weather.data&&<><RainWeather data={weather.data} intensity={weather.rate} wind={weather.wind} direction={weather.direction} quality={quality?'high':'balanced'} moving={!!props.isPlaying} reduced={weather.reduced}/><MangaFlood data={weather.data} depths={weather.depths} rain={weather.rate}/></>}
+        <AnimatedSea storm={weather.rate} sunset={sunset} reduced={weather.reduced} />
+        <Suspense fallback={null}><City buildings={buildings} vegetation={vegetation} quality={quality} showDem={showDem} ground={ground} roadMask={roadMask} /></Suspense>
+        <MangaTerrain visible={showDem} dem={dem} ground={ground} />
+        <MangaRoads dem={dem} visible={showDem} />
+        <MangaPort structures={buildings} ground={ground} />
+        <Navigation view={view} selected={selected} revision={revision} onSample={setSample} roadSnapper={roadSnapper} />
+        {surfaceData&&<><MangaBuildings buildings={surfaceData.buildings} ground={ground} visible={showDem&&buildings} pois={MANGA_POIS} onSelectPoi={id=>{const poi=MANGA_POIS.find(p=>p.id===id);if(poi)focusPoi(poi);}}/><MangaCemetery polygon={metadata.cemeteryPolygon} ground={ground} visible={showDem&&buildings}/><RainWeather data={surfaceData} intensity={weather.rate} wind={weather.wind} direction={weather.direction} quality={quality?'high':'balanced'} moving={!!props.isPlaying||weather.playing} reduced={weather.reduced} ground={rainGround} depths={weather.depths} roadSnapper={roadSnapper}/><MangaFlood grid={weather.simulationGrid} result={weather.waterResult} showDem={showDem}/></>}
       </Canvas>
     </RenderBoundary>
     <Progress />
-    <header className="manga6-heading"><span>CARTAGENA DE INDIAS · V6.1</span><h3>Manga</h3><p>Monitoreo de lluvia e inundaciones</p></header>
+    <header className="manga6-heading"><span>CARTAGENA DE INDIAS · V6.1 + PUERTO</span><h3>Manga</h3><p>Monitoreo de lluvia e inundaciones</p></header>
     <div className="manga6-actions">
       <button aria-label="Buscar ubicación" aria-expanded={searchOpen} onClick={()=>setSearchOpen(v=>!v)}><Search size={18}/></button>
       <button onClick={() => setSunset(v => !v)} aria-pressed={sunset}>{sunset ? 'Atardecer' : 'Luz de día'}</button>
       <details><summary>Capas y calidad</summary><div>
         <label><input type="checkbox" checked={buildings} onChange={e => setBuildings(e.target.checked)} />Casas y edificios</label>
         <label><input type="checkbox" checked={vegetation} onChange={e => setVegetation(e.target.checked)} />Vegetación</label>
+        <label><input type="checkbox" checked={showDem} onChange={e => setShowDem(e.target.checked)} />Relieve y pendiente (DEM SRTM)</label>
+        <p>Terreno EGM96 · celdas de 40 m · elevación radar SRTM 30 m (2000). Pendiente calculada entre caras del DEM.</p>
 
         <label><input type="checkbox" checked={quality} onChange={e => setQuality(e.target.checked)} />Sombras y más detalle</label>
         <p>{sample ? `${sample.fps} FPS · ${sample.calls} llamadas · ${sample.triangles.toLocaleString('es-CO')} triángulos` : 'Cargando geometría…'}</p>
@@ -134,15 +205,15 @@ export default function MangaRender(props: MangaMapProps) {
     </div>
     {searchOpen&&<aside className="manga6-search" aria-label="Buscar zonas críticas y lugares">
       <div><Search size={18}/><input autoFocus aria-label="Nombre o sector" placeholder="Buscar en Manga…" value={query} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>{if(e.key==='Escape')setSearchOpen(false);}}/><button aria-label="Cerrar búsqueda" onClick={()=>setSearchOpen(false)}><X size={16}/></button></div>
-      <p>20 zonas críticas · {landmarks.length} lugares emblemáticos</p>
+      <p>20 zonas críticas · {landmarks.length+MANGA_POIS.length} lugares emblemáticos · terminal portuaria</p>
       <ul>{results.map(l=><li key={l.index}><button onClick={()=>{focus('zone',l.index);props.onSelectZona?.(l.zone);setSearchOpen(false);}}><strong>{l.name}</strong><span>{l.detail}</span></button></li>)}</ul>
       {!results.length&&<p>No se encontraron ubicaciones.</p>}
     </aside>}
-    {view==='zone'&&!searchOpen&&<aside className="manga6-place"><button aria-label="Cerrar lugar" onClick={()=>{focus('district');props.onSelectZona?.(null);}}><X size={16}/></button><strong>{locations[selected].name}</strong><p>{locations[selected].description}</p>{locations[selected].zone&&<p>Agua estimada: {(weather.depths[selected]*100).toFixed(1)} cm</p>}<a href={locations[selected].source} target="_blank" rel="noreferrer">Consultar ubicación ↗</a></aside>}
+    {view==='zone'&&!searchOpen&&<aside className="manga6-place"><button aria-label="Cerrar lugar" onClick={()=>{focus('district');props.onSelectZona?.(null);}}><X size={16}/></button><strong>{locations[selected].name}</strong><p>{locations[selected].description}</p>{locations[selected].poi&&<p><b>{locations[selected].poi.category}</b><br/>{locations[selected].poi.address}</p>}{locations[selected].zone&&<><p>Agua estimada: {(weather.depths[selected]*100).toFixed(1)} cm</p>{roadSnapper&&!roadSnapper(locations[selected].position[0],locations[selected].position[1],25)&&<p>Fuera de la red de calles modelada; el agua no se dibuja en esta ubicación.</p>}</> }<a href={locations[selected].source} target="_blank" rel="noreferrer">Consultar ubicación ↗</a></aside>}
     <WeatherPanel weather={weather} source={props.sourceLabel} hour={props.currentHour}/>
     <nav className="manga6-views" aria-label="Vistas del barrio">
       {([['district', 'Toda Manga'], ['top', 'Vista desde arriba']] as const).map(([key, label]) => <button key={key} aria-pressed={view === key} onClick={() => focus(key)}>{label}</button>)}
     </nav>
-    <footer className="manga6-footer"><span>Agua estimada por zona · relieve y drenaje pendientes de calibración</span><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap</a></footer>
+    <footer className="manga6-footer"><span>Escorrentía 2D por DEM · almacenamiento e infiltración exploratorios</span><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap</a></footer>
   </section>;
 }

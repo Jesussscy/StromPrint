@@ -4,8 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import Navbar from "@/app/components/Navbar";
-import TopographicMesh from "@/app/components/TopographicMesh";
-import ParticleCanvas from "@/app/components/ParticleCanvas";
+import StormStory from "@/app/components/StormStory";
 import CursorTracker from "@/app/components/CursorTracker";
 import TimelineSlider from "@/app/components/TimelineSlider";
 import WeatherBadge from "@/app/components/WeatherBadge";
@@ -102,70 +101,14 @@ const MangaMap = dynamic(() => import("@/app/components/MangaMap"), {
 /* ——— HERO ——————————————————————————————————————————————————————————————— */
 
 function HeroSection() {
-  return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden" style={{ background: "var(--ocean-deep)" }}>
-      <TopographicMesh />
-      <ParticleCanvas />
-
-      <div className="relative z-10 mx-auto max-w-5xl px-6 text-center">
-        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
-          <div className="inline-flex items-center gap-2 rounded-full glass px-4 py-1.5 mb-8">
-            <span className="h-1.5 w-1.5 rounded-full bg-risk-normal animate-pulse-slow" />
-            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-cyan">Sistema activo · Manga, Cartagena</span>
-          </div>
-
-          <h1
-            className="title-storm glitch-title text-4xl sm:text-5xl md:text-7xl lg:text-8xl text-white mb-6"
-            data-text="STORM//PRINT"
-          >
-            STORM<span className="neon-text">{"//"}</span>PRINT
-          </h1>
-
-          <p className="font-body text-base sm:text-lg md:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed mb-10 px-2">
-            Ingeniería de datos para la resiliencia climática en el Caribe colombiano.
-          </p>
-
-          <div className="flex flex-wrap justify-center gap-4 sm:gap-6 mb-12">
-            {[
-              { value: "48 h", label: "Ventana de pronóstico" },
-              { value: "24/7", label: "Monitoreo" },
-              { value: "7 días", label: "Pronóstico" },
-            ].map((stat) => (
-              <div key={stat.label} className="glass rounded-xl px-4 sm:px-5 py-3 flex-1 min-w-[100px] max-w-[160px]">
-                <p className="font-display text-lg sm:text-xl font-bold neon-text">{stat.value}</p>
-                <p className="font-mono text-[9px] uppercase tracking-widest text-slate-500">{stat.label}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* CTA Button */}
-          <motion.a
-            href="#panel-vivo"
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            className="group inline-flex items-center gap-3 rounded-2xl px-8 py-4 font-mono text-sm uppercase tracking-widest text-ocean-deep font-bold transition-all min-h-[52px]"
-            style={{
-              background: "linear-gradient(135deg, #00E5FF 0%, #00B4D8 50%, #0077B6 100%)",
-              boxShadow: "0 0 30px rgba(0, 229, 255, 0.3), 0 0 60px rgba(0, 229, 255, 0.1)",
-            }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="8,5 19,12 8,19" /></svg>
-            Iniciar Simulación
-          </motion.a>
-        </motion.div>
-      </div>
-
-      {/* Bottom fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-ocean-deep to-transparent" />
-    </section>
-  );
+  return <StormStory />;
 }
 
 /* ——— EL PROBLEMA ————————————————————————————————————————————————————————— */
 
 function ProblemSection() {
   return (
-    <section className="relative py-24 px-6">
+    <section id="territorio" className="storm-editorial relative py-24 px-6">
       <div className="mx-auto max-w-6xl">
         <motion.div {...FADE} className="text-center mb-16">
           <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-cyan mb-4">El problema</p>
@@ -453,7 +396,9 @@ function DashboardEmbedded() {
       playbackRef.current = setInterval(() => {
         setCurrentHour((prev) => {
           const max = prediccion.puntos[prediccion.puntos.length - 1].tiempo_hora;
-          if (prev >= max) { setIsPlaying(false); return max; }
+          // La ventana se renueva como una semana móvil: al completar el día 7,
+          // el recorrido vuelve al día 1 sin perder la reproducción.
+          if (prev >= max) return 0;
           return prev + 0.5;
         });
       }, PLAYBACK_SPEED_MS / velocidad);
@@ -819,19 +764,6 @@ spatialForcing={prediccion?.forzamiento_espacial}
       </div>
 
       {/* ═══ PRONÓSTICO POR DÍA ═══ */}
-      {daySummaries.length > 0 && (
-        <div>
-          <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.15em] text-slate-500">
-            Pronóstico por día
-          </p>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
-            {daySummaries.map((s, i) => (
-              <ForecastDayCard key={s.dayIndex} summary={s} index={i} />
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* ═══ RESUMEN 7 DÍAS ═══ */}
       {prediccion && prediccion.puntos.length > 0 && (
         <SummaryDashboard puntos={prediccion.puntos} daySummaries={daySummaries} />
@@ -856,6 +788,23 @@ spatialForcing={prediccion?.forzamiento_espacial}
 /* ——— PRONÓSTICO 48H ————————————————————————————————————————————————————— */
 
 function ForecastSection({ puntos, onSeleccionarPunto }: { puntos: import("@/app/lib/api").PuntoPrediccion[]; onSeleccionarPunto?: (p: import("@/app/lib/api").PuntoPrediccion) => void }) {
+  const days = useMemo(() => computeDaySummaries(puntos).slice(0, 7), [puntos]);
+  const [selectedDay, setSelectedDay] = useState(0);
+
+  useEffect(() => {
+    const onHour = (event: Event) => {
+      const hour = Number((event as CustomEvent<{ hora?: number }>).detail?.hora ?? 0);
+      if (Number.isFinite(hour)) setSelectedDay(Math.min(6, Math.max(0, Math.floor(hour / 24))));
+    };
+    window.addEventListener("stormprint:hora", onHour);
+    return () => window.removeEventListener("stormprint:hora", onHour);
+  }, []);
+
+  const selectDay = (dayIndex: number) => {
+    setSelectedDay(dayIndex);
+    window.dispatchEvent(new CustomEvent("stormprint:hora", { detail: { hora: dayIndex * 24 } }));
+  };
+
   return (
     <section id="pronostico" className="relative py-24 px-6">
       <div className="mx-auto max-w-6xl">
@@ -863,9 +812,18 @@ function ForecastSection({ puntos, onSeleccionarPunto }: { puntos: import("@/app
           <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-cyan mb-4">Pronóstico</p>
           <h2 className="font-display text-2xl md:text-4xl font-bold text-white mb-4">Evolución del nivel en 7 días</h2>
           <p className="text-slate-400 max-w-2xl mx-auto">
-            Curva de pronóstico horario con líneas de umbral de riesgo.
+            Siete jornadas de lluvia y nivel de agua, sincronizadas con la línea temporal y el mapa 3D.
           </p>
         </motion.div>
+        {days.length > 0 && <div id="dias-pronostico" className="storm-days-panel mb-5 rounded-[24px] p-4 sm:p-6">
+          <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div><p className="mb-1 font-mono text-[9px] uppercase tracking-[.22em] text-cyan/75">Ventana móvil · 168 horas</p><h3 className="font-display text-lg font-semibold text-white">Pronóstico por día</h3></div>
+            <p className="font-mono text-[9px] uppercase tracking-[.12em] text-slate-500">Selecciona una jornada para recorrerla en el mapa</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
+            {days.map((summary, index) => <ForecastDayCard key={summary.dayIndex} summary={summary} index={index} active={selectedDay === summary.dayIndex} onClick={() => selectDay(summary.dayIndex)} />)}
+          </div>
+        </div>}
         {puntos.length > 0 ? (
           <ForecastChart puntos={puntos} onSeleccionarPunto={onSeleccionarPunto} />
         ) : (
@@ -1076,25 +1034,18 @@ export default function LandingPage() {
       )}
 
       <main id="contenido" className="orden-movil">
-        {/* Hero: en móvil queda oculto (el panel en vivo pasa a ser la primera
-            experiencia; la marca ya está en el navbar). Desktop intacto. */}
-        <div className="hidden md:block">
-          <HeroSection />
-        </div>
-        <ProblemSection />
-        <HowItWorksSection />
-        <DataSourceSection />
+        <HeroSection />
 
-      {/* Panel en Vivo — primero en móvil (panel primero, marketing después) */}
-      <section id="panel-vivo" className="relative py-10 px-6 md:py-24">
+      {/* El monitoreo sigue inmediatamente después de la portada y conserva el dashboard completo. */}
+      <section id="panel-vivo" className="storm-monitoring relative py-10 px-4 sm:px-6 md:py-20">
         <div className="mx-auto max-w-7xl mb-8">
           <motion.div {...FADE} className="text-center">
-            <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-cyan mb-4">Datos en vivo</p>
-            <h2 className="font-display text-2xl md:text-4xl font-bold text-white">
-              Panel de Monitoreo
+            <p className="mb-3 font-mono text-[10px] uppercase tracking-[.28em] text-cyan">Centro de monitoreo · datos en vivo</p>
+            <h2 className="font-display text-3xl font-semibold tracking-tight text-white md:text-5xl">
+              La semana, en perspectiva.
             </h2>
-            <p className="mt-3 text-slate-400 max-w-2xl mx-auto">
-              Explorá la simulación en tiempo real. Ajustá los parámetros y observá cómo responde el modelo.
+            <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-slate-400 md:text-base">
+              Explora el modelo 3D, revisa la evolución hora a hora y salta entre los siete días del pronóstico.
             </p>
           </motion.div>
         </div>
@@ -1103,6 +1054,9 @@ export default function LandingPage() {
 
       <ForecastSection puntos={prediccion?.puntos ?? []} onSeleccionarPunto={onSeleccionarPunto} />
       <NarrativeSection />
+      <ProblemSection />
+      <HowItWorksSection />
+      <DataSourceSection />
 
       {/* Estación Meteorológica */}
       <section id="meteo" className="relative py-24 px-6">

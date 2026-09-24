@@ -8,6 +8,8 @@ import { riskColor } from "@/app/lib/api";
 interface ForecastDayCardProps {
   summary: DaySummary;
   index: number;
+  active?: boolean;
+  onClick?: () => void;
 }
 
 function WeatherIcon({ nivel }: { nivel: number }) {
@@ -108,7 +110,7 @@ function MiniBarChart({ lluviaMax }: { lluviaMax: number }) {
   );
 }
 
-function ForecastDayCard({ summary, index }: ForecastDayCardProps) {
+function ForecastDayCard({ summary, index, active = false, onClick }: ForecastDayCardProps) {
   const accent = riskColor(summary.estadoDominante);
   const rainPct = summary.horasTotales > 0
     ? Math.round((summary.horasConLluvia / summary.horasTotales) * 100)
@@ -123,11 +125,17 @@ function ForecastDayCard({ summary, index }: ForecastDayCardProps) {
     : "Sin riesgo";
 
   return (
-    <motion.div
+    <motion.button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      aria-label={`Mostrar pronóstico del día ${summary.dayIndex + 1}, ${summary.dayLabel}`}
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: 0.1 * index }}
-      className="glass rounded-2xl p-4 flex flex-col items-center"
+      whileHover={{ y: -4 }}
+      whileTap={{ scale: .98 }}
+      className={`storm-day-card glass flex min-h-[250px] flex-col items-center rounded-2xl p-4 text-left transition-colors ${active ? "is-active" : ""}`}
     >
       <div className="flex items-center justify-between w-full mb-2">
         <div>
@@ -169,7 +177,7 @@ function ForecastDayCard({ summary, index }: ForecastDayCardProps) {
           />
         </div>
       </div>
-    </motion.div>
+    </motion.button>
   );
 }
 

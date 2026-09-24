@@ -14,7 +14,9 @@ interface Tab {
 
 const DEFAULT_TABS: Tab[] = [
   { id: "inicio", label: "Inicio", href: "/", icon: <Home size={15} /> },
-  { id: "panel", label: "Panel Vivo", href: "/#panel-vivo", icon: <LayoutDashboard size={15} /> },
+  { id: "panel", label: "Monitoreo", href: "/#panel-vivo", icon: <LayoutDashboard size={15} /> },
+  { id: "pronostico", label: "Pronóstico", href: "/#pronostico", icon: <LayoutDashboard size={15} /> },
+  { id: "territorio", label: "Territorio", href: "/#territorio", icon: <Home size={15} /> },
   { id: "ciencia", label: "Ciencia", href: "/ciencia", icon: <Brain size={15} /> },
   { id: "alertas", label: "Alertas", href: "/alertas", icon: <Siren size={15} /> },
   { id: "contacto", label: "Contacto", href: "/#contacto", icon: <Phone size={15} /> },
@@ -113,6 +115,7 @@ export default function Navbar({
 
   return (
     <nav
+      className="storm-navbar"
       style={{
         position: "sticky",
         top: 0,
@@ -125,9 +128,9 @@ export default function Navbar({
         justifyContent: "space-between",
         padding: "0 16px",
         paddingTop: "env(safe-area-inset-top, 0px)",
-        background: "var(--bg-nav, rgba(2,12,24,0.95))",
+        background: "rgba(7,22,20,.86)",
         backdropFilter: "blur(12px)",
-        borderBottom: "1px solid var(--border, rgba(255,255,255,0.06))",
+        borderBottom: "1px solid rgba(172,225,204,.12)",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>

@@ -27,7 +27,9 @@ function tiempoDesde(iso: string): string {
 
 const NAV_LINKS = [
   { label: "Inicio", href: "/", icon: <Home size={15} /> },
-  { label: "Panel en Vivo", href: "/#panel-vivo", icon: <LayoutDashboard size={15} /> },
+  { label: "Monitoreo", href: "/#panel-vivo", icon: <LayoutDashboard size={15} /> },
+  { label: "Pronóstico", href: "/#pronostico", icon: <LayoutDashboard size={15} /> },
+  { label: "Territorio", href: "/#territorio", icon: <MapPin size={15} /> },
   { label: "Ciencia", href: "/ciencia", icon: <Brain size={15} /> },
   { label: "Alertas", href: "/alertas", icon: <Siren size={15} /> },
 ];
@@ -79,7 +81,7 @@ export default function Footer() {
 
       <div className="mx-auto max-w-6xl px-6 pt-14 pb-24 sm:pb-10">
         {/* Grid de 3 columnas */}
-        <div className="grid gap-10 md:grid-cols-3">
+        <div className="grid gap-10 sm:grid-cols-2 xl:grid-cols-4">
 
           {/* ── Columna 1: Marca ── */}
           <div className="space-y-5">
@@ -124,6 +126,17 @@ export default function Footer() {
             </div>
           </div>
 
+          {/* ── Columna 2: Créditos y alcance ── */}
+          <div id="creditos">
+            <h4 className="font-display text-xs font-bold uppercase tracking-widest text-white mb-5">Sobre el proyecto</h4>
+            <p className="max-w-xs text-sm leading-relaxed text-slate-400">StormPrint explora cómo combinar observación meteorológica, topografía y modelación para entender el riesgo de inundación en Manga.</p>
+            <div className="mt-4 space-y-2 text-[11px] leading-relaxed text-slate-500">
+              <p><span className="text-slate-300">Datos:</span> Open-Meteo, cartografía OpenStreetMap y mediciones DAVIS cuando están disponibles.</p>
+              <p><span className="text-slate-300">Modelo:</span> desarrollo StormPrint sobre topografía de referencia y escenarios exploratorios.</p>
+            </div>
+            <a href="#condiciones" className="mt-4 inline-flex min-h-10 items-center text-xs text-cyan/80 underline decoration-cyan/30 underline-offset-4 hover:text-cyan">Créditos y condiciones de uso</a>
+          </div>
+
           {/* ── Columna 2: Navegación ── */}
           <div>
             <h4 className="font-display text-xs font-bold uppercase tracking-widest text-white mb-5">
@@ -146,7 +159,7 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* ── Columna 3: Estado del Sistema ── */}
+          {/* ── Columna 4: Estado del Sistema ── */}
           <div>
             <h4 className="font-display text-xs font-bold uppercase tracking-widest text-white mb-5">
               Estado del Sistema
@@ -192,6 +205,9 @@ export default function Footer() {
 
         {/* ── Barra inferior ── */}
         <div className="mt-12 pt-6 border-t border-white/5">
+          <p id="condiciones" className="mx-auto mb-6 max-w-4xl text-center text-[10px] leading-relaxed text-slate-600">
+            Las simulaciones y pronósticos son herramientas de orientación y dependen de la disponibilidad de sus fuentes. No sustituyen los avisos oficiales de las autoridades ni deben usarse por sí solos para tomar decisiones de evacuación.
+          </p>
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-slate-500">
             <p className="flex items-center gap-2">
               <Phone size={12} className="text-cyan/60" />

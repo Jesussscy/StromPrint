@@ -163,6 +163,75 @@ body {
   background: radial-gradient(ellipse at 50% 0%, rgba(0, 229, 255, 0.08) 0%, rgba(0, 229, 255, 0.02) 40%, var(--ocean-deep) 70%);
 }
 
+/* StormPrint editorial shell: coastal atmosphere, topographic depth and quiet motion. */
+.storm-hero {
+  background:
+    radial-gradient(ellipse at 77% 50%, rgba(17, 119, 119, .22), transparent 38%),
+    radial-gradient(ellipse at 5% 8%, rgba(51, 107, 92, .18), transparent 42%),
+    linear-gradient(145deg, #071613 0%, #071b1d 52%, #07141a 100%);
+}
+.storm-hero-grid {
+  opacity: .18;
+  background-image: linear-gradient(rgba(143, 206, 189, .09) 1px, transparent 1px), linear-gradient(90deg, rgba(143, 206, 189, .09) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: linear-gradient(90deg, transparent, black 48%, black 85%, transparent);
+}
+.storm-hero > canvas { opacity: .34; }
+.storm-hero-title { font-family: var(--font-display), sans-serif; }
+.storm-hero-title span { color: #92d9c0; }
+.storm-eyebrow, .storm-quiet-cta { border: 1px solid rgba(183, 224, 205, .18); background: rgba(223, 245, 233, .045); color: #b9d6c8; }
+.storm-live-dot, .storm-chip-pulse { width: 7px; height: 7px; border-radius: 50%; background: #a8e7bd; box-shadow: 0 0 14px #79ddb0; animation: storm-breathe 2.6s ease-in-out infinite; }
+.storm-primary-cta { background: linear-gradient(120deg, #b2e7c7, #73cbbd); box-shadow: 0 10px 34px rgba(72, 182, 156, .19); transition: box-shadow .25s, filter .25s; }
+.storm-primary-cta:hover { box-shadow: 0 14px 42px rgba(72, 182, 156, .32); filter: brightness(1.05); }
+.storm-hero-scene { perspective: 1100px; transform-style: preserve-3d; }
+.storm-scene-halo { position:absolute; inset:13% 6%; border-radius:50%; background:radial-gradient(ellipse,rgba(63,192,171,.25),rgba(31,120,131,.08) 46%,transparent 70%); filter:blur(18px); }
+.storm-island-shadow { position:absolute; left:12%; right:7%; top:20%; bottom:3%; border-radius:48%; background:rgba(49,188,176,.25); filter:blur(34px); transform:rotateX(58deg) rotateZ(-18deg) translateY(18%); }
+.storm-island { position:absolute; inset:4% 0 1%; transform:rotateX(55deg) rotateZ(-18deg) scale(.94); transform-style:preserve-3d; filter:drop-shadow(0 40px 25px rgba(0,0,0,.38)); animation:storm-island-float 8s ease-in-out infinite; }
+.storm-island::after { content:""; position:absolute; left:17%; right:13%; top:13%; bottom:17%; border-radius:47%; border:1px solid rgba(181,246,223,.3); transform:translateZ(-27px) scale(1.03); box-shadow:0 14px 0 -1px rgba(87,197,173,.11),0 28px 0 -2px rgba(87,197,173,.10),0 44px 0 -3px rgba(87,197,173,.08); pointer-events:none; }
+.storm-island svg { overflow:visible; }
+.storm-island svg > path:nth-of-type(1) { animation:storm-sea-glow 7s ease-in-out infinite; }
+.storm-island svg > path:nth-of-type(2),.storm-island svg > path:nth-of-type(3) { stroke-dasharray:14 16; animation:storm-water-flow 9s linear infinite; }
+.storm-island svg > path:nth-of-type(3) { animation-duration:13s; animation-direction:reverse; }
+.storm-orbit { position:absolute; left:15%; right:10%; top:13%; bottom:0; border:1px solid rgba(125,218,206,.15); border-radius:50%; transform:rotateX(64deg) rotateZ(-17deg); }
+.storm-orbit-one { animation:storm-orbit 26s linear infinite; }
+.storm-orbit-two { inset:8% 2% -10% 22%; transform:rotateX(64deg) rotateZ(21deg); border-color:rgba(215,212,166,.14); animation:storm-orbit 34s linear infinite reverse; }
+.storm-scene-chip { position:absolute; z-index:2; display:flex; align-items:center; gap:11px; padding:13px 16px; border:1px solid rgba(204,236,218,.16); border-radius:14px; background:rgba(9,29,31,.8); box-shadow:0 18px 45px rgba(0,0,0,.24); backdrop-filter:blur(14px); color:#d8e9dc; }
+.storm-scene-chip b,.storm-scene-chip small { display:block; }
+.storm-scene-chip b { font:600 9px/1.4 var(--font-mono),monospace; letter-spacing:.12em; }
+.storm-scene-chip small { margin-top:4px; color:#8ca8a0; font-size:10px; }
+.storm-chip-top { top:10%; right:3%; animation:storm-card-float 7s ease-in-out infinite; }
+.storm-chip-bottom { bottom:14%; left:0; animation:storm-card-float 8s ease-in-out -2s infinite; }
+.storm-rain-glyph { color:#9bdfd6; font-size:28px; line-height:1; }
+.storm-scene-caption { position:absolute; right:6%; bottom:3%; color:rgba(204,226,215,.58); font:9px var(--font-mono),monospace; letter-spacing:.13em; }
+.storm-scene-caption span { color:#d3bc7d; }
+.storm-scroll-cue { position:absolute; bottom:25px; left:50%; display:flex; align-items:center; gap:10px; transform:translateX(-50%); color:rgba(197,220,208,.48); font:9px var(--font-mono),monospace; letter-spacing:.18em; white-space:nowrap; }
+.storm-scroll-cue span { display:block; width:25px; height:1px; background:#98d7c0; animation:storm-cue 2s ease-in-out infinite; }
+.storm-monitoring { background:radial-gradient(ellipse at 50% 0%,rgba(44,133,125,.1),transparent 48%); }
+.storm-days-panel { border:1px solid rgba(128,213,190,.15); background:linear-gradient(145deg,rgba(22,55,51,.27),rgba(8,20,24,.58)); }
+.storm-day-card { width:100%; cursor:pointer; border-color:rgba(0,229,255,.12); }
+.storm-day-card.is-active { border-color:rgba(135,221,191,.76); background:linear-gradient(150deg,rgba(77,160,134,.17),rgba(255,255,255,.035)); box-shadow:0 0 0 1px rgba(135,221,191,.18),0 12px 38px rgba(22,106,92,.12); }
+.storm-day-card:focus-visible { outline:2px solid #a8e7bd; outline-offset:3px; }
+.storm-editorial { background:linear-gradient(180deg,rgba(205,194,152,.025),transparent 60%); }
+@keyframes storm-breathe { 50% { opacity:.45; box-shadow:0 0 5px #79ddb0; } }
+@keyframes storm-island-float { 0%,100% { translate:0 0; } 50% { translate:0 -8px; } }
+@keyframes storm-sea-glow { 0%,100% { opacity:.72; } 50% { opacity:.95; } }
+@keyframes storm-water-flow { to { stroke-dashoffset:-120px; } }
+@keyframes storm-card-float { 0%,100% { translate:0 0; } 50% { translate:0 -7px; } }
+@keyframes storm-orbit { to { rotate:360deg; } }
+@keyframes storm-cue { 0%,100% { transform:scaleX(.5); transform-origin:left; opacity:.4; } 50% { transform:scaleX(1); opacity:1; } }
+@media (max-width:767px) {
+  .storm-hero { min-height:auto; }
+  .storm-hero-scene { height:340px; margin-top:-18px; }
+  .storm-chip-top { right:0; top:6%; }
+  .storm-chip-bottom { left:0; bottom:12%; }
+  .storm-scene-caption { right:2%; bottom:1%; font-size:7px; }
+  .storm-scroll-cue { display:none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .storm-live-dot,.storm-chip-pulse,.storm-island,.storm-orbit,.storm-chip-top,.storm-chip-bottom,.storm-scroll-cue span,.storm-island svg > path:nth-of-type(1),.storm-island svg > path:nth-of-type(2),.storm-island svg > path:nth-of-type(3) { animation:none !important; }
+  .storm-island { translate:0 0; }
+}
+
 /* ─── Scan Line ─────────────────────────────────────────────────────────── */
 
 .scan-line::before {
@@ -359,9 +428,7 @@ input[type="range"]::-moz-range-thumb {
 
 /* ─── Mobile & Touch ────────────────────────────────────────────────── */
 
-/* Panel primero en móvil: el #panel-vivo pasa a ser la primera sección de la
-   página (panel primero, marketing después). El Hero se oculta (hidden md:block)
-   y el resto de secciones quedan detrás del panel. Desktop intacto. */
+/* En pantallas pequeñas la portada y el centro de monitoreo abren el recorrido. */
 @media (max-width: 767px) {
   .orden-movil {
     display: flex;
@@ -370,8 +437,13 @@ input[type="range"]::-moz-range-thumb {
   .orden-movil > * {
     order: 20;
   }
-  .orden-movil #panel-vivo {
+  .orden-movil > .storm-hero,
+  .orden-movil > .story,
+  .orden-movil > .story-marquee {
     order: 1;
+  }
+  .orden-movil #panel-vivo {
+    order: 2;
   }
 }
 

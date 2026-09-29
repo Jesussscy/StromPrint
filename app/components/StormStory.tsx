@@ -66,11 +66,12 @@ export default function StormStory() {
   const finishIntro = useCallback(() => setIntro(false), []);
 
   useEffect(() => () => { if (entryTimer.current !== null) window.clearTimeout(entryTimer.current); }, []);
-  const enterMap = () => {
+  const enterMap = (scenario?: "Alerta") => {
     if (enteringMap) return;
-    if (reducedMotion) { router.push("/manga-3d"); return; }
+    const destination=scenario?`/manga-3d?escenario=${scenario}`:"/manga-3d";
+    if (reducedMotion) { router.push(destination); return; }
     setEnteringMap(true);
-    entryTimer.current = window.setTimeout(() => router.push("/manga-3d"), 760);
+    entryTimer.current = window.setTimeout(() => router.push(destination), 760);
   };
 
   useEffect(() => {
@@ -130,18 +131,21 @@ export default function StormStory() {
                 <motion.h1 initial={false} animate={{ opacity: active === index ? 1 : .55, y: active === index ? 0 : 28 }} transition={{ duration: .7 }} className="story-title">{chapter.title}</motion.h1>
                 <p className="story-description">{chapter.description}</p>
                 {index === 0 ? <div className="story-entry-actions">
-                  <button className="story-map-entry" onClick={enterMap} aria-label="Explorar el mapa 3D de Manga">
+                  <button className="story-map-entry" onClick={() => enterMap()} aria-label="Explorar el mapa 3D de Manga">
                     <span className="story-map-entry__icon"><CloudRain size={27} strokeWidth={1.7} /></span>
                     <span className="story-map-entry__text"><strong>Entrar al mapa 3D</strong><small>Explora Manga desde el cielo</small></span>
                     <ArrowUpRight size={20} />
                   </button>
                   <a className="story-entry-secondary" href="#panel-vivo">Ir al monitoreo ↗</a>
-                </div> : <a className="story-action" href={chapter.href}>{chapter.action}<span>↗</span></a>}
+                </div> : <div className="story-chapter-actions"><a className="story-action" href={chapter.href}>{chapter.action}<span>↗</span></a><button type="button" className="story-scene-map" onClick={() => enterMap(index===2?"Alerta":undefined)}><CloudRain size={19}/><span>{index===2?"Simular lluvia en las calles":"Explorar Manga en 3D"}</span><ArrowUpRight size={17}/></button></div>}
               </div>
               <div className="story-frame" aria-label={`Vista del modelo de Manga: ${chapter.label.toLowerCase()}`}>
                 <Image src={`/story/${shots[index]}.webp`} alt={`Modelo 3D de Manga: ${chapter.label.toLowerCase()}`} fill sizes="(max-width: 700px) 100vw, 43vw" priority={index === 0} />
                 <div className="story-frame-head"><span>STORMPRINT / MANGA</span><span>{chapter.number}</span></div>
                 <div className="story-frame-foot"><span>10°24′ N · 75°32′ O</span><span>MODELO CARTOGRÁFICO</span></div>
+                {index===1&&<div className="story-frame-signal story-frame-signal--coast" aria-hidden="true"><span className="story-frame-signal__pulse"/><strong>UNA ISLA, TRES FUERZAS</strong><small>LLUVIA <i/> MAREA <i/> RELIEVE</small></div>}
+                {index===2&&<div className="story-frame-rain" aria-hidden="true"><div className="story-frame-rain__drops"/><div className="story-frame-signal"><strong>DE LA LLUVIA A LA CALLE</strong><small>SIMULACIÓN DE ESCORRENTÍA</small><div className="story-frame-days">{Array.from({length:7},(_,day)=><span key={day} style={{height:`${27+[18,33,45,26,52,39,20][day]}%`}}/>)}</div><em>D1　 D2　 D3　 D4　 D5　 D6　 D7</em></div></div>}
+                {index===3&&<div className="story-frame-signal story-frame-signal--dashboard" aria-hidden="true"><strong>CENTRO DE MONITOREO</strong><small>07 DÍAS · 168 HORAS</small><div className="story-frame-dashboard"><span><i/> LLUVIA</span><span><i/> NIVEL</span><span><i/> RIESGO</span></div></div>}
               </div>
               <div className="story-scene-index"><span>ESCENA {chapter.number.slice(0, 2)}</span><strong>{chapter.label}</strong><i /></div>
             </div>

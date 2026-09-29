@@ -66,6 +66,15 @@ export function useMangaWeather(props:MangaMapProps) {
   },[]);
   useEffect(()=>{const activate=()=>{setManual(null);setManualTime(0);setPlaying(false);};window.addEventListener(FORECAST_TIMELINE_EVENT,activate);return()=>window.removeEventListener(FORECAST_TIMELINE_EVENT,activate);},[]);
   useEffect(()=>{setManual(null);setManualTime(0);setPlaying(false);},[props.currentHour,props.sourceLabel]);
+  useEffect(()=>{
+    if(!props.standalone)return;
+    const scenario=new URLSearchParams(window.location.search).get('escenario');
+    if(scenario && Object.prototype.hasOwnProperty.call(RAIN_PRESETS,scenario)){
+      setManual(scenario as RainPreset);
+      setDuration(2);
+      setManualTime(0);
+    }
+  },[props.standalone]);
   const point=props.puntoMeteo;
   const hour=Math.max(0,props.currentHour??0);
   const hours=useMemo(()=>props.spatialForcing?.hours.map(h=>({tiempo_hora:h.hour,wind_kmh:h.wind_kmh,wind_direction_deg:h.wind_direction_deg}))??[],[props.spatialForcing]);
@@ -152,8 +161,12 @@ export function useMangaWeather(props:MangaMapProps) {
 
 function formatSimulationTime(hours:number){const mins=Math.round(hours*60),h=Math.floor(mins/60),m=mins%60;return `${h} h ${String(m).padStart(2,'0')} min`;}
 
-export function WeatherPanel({weather:w,source,hour,standalone=false}:{weather:ReturnType<typeof useMangaWeather>;source?:string;hour?:number;standalone?:boolean}) {
+export function WeatherPanel({weather:w,source,hour,standalone=false,onExpandedChange}:{weather:ReturnType<typeof useMangaWeather>;source?:string;hour?:number;standalone?:boolean;onExpandedChange?:(expanded:boolean)=>void}) {
   const [collapsed,setCollapsed]=useState(true);
+  useEffect(()=>{
+    if(standalone&&new URLSearchParams(window.location.search).has('escenario'))setCollapsed(false);
+  },[standalone]);
+  useEffect(()=>{onExpandedChange?.(!collapsed);},[collapsed,onExpandedChange]);
   if(standalone) return <aside className={`manga6-weather manga6-weather--studio${collapsed?' is-collapsed':''}`} aria-label="Laboratorio de lluvia">
     <button className="manga6-weather__trigger" type="button" aria-expanded={!collapsed} onClick={()=>setCollapsed(v=>!v)}>
       <span className="manga6-weather__icon"><CloudRain size={22}/></span>

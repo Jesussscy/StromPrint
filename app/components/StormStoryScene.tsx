@@ -4,6 +4,7 @@ import { Suspense, useMemo, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
+import { AnimatedSea } from "./MangaPort";
 
 type Props = { progress: React.MutableRefObject<number>; reducedMotion: boolean };
 
@@ -63,19 +64,6 @@ function CameraJourney({ progress, reducedMotion }: Props) {
   return null;
 }
 
-function Water({ reducedMotion }: { reducedMotion: boolean }) {
-  const material = useRef<THREE.MeshStandardMaterial>(null);
-  useFrame(({ clock }) => {
-    if (material.current && !reducedMotion) material.current.opacity = 0.75 + Math.sin(clock.elapsedTime * 0.8) * 0.07;
-  });
-  return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -3.5, 0]} receiveShadow>
-      <planeGeometry args={[14000, 14000]} />
-      <meshStandardMaterial ref={material} color="#07586a" metalness={0.22} roughness={0.46} transparent opacity={0.78} />
-    </mesh>
-  );
-}
-
 export default function StormStoryScene({ progress, reducedMotion }: Props) {
   return (
     <Canvas
@@ -90,7 +78,7 @@ export default function StormStoryScene({ progress, reducedMotion }: Props) {
       <hemisphereLight args={["#cce9e7", "#0a3440", 2]} />
       <directionalLight position={[900, 1650, -650]} intensity={3.1} color="#f8d5a4" />
       <directionalLight position={[-800, 780, 900]} intensity={1.25} color="#4fe7dd" />
-      <Water reducedMotion={reducedMotion} />
+      <AnimatedSea reduced={reducedMotion} storm={5} />
       <Suspense fallback={null}><MangaModel /></Suspense>
       <CameraJourney progress={progress} reducedMotion={reducedMotion} />
     </Canvas>

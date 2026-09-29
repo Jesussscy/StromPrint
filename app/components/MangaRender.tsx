@@ -158,6 +158,7 @@ export default function MangaRender(props: MangaMapProps) {
   const [showDem, setShowDem] = useState(true);
   const rainGround=useMemo(()=>showDem?ground:()=>0,[showDem,ground]);
   const [sunset, setSunset] = useState(false), [quality, setQuality] = useState(false);
+  const [weatherExpanded,setWeatherExpanded]=useState(false);
   const emergency=!!props.standalone&&weather.manual==='Critico';
   const [sample, setSample] = useState<Sample | null>(null);
   const [visible, setVisible] = useState(true);
@@ -175,7 +176,7 @@ export default function MangaRender(props: MangaMapProps) {
   function focusPoi(poi:MangaPoi) { const index=locations.findIndex(place=>place.poi?.id===poi.id);if(index<0)return;focus('zone',index);props.onSelectZona?.(null); }
   function startEmergency(){weather.setManual('Critico');weather.setDuration(6);weather.setManualTime(2);weather.setPlaying(true);focus('district');}
   function endEmergency(){weather.setPlaying(false);weather.setManual(null);weather.setManualTime(0);focus('district');}
-  return <section className={`manga6${props.standalone?' manga6--standalone':''}${emergency?' manga6--emergency':''}`} ref={container} aria-label="Manga: modelo 3D con sociedad portuaria">
+  return <section className={`manga6${props.standalone?' manga6--standalone':''}${emergency?' manga6--emergency':''}${weatherExpanded?' manga6--weather-open':''}`} ref={container} aria-label="Manga: modelo 3D con sociedad portuaria">
     <RenderBoundary>
       <Canvas frameloop={visible ? 'always' : 'never'} shadows={quality} dpr={[1, 1.5]} camera={{ position: [1700, 2100, 2100], fov: 43, near: 2, far: 15000 }} gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping }}>
         <color attach="background" args={[weather.rate>10 ? '#718995' : sunset ? '#e0bfa4' : '#bad4d7']} />
@@ -213,7 +214,7 @@ export default function MangaRender(props: MangaMapProps) {
         <button type="button" className="manga6-emergency-button" aria-label={emergency?'Detener simulación de emergencia':'Iniciar simulación de emergencia'} aria-pressed={emergency} onClick={emergency?endEmergency:startEmergency} title="Simular emergencia"><Siren size={23}/><span>{emergency?'Detener':'Emergencia'}</span></button>
       </div>
       <div className="manga6-map-hint"><CloudRain size={15}/><span>Arrastra para explorar · acerca para ver las calles</span></div>
-      {emergency&&<aside className="manga6-emergency-card" role="status" aria-label="Simulación de emergencia activa">
+      {emergency&&!weatherExpanded&&<aside className="manga6-emergency-card" role="status" aria-label="Simulación de emergencia activa">
         <div className="manga6-emergency-card__top"><Siren size={22}/><span>SIMULACIÓN EXTREMA</span><button type="button" onClick={endEmergency} aria-label="Cerrar simulación"><X size={18}/></button></div>
         <strong>Tormenta sobre Manga</strong>
         <p>Tormenta intensa durante {weather.duration} h y drenaje posterior. El agua se calcula sobre el relieve del modelo.</p>
@@ -228,7 +229,7 @@ export default function MangaRender(props: MangaMapProps) {
       {!results.length&&<p>No se encontraron ubicaciones.</p>}
     </aside>}
     {view==='zone'&&!searchOpen&&<aside className="manga6-place"><button aria-label="Cerrar lugar" onClick={()=>{focus('district');props.onSelectZona?.(null);}}><X size={16}/></button><strong>{locations[selected].name}</strong><p>{locations[selected].description}</p>{locations[selected].poi&&<p><b>{locations[selected].poi.category}</b><br/>{locations[selected].poi.address}</p>}{locations[selected].zone&&<><p>Agua estimada: {(weather.depths[selected]*100).toFixed(1)} cm</p>{roadSnapper&&!roadSnapper(locations[selected].position[0],locations[selected].position[1],25)&&<p>Fuera de la red de calles modelada; el agua no se dibuja en esta ubicación.</p>}</> }<a href={locations[selected].source} target="_blank" rel="noreferrer">Consultar ubicación ↗</a></aside>}
-    <WeatherPanel weather={weather} source={props.sourceLabel} hour={props.currentHour} standalone={props.standalone}/>
+    <WeatherPanel weather={weather} source={props.sourceLabel} hour={props.currentHour} standalone={props.standalone} onExpandedChange={setWeatherExpanded}/>
     <nav className="manga6-views" aria-label="Vistas del barrio">
       {([['district', 'Toda Manga'], ['top', 'Vista desde arriba']] as const).map(([key, label]) => <button key={key} aria-pressed={view === key} onClick={() => focus(key)}>{label}</button>)}
     </nav>

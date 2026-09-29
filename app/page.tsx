@@ -15,6 +15,7 @@ import AlertDrawer from "@/app/components/AlertDrawer";
 import AnimatedCounter from "@/app/components/AnimatedCounter";
 import SummaryDashboard from "@/app/components/SummaryDashboard";
 import MonitoringReveal from "@/app/components/MonitoringReveal";
+import MapPortalButton from "@/app/components/MapPortalButton";
 // Three.js (WebGL) es pesado (varios MB). Se carga de forma diferida (dynamic)
 // solo cuando el cliente lo monta, con ssr:false para no renderizar en el
 // servidor. En móvil además se carga apenas entra en viewport (loading lazy).
@@ -1049,6 +1050,7 @@ export default function LandingPage() {
             </p>
           </motion.div>
         </div>
+        <MapPortalButton />
         <DashboardEmbedded />
       </section>
 

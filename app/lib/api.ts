@@ -262,9 +262,11 @@ async function stormprintFetch<T>(path: string, init?: RequestInit): Promise<T> 
     ...(init?.headers as Record<string, string> ?? {}),
   };
 
-  // Timeout por request: evita que la UI quede colgada si el backend
-  // (serverless) tarda mas de lo razonable. 25s por defecto, configurable.
-  const timeoutMs = init?.signal ? Infinity : 25_000;
+  // El pronóstico y la consulta meteorológica pueden tardar más durante el
+  // arranque local. Darles tiempo evita mostrar un error mientras el backend
+  // sigue procesando una respuesta válida.
+  const slowRequest = path.startsWith("/api/v1/predecir") || path.startsWith("/api/v1/weather");
+  const timeoutMs = init?.signal ? Infinity : slowRequest ? 45_000 : 25_000;
   const controller = new AbortController();
   const timer = timeoutMs !== Infinity ? setTimeout(() => controller.abort(), timeoutMs) : null;
 

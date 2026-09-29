@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { CloudRain, Pause, Play, RotateCcw } from 'lucide-react';
+import { ChevronDown, CloudRain, Pause, Play, RotateCcw, Waves } from 'lucide-react';
 import type { MangaMapProps } from './MangaMap';
 import type { MangaData } from '@/app/lib/manga/types';
 import type { Grid, Scenario, Triangle, WaterResult } from '@/app/lib/manga/types';
@@ -152,8 +152,33 @@ export function useMangaWeather(props:MangaMapProps) {
 
 function formatSimulationTime(hours:number){const mins=Math.round(hours*60),h=Math.floor(mins/60),m=mins%60;return `${h} h ${String(m).padStart(2,'0')} min`;}
 
-export function WeatherPanel({weather:w,source,hour}:{weather:ReturnType<typeof useMangaWeather>;source?:string;hour?:number}) {
+export function WeatherPanel({weather:w,source,hour,standalone=false}:{weather:ReturnType<typeof useMangaWeather>;source?:string;hour?:number;standalone?:boolean}) {
   const [collapsed,setCollapsed]=useState(true);
+  if(standalone) return <aside className={`manga6-weather manga6-weather--studio${collapsed?' is-collapsed':''}`} aria-label="Laboratorio de lluvia">
+    <button className="manga6-weather__trigger" type="button" aria-expanded={!collapsed} onClick={()=>setCollapsed(v=>!v)}>
+      <span className="manga6-weather__icon"><CloudRain size={22}/></span>
+      <span className="manga6-weather__trigger-copy"><small>ATMÓSFERA · MANGA</small><strong>{w.manual?`Simulación: ${w.manual==='Critico'?'crítico':w.manual.toLowerCase()}`:w.hasWeather?rainLabel(w.rate):'Sin datos meteorológicos'}</strong></span>
+      <span className="manga6-weather__rate">{w.rate.toFixed(1)}<small>mm/h</small></span>
+      <ChevronDown className="manga6-weather__chevron" size={18}/>
+    </button>
+    {!collapsed&&<div className="manga6-weather__body">
+      <div className="manga6-weather__intro"><span className="manga6-weather__eyebrow"><Waves size={15}/> ESCENARIOS EXPLORATORIOS</span><h3>Haz llover sobre Manga.</h3><p>Elige una intensidad, define cuántas horas llueve y observa cómo evoluciona el agua en el terreno.</p></div>
+      <div className="manga6-weather__presets" role="group" aria-label="Intensidad de lluvia">
+        {(Object.keys(RAIN_PRESETS) as RainPreset[]).map(k=><button type="button" key={k} aria-pressed={w.manual===k} onClick={()=>w.setManual(k)}><span>{k==='Critico'?'Crítico':k}</span><b>{RAIN_PRESETS[k]}<small>mm/h</small></b></button>)}
+      </div>
+      {w.manual?<div className="manga6-weather__simulation">
+        <div className="manga6-weather__time-head"><span><b>{w.manualTime<w.duration?'Lluvia activa':'Drenaje posterior'}</b><small>{formatSimulationTime(w.manualTime)} de {formatSimulationTime(w.duration+6)}</small></span><button type="button" onClick={w.togglePlayback}>{w.playing?<Pause size={16}/>:<Play size={16}/>} {w.playing?'Pausar':'Reproducir'}</button></div>
+        <input aria-label="Línea de tiempo de inundación" type="range" min="0" max={w.duration+6} step="0.05" value={Math.min(w.manualTime,w.duration+6)} onChange={e=>{w.setManualTime(Number(e.target.value));w.setPlaying(false);}}/>
+        <div className="manga6-weather__scale"><span>0 h</span><span>{w.duration} h de lluvia</span><span>+6 h drenaje</span></div>
+        <label className="manga6-weather__duration">Duración de la lluvia <strong>{w.duration} horas</strong><input aria-label="Duración de lluvia artificial" type="range" min="1" max="24" value={w.duration} onChange={e=>w.setDuration(Number(e.target.value))}/></label>
+        <div className="manga6-weather__metrics"><span><small>ACUMULADO</small><b>{w.accumulatedMm.toFixed(1)} mm</b></span><span><small>PROFUNDIDAD MÁX.</small><b>{w.waterResult?(w.waterResult.maxDepthM*100).toFixed(0):'—'} cm</b></span></div>
+        <div className="manga6-weather__foot-actions"><button type="button" onClick={()=>{w.setPlaying(false);w.setManualTime(0);}}><RotateCcw size={14}/> Reiniciar</button><button type="button" onClick={()=>w.setManual(null)}>Salir de simulación</button></div>
+      </div>:<p className="manga6-weather__empty">Selecciona un escenario para activar la lluvia y la línea temporal. {w.hasWeather?`Ahora se muestran ${source??'datos meteorológicos'}.`:'Aún no hay datos meteorológicos para esta vista.'}</p>}
+      {(w.error||w.simulationError)&&<p className="manga6-weather__error" role="alert">{w.simulationError??'No se pudo cargar la capa de lluvia.'}</p>}
+      {w.computing&&<p role="status" className="manga6-weather__working">Calculando escorrentía…</p>}
+      <details className="manga6-weather__method"><summary>Cómo se calcula</summary><p>Modelo exploratorio 2D sobre celdas DEM de ~40 m. Infiltración 2 mm/h, drenaje 4 mm/h y lluvia uniforme. No es una alerta real ni un pronóstico validado.</p></details>
+    </div>}
+  </aside>;
   return <aside className={`manga6-weather${collapsed?' is-collapsed':''}`} aria-label="Control de lluvia">
     <div><CloudRain size={20}/><strong>{w.hasWeather?rainLabel(w.rate):'Sin datos meteorológicos'}</strong><span>{w.rate.toFixed(1)} mm/h</span><button type="button" aria-expanded={!collapsed} aria-label={collapsed?'Expandir control de lluvia':'Minimizar control de lluvia'} onClick={()=>setCollapsed(value=>!value)}>{collapsed?'Expandir':'Minimizar'}</button></div>
     {!collapsed&&<>

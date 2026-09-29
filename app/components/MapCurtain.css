@@ -1,4 +1,5 @@
 .map-curtain { position:fixed; inset:0; z-index:4000; display:grid; place-items:center; pointer-events:all; overflow:hidden; color:#ebfff6; }
+.map-curtain--embedded{position:absolute;inset:0 0 auto;height:min(100svh,100%);z-index:30;pointer-events:none}
 .map-curtain__panel { position:absolute; top:0; bottom:0; width:50.5%; background:radial-gradient(circle at 80% 45%,#0f6575,#073849 55%,#031d2b); }
 .map-curtain__panel--left { left:0; border-right:1px solid rgba(181,241,219,.24); }
 .map-curtain__panel--right { right:0; transform:scaleX(-1); border-right:1px solid rgba(181,241,219,.24); }

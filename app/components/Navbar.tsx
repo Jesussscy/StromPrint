@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Home, LayoutDashboard, Brain, Siren, Phone, Menu, X } from "lucide-react";
+import { Home, LayoutDashboard, Brain, Siren, Phone, Menu, X, Waves, ArrowUpRight, CloudSun } from "lucide-react";
 
 interface Tab {
   id: string;
@@ -122,23 +122,24 @@ export default function Navbar({
         left: 0,
         right: 0,
         zIndex: 50,
-        height: "calc(56px + env(safe-area-inset-top, 0px))",
+        height: "calc(66px + env(safe-area-inset-top, 0px))",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "0 16px",
+        padding: "0 clamp(14px, 2vw, 32px)",
         paddingTop: "env(safe-area-inset-top, 0px)",
-        background: "rgba(7,22,20,.86)",
-        backdropFilter: "blur(12px)",
-        borderBottom: "1px solid rgba(172,225,204,.12)",
+        background: "linear-gradient(90deg,rgba(5,31,39,.94),rgba(7,54,56,.91))",
+        backdropFilter: "blur(22px)",
+        borderBottom: "1px solid rgba(185,243,222,.28)",
+        boxShadow: "0 9px 32px rgba(0,27,37,.18)",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
         {/* Hamburguesa: abre el menú lateral en móvil */}
         <button
           onClick={() => setMenuAbierto(true)}
           aria-label="Abrir menú de navegación"
-          className="md:hidden"
+          className="xl:hidden"
           style={{
             display: "flex",
             alignItems: "center",
@@ -157,14 +158,15 @@ export default function Navbar({
           <Menu size={22} />
         </button>
 
-        <div style={{ fontWeight: 700, fontSize: 13, letterSpacing: "0.08em", color: "var(--text-primary, #fff)" }}>
-          STORMPRINT
+        <div style={{ display:"flex",alignItems:"center",gap:10,color:"#f1fff6" }}>
+          <span style={{display:"grid",placeItems:"center",width:35,height:35,borderRadius:11,background:"linear-gradient(145deg,#b8ead6,#6fbdb6)",color:"#12434a",boxShadow:"0 0 0 1px rgba(255,255,255,.36)"}}><Waves size={22}/></span>
+          <span style={{display:"flex",flexDirection:"column",gap:1}}><strong style={{fontSize:15,letterSpacing:".095em",lineHeight:1}}>STORMPRINT</strong><small style={{fontSize:8,letterSpacing:".16em",color:"#9dd5ce",fontFamily:"monospace"}}>CARTAGENA · COLOMBIA</small></span>
         </div>
       </div>
 
       {/* Desktop tabs */}
       <div
-        className="hidden md:flex"
+        className="hidden xl:flex"
         style={{
           position: "relative",
           alignItems: "center",
@@ -183,7 +185,7 @@ export default function Navbar({
               display: "flex",
               alignItems: "center",
               gap: 6,
-              padding: "8px 14px",
+              padding: "8px 11px",
               fontSize: 11,
               fontWeight: 600,
               letterSpacing: "0.06em",
@@ -195,8 +197,8 @@ export default function Navbar({
                 active === tab.id
                   ? "var(--text-active, #fff)"
                   : "var(--text-inactive, rgba(255,255,255,0.45))",
-              background: "none",
-              border: "none",
+              background: active === tab.id ? "rgba(176,238,219,.14)" : "none",
+              border: active === tab.id ? "1px solid rgba(191,248,225,.28)" : "1px solid transparent",
               cursor: "pointer",
               borderRadius: 8,
               transition: "color 0.2s, transform 0.15s",
@@ -240,8 +242,7 @@ export default function Navbar({
         />
       </div>
 
-      {/* Placeholder right area */}
-      <div className="hidden md:block" style={{ width: 80 }} />
+      <button type="button" className="hidden xl:flex" onClick={()=>router.push("/manga-3d")} style={{alignItems:"center",gap:8,minHeight:43,padding:"0 14px",border:"1px solid rgba(200,255,235,.6)",borderRadius:12,background:"linear-gradient(120deg,#d2f1df,#9edbcc)",color:"#17484c",fontSize:11,fontWeight:800,letterSpacing:".06em",cursor:"pointer"}}><CloudSun size={17}/> MAPA 3D <ArrowUpRight size={16}/></button>
 
       {/* ── Menú lateral móvil (hamburguesa) ─────────────────────────────── */}
       <AnimatePresence>
@@ -255,7 +256,7 @@ export default function Navbar({
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               onClick={() => setMenuAbierto(false)}
-              className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm md:hidden"
+              className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm xl:hidden"
               aria-hidden="true"
             />
             {/* Panel lateral que se desliza desde la izquierda (80% ancho) */}
@@ -265,7 +266,7 @@ export default function Navbar({
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", stiffness: 380, damping: 38 }}
-              className="fixed left-0 top-0 bottom-0 z-[80] flex w-[80%] max-w-[320px] flex-col bg-[#04090F]/98 md:hidden overflow-y-auto"
+              className="fixed left-0 top-0 bottom-0 z-[80] flex w-[80%] max-w-[320px] flex-col bg-[#072b33]/98 xl:hidden overflow-y-auto"
               style={{ borderRight: "1px solid var(--border, rgba(255,255,255,0.08))", boxShadow: "8px 0 32px rgba(0,0,0,0.5)" }}
               role="dialog"
               aria-modal="true"
@@ -321,8 +322,8 @@ export default function Navbar({
                         marginBottom: 4,
                         borderRadius: 12,
                         border: "none",
-                        background: esActivo ? "rgba(34,211,238,0.12)" : "transparent",
-                        color: esActivo ? "#22d3ee" : "var(--text-inactive, rgba(255,255,255,0.55))",
+                        background: esActivo ? "rgba(177,238,214,0.16)" : "transparent",
+                        color: esActivo ? "#bcebdc" : "rgba(232,251,245,.76)",
                         fontSize: 14,
                         fontWeight: 600,
                         fontFamily: "monospace",
@@ -334,13 +335,14 @@ export default function Navbar({
                         touchAction: "manipulation",
                       }}
                     >
-                      <span style={{ display: "flex", alignItems: "center", color: esActivo ? "#22d3ee" : "currentColor" }}>
+                      <span style={{ display: "flex", alignItems: "center", color: esActivo ? "#bcebdc" : "currentColor" }}>
                         {tab.icon}
                       </span>
                       {tab.label}
                     </button>
                   );
                 })}
+                <button type="button" onClick={()=>{setMenuAbierto(false);router.push("/manga-3d");}} style={{display:"flex",alignItems:"center",gap:12,width:"100%",minHeight:48,padding:"0 14px",marginTop:16,border:"1px solid rgba(187,245,222,.45)",borderRadius:12,background:"rgba(177,238,214,.14)",color:"#dcfaeb",fontSize:13,fontWeight:800,letterSpacing:".06em",cursor:"pointer"}}><CloudSun size={20}/> EXPLORAR MAPA 3D <ArrowUpRight size={17}/></button>
               </div>
             </motion.aside>
           </>

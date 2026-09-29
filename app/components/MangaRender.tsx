@@ -7,7 +7,7 @@ import type { OrbitControls as Controls } from 'three-stdlib';
 import * as THREE from 'three';
 import metadata from '@/public/models/manga/v6.1/metadata.json';
 import './MangaRender.css';
-import { ArrowLeft, CloudRain, Compass, Layers3, Map as MapIcon, Moon, Search, Siren, Sun, X } from 'lucide-react';
+import { ArrowLeft, CloudRain, Compass, Layers3, Map as MapIcon, Mountain, Moon, Search, Siren, Sun, Trees, Building2, Sparkles, X } from 'lucide-react';
 import type { MangaMapProps } from './MangaMap';
 import { ZONAS_MANGA } from '@/app/lib/zonasManga';
 import { zoneLocal } from '@/app/lib/manga/adapter';
@@ -182,7 +182,7 @@ export default function MangaRender(props: MangaMapProps) {
         <hemisphereLight args={[sunset ? '#ffd4a5' : '#eef7ff', '#6e7961', 1.6]} />
         <directionalLight position={sunset ? [-900, 550, 800] : [700, 1600, -600]} intensity={weather.rate>10 ? .9 : sunset ? 2.4 : 2.1} color={sunset ? '#ffc58f' : '#fff4db'} castShadow={quality}
           shadow-mapSize={[2048, 2048]} shadow-camera-left={-1400} shadow-camera-right={1400} shadow-camera-top={1400} shadow-camera-bottom={-1400} shadow-camera-far={5000} shadow-bias={-.0002} />
-        <AnimatedSea storm={weather.rate} sunset={sunset} reduced={weather.reduced} />
+        <AnimatedSea storm={weather.rate} sunset={sunset} reduced={weather.reduced} boundary={weather.data?.boundary} />
         <Suspense fallback={null}><City buildings={buildings} vegetation={vegetation} quality={quality} showDem={showDem} ground={ground} roadMask={roadMask} onReady={props.onReady} /></Suspense>
         <MangaTerrain visible={showDem} dem={dem} ground={ground} />
         <MangaRoads dem={dem} visible={showDem} />
@@ -197,15 +197,13 @@ export default function MangaRender(props: MangaMapProps) {
     <div className="manga6-actions">
       <button aria-label="Buscar ubicación" aria-expanded={searchOpen} onClick={()=>setSearchOpen(v=>!v)}><Search size={18}/><span>Buscar</span></button>
       <button onClick={() => setSunset(v => !v)} aria-pressed={sunset}>{sunset?<Moon size={18}/>:<Sun size={18}/>}<span>{sunset ? 'Atardecer' : 'Luz de día'}</span></button>
-      <details><summary><Layers3 size={18}/><span>Capas</span></summary><div>
-        <label><input type="checkbox" checked={buildings} onChange={e => setBuildings(e.target.checked)} />Casas y edificios</label>
-        <label><input type="checkbox" checked={vegetation} onChange={e => setVegetation(e.target.checked)} />Vegetación</label>
-        <label><input type="checkbox" checked={showDem} onChange={e => setShowDem(e.target.checked)} />Relieve y pendiente (DEM SRTM)</label>
-        <p>Terreno EGM96 · celdas de 40 m · elevación radar SRTM 30 m (2000). Pendiente calculada entre caras del DEM.</p>
-
-        <label><input type="checkbox" checked={quality} onChange={e => setQuality(e.target.checked)} />Sombras y más detalle</label>
-        <p>{sample ? `${sample.fps} FPS · ${sample.calls} llamadas · ${sample.triangles.toLocaleString('es-CO')} triángulos` : 'Cargando geometría…'}</p>
-        <a href="/models/manga/v6.1/manga-v6.1.glb" download>Descargar modelo 6.1</a>
+      <details className="manga6-layer-menu"><summary><Layers3 size={18}/><span>Capas</span></summary><div>
+        <div className="manga6-layer-title"><strong>Capas del mapa</strong><small>Personaliza la vista 3D</small></div>
+        <label><Mountain size={19}/><span><b>Relieve</b><small>Elevación y pendiente DEM</small></span><input type="checkbox" checked={showDem} onChange={e => setShowDem(e.target.checked)} /></label>
+        <label><Building2 size={19}/><span><b>Edificaciones</b><small>Casas y estructuras</small></span><input type="checkbox" checked={buildings} onChange={e => setBuildings(e.target.checked)} /></label>
+        <label><Trees size={19}/><span><b>Vegetación</b><small>Árboles y zonas verdes</small></span><input type="checkbox" checked={vegetation} onChange={e => setVegetation(e.target.checked)} /></label>
+        <label><Sparkles size={19}/><span><b>Detalle visual</b><small>Sombras de mayor calidad</small></span><input type="checkbox" checked={quality} onChange={e => setQuality(e.target.checked)} /></label>
+        <div className="manga6-layer-foot"><span>{sample ? `${sample.fps} FPS · ${sample.triangles.toLocaleString('es-CO')} triángulos` : 'Preparando geometría…'}</span><a href="/models/manga/v6.1/manga-v6.1.glb" download>Descargar modelo ↗</a></div>
       </div></details>
     </div>
     {props.standalone&&<>
@@ -230,7 +228,7 @@ export default function MangaRender(props: MangaMapProps) {
       {!results.length&&<p>No se encontraron ubicaciones.</p>}
     </aside>}
     {view==='zone'&&!searchOpen&&<aside className="manga6-place"><button aria-label="Cerrar lugar" onClick={()=>{focus('district');props.onSelectZona?.(null);}}><X size={16}/></button><strong>{locations[selected].name}</strong><p>{locations[selected].description}</p>{locations[selected].poi&&<p><b>{locations[selected].poi.category}</b><br/>{locations[selected].poi.address}</p>}{locations[selected].zone&&<><p>Agua estimada: {(weather.depths[selected]*100).toFixed(1)} cm</p>{roadSnapper&&!roadSnapper(locations[selected].position[0],locations[selected].position[1],25)&&<p>Fuera de la red de calles modelada; el agua no se dibuja en esta ubicación.</p>}</> }<a href={locations[selected].source} target="_blank" rel="noreferrer">Consultar ubicación ↗</a></aside>}
-    <WeatherPanel weather={weather} source={props.sourceLabel} hour={props.currentHour}/>
+    <WeatherPanel weather={weather} source={props.sourceLabel} hour={props.currentHour} standalone={props.standalone}/>
     <nav className="manga6-views" aria-label="Vistas del barrio">
       {([['district', 'Toda Manga'], ['top', 'Vista desde arriba']] as const).map(([key, label]) => <button key={key} aria-pressed={view === key} onClick={() => focus(key)}>{label}</button>)}
     </nav>

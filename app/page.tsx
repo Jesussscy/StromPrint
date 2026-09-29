@@ -14,7 +14,7 @@ import CommandCenter from "@/app/components/CommandCenter";
 import AlertDrawer from "@/app/components/AlertDrawer";
 import AnimatedCounter from "@/app/components/AnimatedCounter";
 import SummaryDashboard from "@/app/components/SummaryDashboard";
-import NotificationBanner from "@/app/components/NotificationBanner";
+import MonitoringReveal from "@/app/components/MonitoringReveal";
 // Three.js (WebGL) es pesado (varios MB). Se carga de forma diferida (dynamic)
 // solo cuando el cliente lo monta, con ssr:false para no renderizar en el
 // servidor. En móvil además se carga apenas entra en viewport (loading lazy).
@@ -1002,7 +1002,6 @@ export default function LandingPage() {
     <>
       <Navbar />
       <CursorTracker />
-      <NotificationBanner />
       <AlertDrawer
         nivelAguaCm={prediccion?.nivel_actual_cm}
         nivelMaximo={prediccion?.nivel_maximo_cm}
@@ -1038,6 +1037,7 @@ export default function LandingPage() {
 
       {/* El monitoreo sigue inmediatamente después de la portada y conserva el dashboard completo. */}
       <section id="panel-vivo" className="storm-monitoring relative py-10 px-4 sm:px-6 md:py-20">
+        <MonitoringReveal />
         <div className="mx-auto max-w-7xl mb-8">
           <motion.div {...FADE} className="text-center">
             <p className="mb-3 font-mono text-[10px] uppercase tracking-[.28em] text-cyan">Centro de monitoreo · datos en vivo</p>

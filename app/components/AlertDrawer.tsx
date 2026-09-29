@@ -241,10 +241,10 @@ export default function AlertDrawer({ nivelAguaCm, nivelMaximo, tendenciaCmH, on
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Centro de alertas"
-        className="fixed bottom-20 left-4 z-[55] md:bottom-6 md:left-6 md:z-[90] glass-glow rounded-xl p-3 cursor-pointer active:scale-95 transition-transform duration-150 min-w-[44px] min-h-[44px] flex items-center justify-center"
-        style={{ borderColor: `${NIVEL_STYLE[nivelActual].color}55`, boxShadow: `0 0 14px ${NIVEL_STYLE[nivelActual].glow}` }}
+        className="fixed bottom-20 left-4 z-[55] md:bottom-6 md:left-6 md:z-[90] rounded-2xl p-3 cursor-pointer active:scale-95 transition-transform duration-150 min-w-[48px] min-h-[48px] flex items-center justify-center"
+        style={{ background:"rgba(7,45,54,.9)",border:"1px solid rgba(191,244,224,.55)",backdropFilter:"blur(18px)",boxShadow: unread>0?`0 0 18px ${NIVEL_STYLE[nivelActual].glow}`:"0 8px 24px rgba(2,28,36,.3)" }}
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={NIVEL_STYLE[nivelActual].color} strokeWidth="1.5">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={unread>0?NIVEL_STYLE[nivelActual].color:"#c7eedf"} strokeWidth="1.7">
           <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
           <path d="M13.73 21a2 2 0 0 1-3.46 0" />
         </svg>
@@ -279,8 +279,8 @@ export default function AlertDrawer({ nivelAguaCm, nivelMaximo, tendenciaCmH, on
               aria-label="Centro de Alertas"
               className="fixed right-0 top-0 bottom-0 z-[100] w-[380px] max-w-[94vw] overflow-y-auto safe-area-bottom backdrop-blur-xl"
               style={{
-                background: "rgba(8, 12, 20, 0.96)",
-                borderLeft: "1px solid rgba(0, 243, 255, 0.2)",
+                background: "rgba(5, 36, 45, 0.97)",
+                borderLeft: "1px solid rgba(187, 242, 221, 0.35)",
               }}
               drag="x"
               dragConstraints={{ left: 0, right: 0 }}
@@ -306,16 +306,16 @@ export default function AlertDrawer({ nivelAguaCm, nivelMaximo, tendenciaCmH, on
 
                 {/* Métricas */}
                 <div className="mb-4 grid grid-cols-2 gap-2">
-                  <MiniMetric label="Alertas hoy" valor={String(metrics.alertas_hoy ?? 0)} color="#FFD600" />
+                  <MiniMetric label="Alertas hoy" valor={String(metrics.alertas_hoy ?? 0)} color="#bcebdc" />
                   <MiniMetric
                     label="Última alerta"
                     valor={metrics.ultima_alerta ? getTimeAgo(metrics.ultima_alerta, now) : "—"}
-                    color="#FF0055"
+                    color="#92d9d0"
                   />
                 </div>
 
                 {/* Acciones */}
-                <div className="mb-4 flex gap-2">
+                {unread>0&&<div className="mb-4 flex gap-2">
                   <button
                     onClick={silenciarTodas}
                     className="glass-glow rounded-lg px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-slate-300 hover:text-white transition"
@@ -323,7 +323,7 @@ export default function AlertDrawer({ nivelAguaCm, nivelMaximo, tendenciaCmH, on
                     <svg className="inline-block mr-1.5 -mt-0.5" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16.8 3.27A16 16 0 0 0 4 7l-1.27-.63A2 2 0 0 0 0 8.12V20a2 2 0 0 0 3.27 1.51l1.27-1.27A16 16 0 0 0 16.8 24h1.5a2.5 2.5 0 0 0 2.5-2.5v-2.76A16 16 0 0 0 22 19.75L20 21a2 2 0 0 1-3.27-1.51V8.12a2 2 0 0 1 1.51-2z" /><line x1="2" y1="2" x2="22" y2="22" /></svg>
                     Silenciar todas
                   </button>
-                </div>
+                </div>}
 
                 {/* Lista */}
                 <div className="space-y-2.5">

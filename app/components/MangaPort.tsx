@@ -289,7 +289,46 @@ function Wake({x,y,length,width,angle=0}:{x:number;y:number;length:number;width:
   </mesh>;
 }
 
-export function AnimatedSea({storm=0,sunset=false,reduced=false}:{storm?:number;sunset?:boolean;reduced?:boolean}) {
+function ShoreBreak({boundary,reduced,storm}:{boundary:[number,number][];reduced:boolean;storm:number}) {
+  const geometry=useMemo(()=>{
+    const positions:number[]=[],across:number[]=[],along:number[]=[],indices:number[]=[];
+    const area=boundary.reduce((sum,[x,y],i)=>{const [nx,ny]=boundary[(i+1)%boundary.length];return sum+x*ny-nx*y;},0);
+    const orientation=area<0?1:-1;
+    let distance=0;
+    boundary.forEach(([x,y],i)=>{
+      const [nx,ny]=boundary[(i+1)%boundary.length],dx=nx-x,dy=ny-y,length=Math.hypot(dx,dy);
+      if(length<.01)return;
+      const ox=-dy/length*orientation,oy=dx/length*orientation,base=positions.length/3;
+      for(const [px,py,d] of [[x,y,1],[x,y,18],[nx,ny,1],[nx,ny,18]]){
+        positions.push(px+ox*d,-.91,-(py+oy*d));across.push(d/18);along.push(distance+(px===nx&&py===ny?length:0));
+      }
+      indices.push(base,base+1,base+2,base+1,base+3,base+2);
+      distance+=length;
+    });
+    const result=new THREE.BufferGeometry();
+    result.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+    result.setAttribute('aAcross',new THREE.Float32BufferAttribute(across,1));
+    result.setAttribute('aAlong',new THREE.Float32BufferAttribute(along,1));
+    result.setIndex(indices);result.computeVertexNormals();return result;
+  },[boundary]);
+  const material=useMemo(()=>new THREE.ShaderMaterial({
+    uniforms:{uTime:{value:0},uStorm:{value:0}},transparent:true,depthWrite:false,side:THREE.DoubleSide,
+    vertexShader:`attribute float aAcross;attribute float aAlong;varying float vAcross;varying float vAlong;void main(){vAcross=aAcross;vAlong=aAlong;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+    fragmentShader:`uniform float uTime;uniform float uStorm;varying float vAcross;varying float vAlong;
+      void main(){float wash=.5+.5*sin(vAcross*13.-uTime*(1.8+uStorm*.8)+vAlong*.029);
+        float soft=1.-smoothstep(.12,.98,vAcross);float lace=pow(wash,5.)*.28;
+        float broken=.74+.26*sin(vAlong*.13+sin(vAlong*.037-uTime*.7));
+        float alpha=(.28*soft+lace*soft)*broken*(.8+uStorm*.36);
+        gl_FragColor=vec4(mix(vec3(.36,.71,.7),vec3(.88,.96,.9),wash*.6),alpha);
+      }`,
+  }),[]);
+  useFrame((_,dt)=>{if(!reduced)material.uniforms.uTime.value+=Math.min(dt,.1);material.uniforms.uStorm.value+=(Math.min(storm/30,1)-material.uniforms.uStorm.value)*Math.min(1,dt*2);});
+  useEffect(()=>()=>geometry.dispose(),[geometry]);
+  useEffect(()=>()=>material.dispose(),[material]);
+  return <mesh geometry={geometry} material={material} raycast={()=>{}} renderOrder={4}/>;
+}
+
+export function AnimatedSea({storm=0,sunset=false,reduced=false,boundary}:{storm?:number;sunset?:boolean;reduced?:boolean;boundary?:[number,number][]}) {
   const material=useMemo(()=>new THREE.ShaderMaterial({
     uniforms:{uTime:{value:0},uStorm:{value:0},uSunset:{value:0},uLightDir:{value:new THREE.Vector3(.42,.82,-.38)}},
     vertexShader:`uniform float uTime;uniform float uStorm;varying vec2 vSea;varying float vWave;varying vec3 vWorld;
@@ -317,21 +356,20 @@ export function AnimatedSea({storm=0,sunset=false,reduced=false}:{storm?:number;
         vec3 normal=normalize(vec3(-dx*4.2,1.,-dz*4.2));vec3 viewDir=normalize(cameraPosition-vWorld);
         vec3 halfDir=normalize(normalize(uLightDir)+viewDir);
         float fresnel=pow(1.-max(dot(normal,viewDir),0.),3.2);
-        float spec=pow(max(dot(normal,halfDir),0.),72.)*(.32+uStorm*.2);
-        float broad=.5+.5*sin(dot(q,vec2(.014,.009))-uTime*.52);
-        float chopA=sin(dot(q,vec2(.034,.021))-uTime*1.18+sin(q.y*.009+uTime*.3)*.45);
-        float chopB=sin(dot(q,vec2(-.019,.037))+uTime*.91);
-        float ripple=chopA*chopB;
-        float crest=smoothstep(.25,.42,h)*smoothstep(.008,.035,abs(dx)+abs(dz));
-        float foam=clamp(crest*(.12+uStorm*.42)+pow(max(0.,ripple),10.)*(.12+uStorm*.12),0.,.48);
-        float glint=pow(max(0.,sin(dot(q,vec2(.047,-.028))+uTime*1.5)*sin(dot(q,vec2(.021,.055))-uTime*1.07)),9.);
-        vec3 deep=mix(vec3(.018,.115,.19),vec3(.035,.17,.23),uSunset*.55);
-        vec3 shallows=mix(vec3(.045,.29,.34),vec3(.20,.34,.37),uSunset*.48);
-        vec3 colour=mix(deep,shallows,clamp(.24+broad*.48+vWave*.15,0.,1.));
-        colour=mix(colour,vec3(.24,.54,.57),fresnel*.66);
-        colour+=vec3(.8,.91,.87)*(spec*.85+glint*(.22+uStorm*.22));
-        colour=mix(colour,vec3(.77,.88,.83),foam);
-        colour=mix(colour,vec3(.035,.12,.18),uStorm*.22);
+        float spec=pow(max(dot(normal,halfDir),0.),28.)*(.22+uStorm*.08);
+        vec2 warped=q+vec2(sin(q.y*.008+uTime*.29)*27.,sin(q.x*.006-uTime*.23)*34.);
+        float broad=.5+.5*sin(dot(warped,vec2(.011,.006))-uTime*.48);
+        float rolling=.5+.5*sin(dot(warped,vec2(.019,.012))-uTime*.77+sin(q.y*.004+uTime*.18)*.8);
+        float crossing=.5+.5*sin(dot(q,vec2(-.013,.027))+uTime*.55);
+        float crest=smoothstep(.79,.995,rolling)*smoothstep(.55,.93,broad);
+        float foam=crest*(.018+uStorm*.065);
+        vec3 deep=mix(vec3(.012,.105,.15),vec3(.07,.17,.19),uSunset*.55);
+        vec3 shallows=mix(vec3(.035,.22,.25),vec3(.18,.30,.31),uSunset*.48);
+        vec3 colour=mix(deep,shallows,clamp(.28+broad*.14+crossing*.08+vWave*.035,0.,1.));
+        colour=mix(colour,vec3(.21,.45,.47),fresnel*.27);
+        colour+=vec3(.63,.82,.79)*(spec*.34+crest*.028);
+        colour=mix(colour,vec3(.64,.82,.78),foam);
+        colour=mix(colour,vec3(.03,.09,.13),uStorm*.22);
         gl_FragColor=vec4(colour,1.);
       }`,
     side:THREE.DoubleSide,
@@ -344,9 +382,12 @@ export function AnimatedSea({storm=0,sunset=false,reduced=false}:{storm?:number;
     material.uniforms.uLightDir.value.set(sunset?-.72:.42,sunset?.34:.82,sunset?-.6:-.38).normalize();
   });
   useEffect(()=>()=>material.dispose(),[material]);
-  return <mesh position={[0,-1.12,0]} rotation={[-Math.PI/2,0,0]} material={material} raycast={()=>{}}>
-    <planeGeometry args={[8000,8000,128,128]} />
-  </mesh>;
+  return <>
+    <mesh position={[0,-1.12,0]} rotation={[-Math.PI/2,0,0]} material={material} raycast={()=>{}}>
+      <planeGeometry args={[8000,8000,128,128]} />
+    </mesh>
+    {boundary&&<ShoreBreak boundary={boundary} reduced={reduced} storm={storm}/>}
+  </>;
 }
 
 export default function MangaPort({structures=true,ground=null}:{structures?:boolean;ground?:GroundSampler|null}) {

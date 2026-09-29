@@ -116,7 +116,7 @@ export default function MobileBottomNav({ items = NAV_MAIN }: MobileBottomNavPro
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-[60] md:hidden border-t border-cyan/15 bg-[#050A0F]/95 backdrop-blur-xl safe-area-bottom"
+      className="fixed inset-x-0 bottom-0 z-[60] md:hidden border-t border-[#a8e6d2]/30 bg-[#082c35]/95 backdrop-blur-xl safe-area-bottom"
       role="navigation"
       aria-label="Navegación móvil"
     >
@@ -132,7 +132,7 @@ export default function MobileBottomNav({ items = NAV_MAIN }: MobileBottomNavPro
               </span>
               <span
                 className={`pointer-events-none font-mono text-[9.5px] uppercase tracking-wider transition-colors duration-200 ${
-                  isActive ? "text-cyan" : "text-slate-500"
+                  isActive ? "text-[#bcebdc]" : "text-[#a3c5c1]"
                 }`}
               >
                 {item.label}
@@ -149,7 +149,7 @@ export default function MobileBottomNav({ items = NAV_MAIN }: MobileBottomNavPro
                 aria-label={item.label}
                 aria-current={isActive ? "page" : undefined}
                 className={`${base} active:scale-95 transition-transform duration-150`}
-                style={{ color: isActive ? "#22d3ee" : "#64748b", WebkitTapHighlightColor: "transparent" }}
+                style={{ color: isActive ? "#bcebdc" : "#a3c5c1", WebkitTapHighlightColor: "transparent" }}
               >
                 {label}
               </Link>
@@ -164,7 +164,7 @@ export default function MobileBottomNav({ items = NAV_MAIN }: MobileBottomNavPro
               aria-label={item.label}
               aria-current={isActive ? "page" : undefined}
               className={`${base} active:scale-95 transition-transform duration-150`}
-              style={{ color: isActive ? "#22d3ee" : "#64748b", WebkitTapHighlightColor: "transparent" }}
+              style={{ color: isActive ? "#bcebdc" : "#a3c5c1", WebkitTapHighlightColor: "transparent" }}
             >
               {label}
             </a>

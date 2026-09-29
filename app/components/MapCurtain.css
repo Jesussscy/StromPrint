@@ -1,0 +1,22 @@
+.map-curtain { position:fixed; inset:0; z-index:4000; display:grid; place-items:center; pointer-events:all; overflow:hidden; color:#ebfff6; }
+.map-curtain__panel { position:absolute; top:0; bottom:0; width:50.5%; background:radial-gradient(circle at 80% 45%,#0f6575,#073849 55%,#031d2b); }
+.map-curtain__panel--left { left:0; border-right:1px solid rgba(181,241,219,.24); }
+.map-curtain__panel--right { right:0; transform:scaleX(-1); border-right:1px solid rgba(181,241,219,.24); }
+.map-curtain--close .map-curtain__panel--left { animation:map-curtain-close-left .75s cubic-bezier(.76,0,.24,1) both; }
+.map-curtain--close .map-curtain__panel--right { animation:map-curtain-close-right .75s cubic-bezier(.76,0,.24,1) both; }
+.map-curtain--open .map-curtain__panel--left { animation:map-curtain-open-left 1.05s .32s cubic-bezier(.76,0,.24,1) both; }
+.map-curtain--open .map-curtain__panel--right { animation:map-curtain-open-right 1.05s .32s cubic-bezier(.76,0,.24,1) both; }
+@keyframes map-curtain-close-left { from { transform:translateX(-101%); } to { transform:translateX(0); } }
+@keyframes map-curtain-close-right { from { transform:translateX(101%) scaleX(-1); } to { transform:translateX(0) scaleX(-1); } }
+@keyframes map-curtain-open-left { from { transform:translateX(0); } to { transform:translateX(-101%); } }
+@keyframes map-curtain-open-right { from { transform:translateX(0) scaleX(-1); } to { transform:translateX(101%) scaleX(-1); } }
+.map-curtain__center { position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; gap:10px; font:700 12px/1.3 var(--font-mono),monospace; letter-spacing:.22em; text-align:center; }
+.map-curtain__orbit { display:grid; place-items:center; width:100px; height:100px; margin-bottom:14px; border:1px solid rgba(201,248,228,.75); border-radius:50%; box-shadow:0 0 0 14px rgba(201,248,228,.07),0 0 65px rgba(120,222,210,.38); animation:map-curtain-orbit 1.5s ease-in-out infinite alternate; }
+.map-curtain__center span { color:#a5d9d3; font-size:10px; }
+.map-curtain--close .map-curtain__center { animation:map-curtain-center-in .45s .33s both; }
+.map-curtain--open .map-curtain__center { animation:map-curtain-center-out .45s .24s both; }
+@keyframes map-curtain-center-in { from { opacity:0; transform:scale(.75); } to { opacity:1; transform:scale(1); } }
+@keyframes map-curtain-center-out { to { opacity:0; transform:scale(1.3); } }
+@keyframes map-curtain-orbit { to { transform:scale(1.08); box-shadow:0 0 0 23px rgba(201,248,228,.04),0 0 90px rgba(120,222,210,.5); } }
+.map-curtain__line { position:absolute; z-index:1; inset:0; pointer-events:none; background:repeating-radial-gradient(circle at 50% 50%,transparent 0 75px,rgba(185,242,225,.08) 76px 77px); }
+@media (prefers-reduced-motion:reduce) { .map-curtain__panel,.map-curtain__center,.map-curtain__orbit { animation-duration:.01ms!important; animation-delay:0ms!important; } }

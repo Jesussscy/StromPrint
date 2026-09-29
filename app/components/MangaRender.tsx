@@ -7,7 +7,7 @@ import type { OrbitControls as Controls } from 'three-stdlib';
 import * as THREE from 'three';
 import metadata from '@/public/models/manga/v6.1/metadata.json';
 import './MangaRender.css';
-import { Search, X } from 'lucide-react';
+import { ArrowLeft, CloudRain, Compass, Layers3, Map as MapIcon, Moon, Search, Siren, Sun, X } from 'lucide-react';
 import type { MangaMapProps } from './MangaMap';
 import { ZONAS_MANGA } from '@/app/lib/zonasManga';
 import { zoneLocal } from '@/app/lib/manga/adapter';
@@ -36,8 +36,9 @@ const locations:Place[] = [...ZONAS_MANGA.map(z=>({name:z.nombre,detail:z.ubicac
   {name:'Buque portacontenedores',detail:'Sociedad Portuaria',description:'Buque de carga y operación de contenedores; representación conceptual.',position:[651,-780,0],zone:null,source:'https://www.google.com/maps/search/?api=1&query=Sociedad+Portuaria+de+Cartagena'}];
 const normalize=(s:string)=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
-function City({ buildings, vegetation, quality, showDem, ground,roadMask }: { buildings: boolean; vegetation: boolean; quality: boolean; showDem: boolean; ground:ReturnType<typeof useGroundSampler>;roadMask:ReturnType<typeof useRoadMask> }) {
+function City({ buildings, vegetation, quality, showDem, ground,roadMask,onReady }: { buildings: boolean; vegetation: boolean; quality: boolean; showDem: boolean; ground:ReturnType<typeof useGroundSampler>;roadMask:ReturnType<typeof useRoadMask>;onReady?:()=>void }) {
   const { scene } = useGLTF('/models/manga/v6.1/manga-v6.1.glb', '/models/manga/draco/');
+  useEffect(()=>{onReady?.();},[onReady]);
   const local = useMemo(() => {
     const copy=scene.clone(true);
     copy.updateMatrixWorld(true);
@@ -157,6 +158,7 @@ export default function MangaRender(props: MangaMapProps) {
   const [showDem, setShowDem] = useState(true);
   const rainGround=useMemo(()=>showDem?ground:()=>0,[showDem,ground]);
   const [sunset, setSunset] = useState(false), [quality, setQuality] = useState(false);
+  const emergency=!!props.standalone&&weather.manual==='Critico';
   const [sample, setSample] = useState<Sample | null>(null);
   const [visible, setVisible] = useState(true);
   const container = useRef<HTMLElement>(null);
@@ -171,7 +173,9 @@ export default function MangaRender(props: MangaMapProps) {
   useEffect(()=>{if(props.focusZonaId!=null){const i=locations.findIndex(l=>l.zone?.id===props.focusZonaId);if(i>=0){setSelected(i);setView('zone');setRevision(r=>r+1);}}},[props.focusZonaId]);
   function focus(next: View, index = 0) { setView(next);setSelected(index);setRevision(r => r + 1); }
   function focusPoi(poi:MangaPoi) { const index=locations.findIndex(place=>place.poi?.id===poi.id);if(index<0)return;focus('zone',index);props.onSelectZona?.(null); }
-  return <section className="manga6" ref={container} aria-label="Manga: modelo 3D con sociedad portuaria">
+  function startEmergency(){weather.setManual('Critico');weather.setDuration(6);weather.setManualTime(2);weather.setPlaying(true);focus('district');}
+  function endEmergency(){weather.setPlaying(false);weather.setManual(null);weather.setManualTime(0);focus('district');}
+  return <section className={`manga6${props.standalone?' manga6--standalone':''}${emergency?' manga6--emergency':''}`} ref={container} aria-label="Manga: modelo 3D con sociedad portuaria">
     <RenderBoundary>
       <Canvas frameloop={visible ? 'always' : 'never'} shadows={quality} dpr={[1, 1.5]} camera={{ position: [1700, 2100, 2100], fov: 43, near: 2, far: 15000 }} gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping }}>
         <color attach="background" args={[weather.rate>10 ? '#718995' : sunset ? '#e0bfa4' : '#bad4d7']} />
@@ -179,7 +183,7 @@ export default function MangaRender(props: MangaMapProps) {
         <directionalLight position={sunset ? [-900, 550, 800] : [700, 1600, -600]} intensity={weather.rate>10 ? .9 : sunset ? 2.4 : 2.1} color={sunset ? '#ffc58f' : '#fff4db'} castShadow={quality}
           shadow-mapSize={[2048, 2048]} shadow-camera-left={-1400} shadow-camera-right={1400} shadow-camera-top={1400} shadow-camera-bottom={-1400} shadow-camera-far={5000} shadow-bias={-.0002} />
         <AnimatedSea storm={weather.rate} sunset={sunset} reduced={weather.reduced} />
-        <Suspense fallback={null}><City buildings={buildings} vegetation={vegetation} quality={quality} showDem={showDem} ground={ground} roadMask={roadMask} /></Suspense>
+        <Suspense fallback={null}><City buildings={buildings} vegetation={vegetation} quality={quality} showDem={showDem} ground={ground} roadMask={roadMask} onReady={props.onReady} /></Suspense>
         <MangaTerrain visible={showDem} dem={dem} ground={ground} />
         <MangaRoads dem={dem} visible={showDem} />
         <MangaPort structures={buildings} ground={ground} />
@@ -188,11 +192,12 @@ export default function MangaRender(props: MangaMapProps) {
       </Canvas>
     </RenderBoundary>
     <Progress />
+    {props.standalone&&<a className="manga6-back" href="/"><ArrowLeft size={18}/><span>Volver al sitio</span></a>}
     <header className="manga6-heading"><span>CARTAGENA DE INDIAS · V6.1 + PUERTO</span><h3>Manga</h3><p>Monitoreo de lluvia e inundaciones</p></header>
     <div className="manga6-actions">
-      <button aria-label="Buscar ubicación" aria-expanded={searchOpen} onClick={()=>setSearchOpen(v=>!v)}><Search size={18}/></button>
-      <button onClick={() => setSunset(v => !v)} aria-pressed={sunset}>{sunset ? 'Atardecer' : 'Luz de día'}</button>
-      <details><summary>Capas y calidad</summary><div>
+      <button aria-label="Buscar ubicación" aria-expanded={searchOpen} onClick={()=>setSearchOpen(v=>!v)}><Search size={18}/><span>Buscar</span></button>
+      <button onClick={() => setSunset(v => !v)} aria-pressed={sunset}>{sunset?<Moon size={18}/>:<Sun size={18}/>}<span>{sunset ? 'Atardecer' : 'Luz de día'}</span></button>
+      <details><summary><Layers3 size={18}/><span>Capas</span></summary><div>
         <label><input type="checkbox" checked={buildings} onChange={e => setBuildings(e.target.checked)} />Casas y edificios</label>
         <label><input type="checkbox" checked={vegetation} onChange={e => setVegetation(e.target.checked)} />Vegetación</label>
         <label><input type="checkbox" checked={showDem} onChange={e => setShowDem(e.target.checked)} />Relieve y pendiente (DEM SRTM)</label>
@@ -203,6 +208,21 @@ export default function MangaRender(props: MangaMapProps) {
         <a href="/models/manga/v6.1/manga-v6.1.glb" download>Descargar modelo 6.1</a>
       </div></details>
     </div>
+    {props.standalone&&<>
+      <div className="manga6-quickbar" aria-label="Controles rápidos del mapa">
+        <button type="button" aria-label="Ver toda Manga" aria-pressed={view==='district'} onClick={()=>focus('district')} title="Vista general"><Compass size={21}/><span>General</span></button>
+        <button type="button" aria-label="Vista desde arriba" aria-pressed={view==='top'} onClick={()=>focus('top')} title="Vista superior"><MapIcon size={21}/><span>Superior</span></button>
+        <button type="button" className="manga6-emergency-button" aria-label={emergency?'Detener simulación de emergencia':'Iniciar simulación de emergencia'} aria-pressed={emergency} onClick={emergency?endEmergency:startEmergency} title="Simular emergencia"><Siren size={23}/><span>{emergency?'Detener':'Emergencia'}</span></button>
+      </div>
+      <div className="manga6-map-hint"><CloudRain size={15}/><span>Arrastra para explorar · acerca para ver las calles</span></div>
+      {emergency&&<aside className="manga6-emergency-card" role="status" aria-label="Simulación de emergencia activa">
+        <div className="manga6-emergency-card__top"><Siren size={22}/><span>SIMULACIÓN EXTREMA</span><button type="button" onClick={endEmergency} aria-label="Cerrar simulación"><X size={18}/></button></div>
+        <strong>Tormenta sobre Manga</strong>
+        <p>Tormenta intensa durante {weather.duration} h y drenaje posterior. El agua se calcula sobre el relieve del modelo.</p>
+        <div className="manga6-emergency-card__stats"><span><b>{weather.manualTime.toFixed(1)} h</b> tiempo simulado</span><span><b>{weather.waterResult?(weather.waterResult.maxDepthM*100).toFixed(0):'…'} cm</b> profundidad máxima</span></div>
+        <small>Escenario exploratorio · no es una alerta real</small>
+      </aside>}
+    </>}
     {searchOpen&&<aside className="manga6-search" aria-label="Buscar zonas críticas y lugares">
       <div><Search size={18}/><input autoFocus aria-label="Nombre o sector" placeholder="Buscar en Manga…" value={query} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>{if(e.key==='Escape')setSearchOpen(false);}}/><button aria-label="Cerrar búsqueda" onClick={()=>setSearchOpen(false)}><X size={16}/></button></div>
       <p>20 zonas críticas · {landmarks.length+MANGA_POIS.length} lugares emblemáticos · terminal portuaria</p>

@@ -57,6 +57,7 @@ export const NotificationBanner = () => {
           if (!prev || n.timestamp > prev.timestamp) porRiesgo.set(n.riesgo!, n);
         }
         const deduped = Array.from(porRiesgo.values())
+          .filter((notification) => notification.tipo !== 'info')
           .sort((a, b) => (a.timestamp < b.timestamp ? 1 : -1))
           .slice(0, 3);
         setNotifications(deduped);

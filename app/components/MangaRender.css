@@ -11,3 +11,48 @@
 .manga6-weather{max-height:min(58vh,560px);overflow-y:auto;scrollbar-color:#628d8e transparent}.manga6-simtime{display:flex;justify-content:space-between;gap:8px;align-items:center;margin:8px 0;color:#e7f5ed}.manga6-simtime span{color:#a9c6c6;font-size:10px}.manga6-simcontrols{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.manga6-simcontrols button{display:inline-flex;align-items:center;justify-content:center;gap:5px}.manga6-weather input[type=range]{accent-color:#8bd8d5}
 .manga6-search{top:78px;right:20px;width:min(350px,calc(100% - 40px))}.manga6-search>div{display:flex;align-items:center;gap:8px}.manga6-search input{min-width:0;flex:1;background:transparent;border:0;color:white;outline-offset:4px;padding:10px 0}.manga6-search p,.manga6-weather p,.manga6-place p{color:#adc9cf;line-height:1.6;margin:8px 0}.manga6-search ul{padding:0;margin:0;list-style:none;max-height:250px;overflow:auto}.manga6-search li button{width:100%;text-align:left;padding:10px;background:transparent;border:0;color:inherit;border-radius:8px}.manga6-search li button:hover{background:#ffffff12}.manga6-search li span{display:block;font-size:10px;color:#9dbdc5;margin-top:4px}.manga6-search>div button,.manga6-place>button{border:0;background:transparent;color:white}.manga6-place{right:20px;top:80px;width:280px}.manga6-place>button{float:right}.manga6-place a{color:#8fe0dc;text-decoration:underline}.manga6-weather{left:20px;bottom:112px;max-width:330px}.manga6-weather>div{display:flex;align-items:center;gap:10px}.manga6-weather>div>span{margin-left:auto;font-variant-numeric:tabular-nums;color:#9ae4e4}.manga6-weather summary{padding:8px 0}.manga6-weather button{border:1px solid #ffffff25;background:#204851;color:#edf7f5;border-radius:8px;padding:8px;font-size:11px}.manga6-presets{display:flex;gap:5px}.manga6-presets button[aria-pressed=true]{background:#b3e9dc;color:#123c3c}.manga6-weather label{display:block;margin:10px 0}.manga6-weather input{display:block;width:100%}.manga6-heading h3{font-size:32px}
 @media(max-width:600px){.manga6-weather{left:12px;bottom:115px;padding:10px;max-width:calc(100% - 24px);max-height:42vh;font-size:10px}.manga6-search,.manga6-place{right:12px;top:118px;width:calc(100% - 24px)}.manga6-search ul{max-height:180px}.manga6-weather p{max-width:265px}.manga6-heading h3{font-size:26px}.manga6-footer span{max-width:230px}}
+
+/* Dedicated cartographic experience. The embedded dashboard keeps its compact controls. */
+.manga6--standalone{background:#0b4150}
+.manga6--standalone .manga6-heading{z-index:20;top:86px;left:22px;max-width:min(370px,calc(100% - 44px));padding:16px 20px;border:1px solid rgba(255,255,255,.57);border-radius:18px;background:rgba(226,244,229,.91);box-shadow:0 12px 45px rgba(7,44,53,.18)}
+.manga6--standalone .manga6-heading>span{font-size:13px;font-weight:800;line-height:1.5;letter-spacing:.14em;color:#245b5a}
+.manga6--standalone .manga6-heading h3{font-size:clamp(38px,4vw,58px);margin:2px 0 0;letter-spacing:-.06em}
+.manga6--standalone .manga6-heading p{font-size:14px;line-height:1.4;color:#2b6460}
+.manga6-back{position:absolute;z-index:25;top:20px;left:22px;display:inline-flex;align-items:center;gap:9px;min-height:44px;padding:10px 16px;border:1px solid rgba(236,255,247,.42);border-radius:12px;background:rgba(6,45,55,.84);color:#f2fff5;font:700 12px/1 var(--font-mono),monospace;letter-spacing:.06em;text-decoration:none;backdrop-filter:blur(14px);transition:transform .2s,background .2s}
+.manga6-back:hover{transform:translateX(-3px);background:#0b5961}
+.manga6--standalone .manga6-actions{top:20px;right:20px;align-items:center;z-index:24}
+.manga6--standalone .manga6-actions>button,.manga6--standalone .manga6-actions summary{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:44px;border-radius:12px;background:rgba(6,45,55,.88);border-color:rgba(224,255,244,.42);font-weight:700;letter-spacing:.04em}
+.manga6--standalone .manga6-actions>button:hover,.manga6--standalone .manga6-actions summary:hover{background:#105e67}
+.manga6-quickbar{position:absolute;z-index:24;top:50%;right:20px;transform:translateY(-50%);display:flex;flex-direction:column;gap:9px;padding:8px;border:1px solid rgba(217,255,239,.3);border-radius:18px;background:rgba(5,37,49,.5);backdrop-filter:blur(16px);box-shadow:0 15px 50px rgba(2,27,39,.25)}
+.manga6-quickbar button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-width:78px;min-height:68px;padding:8px;color:#e8fff1;background:rgba(255,255,255,.07);border:1px solid rgba(221,255,242,.18);border-radius:12px;font:700 10px/1.2 var(--font-mono),monospace;letter-spacing:.03em;transition:background .2s,transform .2s}
+.manga6-quickbar button:hover{background:rgba(177,245,220,.22);transform:translateX(-3px)}
+.manga6-quickbar button[aria-pressed=true]:not(.manga6-emergency-button){background:#dcf3e6;color:#164d52}
+.manga6-quickbar .manga6-emergency-button{background:linear-gradient(145deg,#9a293b,#571525);border-color:#ffa1a4;color:white;box-shadow:0 0 24px rgba(255,96,107,.3)}
+.manga6-quickbar .manga6-emergency-button:hover,.manga6-quickbar .manga6-emergency-button[aria-pressed=true]{background:linear-gradient(145deg,#ce3a4b,#7e1d2f);box-shadow:0 0 34px rgba(255,96,107,.5)}
+.manga6-map-hint{position:absolute;z-index:19;right:25px;bottom:120px;display:flex;align-items:center;gap:8px;max-width:230px;color:#effff7;font:700 10px/1.4 var(--font-mono),monospace;letter-spacing:.05em;text-shadow:0 2px 8px #092d3c}
+.manga6--emergency::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(circle at 50% 45%,transparent 32%,rgba(91,12,29,.28) 100%);animation:manga-storm-breath 3s ease-in-out infinite alternate}
+@keyframes manga-storm-breath{to{opacity:.47}}
+.manga6-emergency-card{position:absolute;z-index:23;top:235px;left:22px;width:min(330px,calc(100% - 130px));padding:18px;border:1px solid rgba(255,159,163,.75);border-radius:17px;background:rgba(42,14,29,.9);box-shadow:0 18px 55px rgba(30,5,13,.42),0 0 28px rgba(230,71,92,.2);backdrop-filter:blur(18px);color:#fff3ee}
+.manga6-emergency-card__top{display:flex;align-items:center;gap:9px;color:#ffb7a6;font:800 11px/1.3 var(--font-mono),monospace;letter-spacing:.09em}
+.manga6-emergency-card__top button{margin-left:auto;border:0;background:transparent;color:#fff4ef}
+.manga6-emergency-card>strong{display:block;margin:13px 0 7px;font-size:19px}.manga6-emergency-card p{font-size:12px;line-height:1.5;color:#f4cbc7}
+.manga6-emergency-card__stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0}.manga6-emergency-card__stats span{padding:10px;border:1px solid rgba(255,178,175,.23);border-radius:9px;color:#e9c4c3;font-size:10px}.manga6-emergency-card__stats b{display:block;margin-bottom:3px;color:#fff4e9;font-size:16px}
+.manga6-emergency-card small{display:block;padding-top:10px;border-top:1px solid rgba(255,178,175,.2);color:#ffc9b9;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+@media(max-width:700px){
+  .manga6-back{top:12px;left:12px;padding:9px 11px;font-size:10px}
+  .manga6--standalone .manga6-actions{top:12px;right:12px;flex-direction:row;gap:5px}
+  .manga6--standalone .manga6-actions>button,.manga6--standalone .manga6-actions summary{width:44px;height:44px;padding:0}
+  .manga6--standalone .manga6-actions>button span,.manga6--standalone .manga6-actions summary span{display:none}
+  .manga6--standalone .manga6-actions details>div{top:50px;width:225px}
+  .manga6--standalone .manga6-heading{top:72px;left:12px;max-width:min(300px,calc(100% - 96px));padding:11px 14px}
+  .manga6--standalone .manga6-heading>span{font-size:12px;letter-spacing:.04em}
+  .manga6--standalone .manga6-heading h3{font-size:40px}
+  .manga6--standalone .manga6-heading p{font-size:11px;max-width:none}
+  .manga6-quickbar{right:12px;top:51%;gap:5px;padding:5px;border-radius:14px}
+  .manga6-quickbar button{min-width:52px;min-height:55px;padding:5px;font-size:8px}
+  .manga6-quickbar button svg{width:18px;height:18px}
+  .manga6-map-hint{display:none}
+  .manga6-emergency-card{top:192px;left:12px;width:min(285px,calc(100% - 90px));padding:13px}
+  .manga6-emergency-card>strong{font-size:16px}.manga6-emergency-card p{font-size:11px}
+}
+@media(prefers-reduced-motion:reduce){.manga6--emergency::after{animation:none}}

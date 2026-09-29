@@ -9,5 +9,6 @@ export interface MangaMapProps {
   meteorologia?: MeteorologiaResumen|null; liveWater?: WaterStateResponse|null; liveLatenciaMs?:number|null;
   forecastPoints?: PuntoPrediccion[]; currentHour?:number; sourceLabel?:string;
   spatialForcing?: SpatialForcing|null; isPlaying?:boolean;
+  standalone?:boolean; onReady?:()=>void;
 }
 export default function MangaMap(props: MangaMapProps) { return <MangaRender {...props} />; }

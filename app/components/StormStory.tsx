@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
+import { CloudRain, FastForward, ArrowUpRight } from "lucide-react";
+import MapCurtain from "./MapCurtain";
 import "./StormStory.css";
 
 const StormStoryScene = dynamic(() => import("./StormStoryScene"), { ssr: false });
@@ -18,13 +21,21 @@ const shots = ["manga-wide", "manga-coast", "manga-streets", "manga-port"];
 
 function Intro({ onFinish }: { onFinish: () => void }) {
   const [phase, setPhase] = useState(0);
+  const timers = useRef<number[]>([]);
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { onFinish(); return; }
-    const first = window.setTimeout(() => setPhase(1), 650);
-    const second = window.setTimeout(() => setPhase(2), 1650);
-    const done = window.setTimeout(onFinish, 2500);
-    return () => { window.clearTimeout(first); window.clearTimeout(second); window.clearTimeout(done); };
+    timers.current = [
+      window.setTimeout(() => setPhase(1), 650),
+      window.setTimeout(() => setPhase(2), 3500),
+      window.setTimeout(onFinish, 4300),
+    ];
+    return () => { timers.current.forEach(window.clearTimeout); timers.current = []; };
   }, [onFinish]);
+  const skip = () => {
+    timers.current.forEach(window.clearTimeout);
+    timers.current = [window.setTimeout(onFinish, 480)];
+    setPhase(2);
+  };
   return (
     <div className={`story-intro story-intro-phase-${phase}`} role="status" aria-label="Preparando recorrido de Manga">
       <div className="story-intro-lines" aria-hidden="true" />
@@ -33,20 +44,34 @@ function Intro({ onFinish }: { onFinish: () => void }) {
         <div className="story-intro-mark"><span className="story-intro-ring" /><span>S</span></div>
         <span className="story-intro-word">STORMPRINT</span>
         <span className="story-intro-subtitle">MANGA, CARTAGENA · SISTEMA DE ALERTA</span>
+        <button className="story-intro-skip" onClick={skip} aria-label="Omitir cinemática y ver el proyecto">
+          <FastForward size={20} strokeWidth={1.8} /><span>Omitir cinemática</span><ArrowUpRight size={17} />
+        </button>
       </div>
       <div className="story-intro-bottom"><span>PREPARANDO EL TERRITORIO</span><span className="story-intro-progress"><i /></span><span>07 DÍAS / 168 H</span></div>
-      <button className="story-intro-skip" onClick={onFinish}>Saltar introducción ↗</button>
     </div>
   );
 }
 
 export default function StormStory() {
+  const router = useRouter();
   const root = useRef<HTMLElement>(null);
   const progress = useRef(0);
   const [active, setActive] = useState(0);
   const [visible, setVisible] = useState(true);
   const [intro, setIntro] = useState(true);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [enteringMap, setEnteringMap] = useState(false);
+  const entryTimer = useRef<number | null>(null);
+  const finishIntro = useCallback(() => setIntro(false), []);
+
+  useEffect(() => () => { if (entryTimer.current !== null) window.clearTimeout(entryTimer.current); }, []);
+  const enterMap = () => {
+    if (enteringMap) return;
+    if (reducedMotion) { router.push("/manga-3d"); return; }
+    setEnteringMap(true);
+    entryTimer.current = window.setTimeout(() => router.push("/manga-3d"), 760);
+  };
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -87,7 +112,8 @@ export default function StormStory() {
 
   return (
     <>
-      <AnimatePresence>{intro && <Intro onFinish={() => setIntro(false)} />}</AnimatePresence>
+      <AnimatePresence>{intro && <Intro onFinish={finishIntro} />}</AnimatePresence>
+      {enteringMap && <MapCurtain direction="close" />}
       <section ref={root} className="story" id="historia" aria-label="Recorrido por Manga">
         <div className="story-visual">
           {visible && <StormStoryScene progress={progress} reducedMotion={reducedMotion} />}
@@ -103,7 +129,14 @@ export default function StormStory() {
                 <div className="story-meta"><span>{chapter.eyebrow}</span><span>{chapter.number}</span></div>
                 <motion.h1 initial={false} animate={{ opacity: active === index ? 1 : .55, y: active === index ? 0 : 28 }} transition={{ duration: .7 }} className="story-title">{chapter.title}</motion.h1>
                 <p className="story-description">{chapter.description}</p>
-                <a className="story-action" href={chapter.href}>{chapter.action}<span>↗</span></a>
+                {index === 0 ? <div className="story-entry-actions">
+                  <button className="story-map-entry" onClick={enterMap} aria-label="Explorar el mapa 3D de Manga">
+                    <span className="story-map-entry__icon"><CloudRain size={27} strokeWidth={1.7} /></span>
+                    <span className="story-map-entry__text"><strong>Entrar al mapa 3D</strong><small>Explora Manga desde el cielo</small></span>
+                    <ArrowUpRight size={20} />
+                  </button>
+                  <a className="story-entry-secondary" href="#panel-vivo">Ir al monitoreo ↗</a>
+                </div> : <a className="story-action" href={chapter.href}>{chapter.action}<span>↗</span></a>}
               </div>
               <div className="story-frame" aria-label={`Vista del modelo de Manga: ${chapter.label.toLowerCase()}`}>
                 <Image src={`/story/${shots[index]}.webp`} alt={`Modelo 3D de Manga: ${chapter.label.toLowerCase()}`} fill sizes="(max-width: 700px) 100vw, 43vw" priority={index === 0} />
